@@ -4,7 +4,6 @@
   "private": false,
   "sideEffects": false,
   "description": "Reatom for react-v1",
-  "source": "src/index.ts",
   "exports": {
     "types": "./build/index.d.ts",
     "require": "./build/index.js",
@@ -16,14 +15,11 @@
   "browserslist": [
     "last 1 year"
   ],
-  "minify": {
-    "mangle": false
-  },
   "scripts": {
     "prepublishOnly": "npm run build && npm run test",
-    "build": "microbundle -f esm,cjs",
-    "test": "vitest run tests/*",
-    "test:watch": "vitest tests/*"
+    "build": "yoctobundle",
+    "test": "vitest run src/*",
+    "test:watch": "vitest src/*"
   },
   "dependencies": {
     "@reatom/core-v1": "^3.1.0",
@@ -46,7 +42,7 @@
     "/package.json"
   ],
   "devDependencies": {
-    "@testing-library/react": "^16.2.0",
+    "@testing-library/react": "^9.5.0",
     "@testing-library/react-hooks": "^8.0.1"
   }
 }
