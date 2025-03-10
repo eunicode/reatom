@@ -379,3 +379,45 @@ test('recursion and promiseAtom', async () => {
   expect(track.calls.length).toBe(1)
   expect(await track.lastInput()).toBe(2)
 })
+
+test('recursion and other atom', async () => {
+  const ctx = createTestCtx()
+
+  const data = atom('', 'data').pipe(
+    withInit((ctx, init) => {
+      setTimeout(() => {
+        resource.init(ctx)
+      })
+      return init(ctx)
+    }),
+  )
+
+  const resource = reatomResource(async (ctx) => {
+    const dataState = ctx.spy(data)
+    const someState = ctx.spy(fetchSome.dataAtom)
+
+    const result = await ctx.schedule(() => someState)
+
+    if (result) data(ctx, result)
+  }, 'resource')
+
+  const fetchSome = reatomAsync(async (ctx, param: string) => {
+    await ctx.schedule(() => sleep())
+    return param
+  }).pipe(withDataAtom(''))
+  fetchSome.dataAtom.pipe(
+    withInit((ctx, init) => {
+      fetchSome(ctx, 'test')
+      return init(ctx)
+    }),
+  )
+
+  // ctx.subscribeTrack(resource.promiseAtom)
+  const track = ctx.subscribeTrack(data)
+  track.calls.length = 0
+
+  await sleep(100)
+
+  expect(track.calls.length).toBe(1)
+  expect(await track.lastInput()).toBe('test')
+})
