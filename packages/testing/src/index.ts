@@ -91,6 +91,7 @@ export const createTestCtx = (options?: CtxOptions): TestCtx => {
   const ctx = createCtx({
     callLateEffect: callSafelySilent,
     callNearEffect: callSafelySilent,
+    restrictMultipleContexts: false,
     ...options,
   })
   const { get } = ctx
