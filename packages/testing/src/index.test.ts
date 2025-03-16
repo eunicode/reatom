@@ -62,10 +62,14 @@ test('mock computed atom', () => {
   const testAtom = atom<string>(() => {
     throw new Error('unreachable')
   }, 'testAtom')
+  testAtom.onChange((ctx, state) => {
+    log = { state, name: ctx.cause.proto.name }
+  })
+  let log: any
 
   const ctx = createTestCtx()
 
   ctx.mock(testAtom, 'mocked')
-
+  expect(log).toEqual({ state: 'mocked', name: 'testAtom' })
   expect(ctx.get(testAtom)).toBe('mocked')
 })

@@ -95,16 +95,21 @@ test('isInit', () => {
   const ctx = createTestCtx()
 
   const logs = new Array<boolean>()
-  const computation = atom((ctx) => {
+  const computation = atom((ctx, state = 0) => {
     logs.push(isInit(ctx))
     logs.push(isInit(ctx))
+    return state + 1
   }, 'computation')
+  computation.onChange((ctx) => {
+    logs.push(isInit(ctx))
+  })
   const work = action((ctx) => isInit(ctx))
 
   ctx.get(computation)
-  expect(logs).toEqual([true, true])
+  expect(logs).toEqual([true, true, true])
+  logs.length = 0
   ctx.get(computation)
-  expect(logs).toEqual([true, true, false, false])
+  expect(logs).toEqual([false, false, false])
 
   expect(work(ctx)).toBe(true)
   expect(work(ctx)).toBe(false)
