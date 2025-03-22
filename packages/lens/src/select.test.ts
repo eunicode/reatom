@@ -1,74 +1,82 @@
 import { createTestCtx } from '@reatom/testing'
 import { describe, test } from 'vitest'
 import { expect } from 'vitest'
-import { atom } from '@reatom/core'
+import { Atom, atom, AtomMut, AtomState } from '@reatom/core'
 import { select } from './select'
 
-// test('should not recompute the end atom if the source atom changed', () => {
-//   let track = 0
-//   const a = atom(0)
-//   const b = atom((ctx) => {
-//     track++
-//     return select(ctx, (ctx) => ctx.spy(a) % 3)
-//   })
-//   const ctx = createTestCtx()
-//
-//   ctx.subscribeTrack(b)
-//   expect(ctx.get(b)).toBe(0)
-//   expect(track).toBe(1)
-//
-//   a(ctx, 3)
-//   a(ctx, 6)
-//   expect(ctx.get(b)).toBe(0)
-//   expect(track).toBe(1)
-//
-//   a(ctx, 10)
-//   expect(ctx.get(b)).toBe(1)
-//   expect(track).toBe(2)
-// })
+test('should not recompute the end atom if the source atom changed', () => {
+  let track = 0
+  const a = atom(0)
+  const b = atom((ctx) => {
+    track++
+    return select(ctx, (ctx) => ctx.spy(a) % 3)
+  })
+  const ctx = createTestCtx()
 
-// test('many selects should work', () => {
-//   const list = atom(new Array<{ value: AtomMut<number> >());
-//   const target = atom((ctx) => {
-//     const length = select(ctx, (ctx) => ctx.spy(list).length);
-//     const sum = select(ctx, (ctx) => ctx.spy(list).reduce((acc, el) => acc + ctx.spy(el.value), 0));
+  ctx.subscribeTrack(b)
+  expect(ctx.get(b)).toBe(0)
+  expect(track).toBe(1)
 
-//     return { length, sum };
-//   });
-//   const ctx = createTestCtx();
-//   const track = ctx.subscribeTrack(target);
+  a(ctx, 3)
+  a(ctx, 6)
+  expect(ctx.get(b)).toBe(0)
+  expect(track).toBe(1)
 
-//   expect(ctx.get(target)).toEqual({ length: 0, sum: 0 });
+  a(ctx, 10)
+  expect(ctx.get(b)).toBe(1)
+  expect(track).toBe(2)
+})
 
-//   const value = atom(1);
-//   list(ctx, [{ value }]);
-//   expect(ctx.get(target)).toEqual({ length: 1, sum: 1 });
-//   expect(track.calls.length).toBe(2);
+test('many selects should work', () => {
+  const list = atom(new Array<{ value: AtomMut<number> }>())
+  const target = atom((ctx) => {
+    const length = select(ctx, (ctx) => ctx.spy(list).length)
+    const sum = select(ctx, (ctx) =>
+      ctx.spy(list).reduce((acc, el) => acc + ctx.spy(el.value), 0),
+    )
 
-//   value(ctx, 2);
-//   expect(ctx.get(target)).toEqual({ length: 1, sum: 2 });
-//   expect(track.calls.length).toBe(3);
+    return { length, sum }
+  })
+  const ctx = createTestCtx()
+  const track = ctx.subscribeTrack(target)
 
-//   list(ctx, [{ value }]);
-//   expect(ctx.get(target)).toEqual({ length: 1, sum: 2 });
-//   expect(track.calls.length).toBe(3);
-// });
+  expect(ctx.get(target)).toEqual({ length: 0, sum: 0 })
 
-// test('prevent select memoization errors', () => {
-//   const list = atom(new Array<AtomMut<{ name: string; value: number }>>());
-//   const sum = atom((ctx) => ctx.spy(list).reduce((acc, el) => acc + select(ctx, (ctx) => ctx.spy(el).value), 0));
-//   const ctx = createTestCtx();
-//   const track = ctx.subscribeTrack(sum);
+  const value = atom(1)
+  list(ctx, [{ value }])
+  expect(ctx.get(target)).toEqual({ length: 1, sum: 1 })
+  expect(track.calls.length).toBe(2)
 
-//   expect(track.calls.length).toBe(1);
-//   expect(ctx.get(sum)).toBe(0);
+  value(ctx, 2)
+  expect(ctx.get(target)).toEqual({ length: 1, sum: 2 })
+  expect(track.calls.length).toBe(3)
 
-//   expect(() =>
-//     list(ctx, [atom({ name: 'a', value: 1 }), atom({ name: 'b', value: 2 })])
-//   ).toThrow('Reatom error: multiple select with the same "toString" representation is not allowed');
-//   // expect(track.calls.length).toBe(2);
-//   // expect(ctx.get(sum)).toBe(3);
-// });
+  list(ctx, [{ value }])
+  expect(ctx.get(target)).toEqual({ length: 1, sum: 2 })
+  expect(track.calls.length).toBe(3)
+})
+
+test('prevent select memoization errors', () => {
+  const list = atom(new Array<AtomMut<{ name: string; value: number }>>())
+  const sum = atom((ctx) =>
+    ctx
+      .spy(list)
+      .reduce((acc, el) => acc + select(ctx, (ctx) => ctx.spy(el).value), 0),
+  )
+  const ctx = createTestCtx()
+  const track = ctx.subscribeTrack(sum)
+
+  expect(track.calls.length).toBe(1)
+  expect(ctx.get(sum)).toBe(0)
+
+  expect(() =>
+    list(ctx, [atom({ name: 'a', value: 1 }), atom({ name: 'b', value: 2 })]),
+  ).toThrow(
+    'Reatom error: multiple select with the same "toString" representation is not allowed',
+  )
+  // expect(track.calls.length).toBe(2);
+  // expect(ctx.get(sum)).toBe(3);
+})
 
 describe('select', () => {
   test('should filter equals', () => {
@@ -103,5 +111,39 @@ describe('select', () => {
 
     n(ctx, 6)
     expect(track.calls.length).toBe(1)
+  })
+
+  function withHistory<T extends Atom>(
+    length = 2,
+  ): (target: T) => T & {
+    history: Atom<[current: AtomState<T>, ...past: Array<AtomState<T>>]>
+  } {
+    return (target) =>
+      Object.assign(target, {
+        history: atom(
+          (ctx, state = []) =>
+            [ctx.spy(target), ...state.slice(0, length)] as [
+              current: AtomState<T>,
+              ...past: Array<AtomState<T>>,
+            ],
+        ),
+      })
+  }
+
+  test('history storing example', () => {
+    const ctx = createTestCtx()
+    const data = atom(1).pipe(withHistory())
+    const lastSumHistory = atom((ctx) => {
+      const [current, past = 0] = ctx.spy(data.history)
+      return current + past
+    })
+
+    expect(ctx.get(lastSumHistory)).toBe(1)
+    data(ctx, 2)
+    expect(ctx.get(lastSumHistory)).toBe(3)
+    data(ctx, 3)
+    expect(ctx.get(lastSumHistory)).toBe(5)
+    data(ctx, 4)
+    expect(ctx.get(lastSumHistory)).toBe(7)
   })
 })
