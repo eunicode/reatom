@@ -262,6 +262,8 @@ export const withCache =
             (ctx, params: ThisParams, value: AsyncResp<T>) => {
               const { cached, key } = find(ctx, params)
 
+              clearTimeout(cached?.clearTimeoutId)
+
               cacheAtom.set(ctx, key, {
                 clearTimeoutId: planCleanup(ctx, key),
                 promise: undefined,
@@ -338,6 +340,7 @@ export const withCache =
                 if (restStaleTime <= 0) {
                   newState.delete(key)
                 } else {
+                  clearTimeout(rec.clearTimeoutId)
                   rec.clearTimeoutId = planCleanup(
                     ctx,
                     key,
@@ -377,6 +380,7 @@ export const withCache =
         cached: ThisCacheRecord,
         swr: boolean,
       ) => {
+        clearTimeout(cached.clearTimeoutId)
         cached.clearTimeoutId = planCleanup(ctx, key)
         // the case: the whole cache was cleared and a new fetching was started
         const isSame = () =>
