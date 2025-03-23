@@ -51,7 +51,7 @@
     "/devtools2.png"
   ],
   "bundleDependencies": [
-    "@observablehq/inspecting",
+    "@observablehq/inspector",
     "@reatom/framework",
     "@reatom/jsx",
     "@reatom/npm-zod",
