@@ -1,0 +1,52 @@
+import { expect, getStackTrace, test } from 'test'
+import { action } from './action'
+import { atom, Frame, root } from './atom'
+import { notify } from 'src/methods'
+
+test('action', () => {
+  const name = 'action'
+  const testAction = action((...params: any[]) => params, `${name}.testAction`)
+  expect(testAction(1, 2, 3)).toEqual([1, 2, 3])
+})
+
+test('action cause stack', () => {
+  const name = 'actionCauseStack'
+  const getTrace = (frame?: Frame) =>
+    getStackTrace('', frame).replaceAll(`${name}.`, '')
+  const a1 = atom(0, `${name}.a1`)
+  const a2 = atom(() => a1(), `${name}.a2`)
+  const act = action((number: number) => {
+    return a1(number)
+  }, `${name}.act`)
+
+  let logData
+  const log = atom(() => {
+    a2()
+    logData = getTrace()
+  }, 'log')
+  log.subscribe()
+  logData = undefined
+
+  act(1)
+  notify()
+
+  expect(logData).toBe(' <-- log <-- a2 <-- a1 <-- act')
+  expect(getTrace(root().state.store.get(log)!)).toBe(
+    ' <-- log <-- a2 <-- a1 <-- act',
+  )
+})
+
+test('actionState', () => {
+  const name = 'actionState'
+  const act = action((a: number, b: number) => a + b, `${name}.act`)
+
+  act(0, 1)
+  act(1, 2)
+  expect(root().state.store.get(act)!.state).toEqual([
+    { params: [0, 1], payload: 1 },
+    { params: [1, 2], payload: 3 },
+  ])
+
+  notify()
+  expect(root().state.store.get(act)!.state).toEqual([])
+})

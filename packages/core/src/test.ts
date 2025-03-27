@@ -1,0 +1,64 @@
+import { test as viTest, vi, type Mock } from 'vitest'
+import { clearStack, root, AtomLike, top, Frame } from './core/atom'
+import { noop, type Unsubscribe } from './utils'
+
+clearStack()
+
+// TODO decorate chainable methods too
+export const test = Object.assign(
+  (name: string, fn: () => void | Promise<void>) =>
+    viTest(name, () => root.start(fn)),
+  viTest,
+) as typeof viTest
+
+// declare module './core/atom' {
+//   export interface AtomLike<State> {
+//     testing: {
+//       subscribe<T extends (state: State) => any>(
+//         cb?: T,
+//       ): Mock<T> & { unsubscribe: Unsubscribe }
+//     }
+//   }
+// }
+
+// MIDDLEWARES.push((target) => ({
+//   testing: {
+//     subscribe: (cb: Fn = noop) => {
+//       const mock = vi.fn(cb)
+//       const unsubscribe = target.subscribe(mock)
+//       return Object.assign(mock, { unsubscribe })
+//     },
+//   },
+// }))
+
+export function subscribe<State, T extends (state: State) => any>(
+  target: AtomLike<State>,
+  cb: T = noop as T,
+): Mock<T> & { unsubscribe: Unsubscribe } {
+  const mock = vi.fn(cb)
+  const unsubscribe = target.subscribe(
+    // @ts-ignore TODO
+    mock,
+  )
+  return Object.assign(mock, { unsubscribe })
+}
+
+export const getStackTrace = (acc = '', frame = top()): string => {
+  if (acc.length > 500) throw new Error('RECURSION')
+  if (!acc) acc = ` <-- ${frame.atom.name}`
+  const cause = frame.pubs.find((pub: Frame | null) => pub && pub.atom !== root)
+  return cause ? getStackTrace(`${acc} <-- ${cause.atom.name}`, cause) : acc
+}
+
+export {
+  expect,
+  vi,
+  describe,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+  expectTypeOf,
+} from 'vitest'
+
+export type * from 'vitest'
