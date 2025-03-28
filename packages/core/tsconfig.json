@@ -6,5 +6,6 @@
     "paths": {
       "test": ["src/test.ts"]
     },
-  }
+  },
+  "exclude": ["build"]
 }
