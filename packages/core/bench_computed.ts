@@ -375,7 +375,7 @@ const testComputers = setupComputersTest({
 
   //   return (i) => store.dispatch(a.entry(i))
   // },
-  async alpha({ listener, startCreation, endCreation }) {
+  async reatom({ listener, startCreation, endCreation }) {
     const { atom, root, wrap, notify, clearStack } = await import('./src')
 
     startCreation()
