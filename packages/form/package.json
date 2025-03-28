@@ -1,7 +1,7 @@
 {
   "name": "@reatom/form",
   "version": "3.3.2",
-  "private": false,
+  "private": true,
   "sideEffects": false,
   "description": "Reatom for form",
   "exports": {

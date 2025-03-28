@@ -1,7 +1,7 @@
 {
   "name": "@reatom/timer",
   "version": "3.6.2",
-  "private": false,
+  "private": true,
   "sideEffects": false,
   "description": "Reatom for timers",
   "exports": {

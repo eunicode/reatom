@@ -1,7 +1,7 @@
 {
   "name": "@reatom/npm-vue",
   "version": "3.6.1",
-  "private": false,
+  "private": true,
   "sideEffects": false,
   "description": "Reatom adapter for Vue",
   "exports": {

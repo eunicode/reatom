@@ -1,7 +1,7 @@
 {
   "name": "@reatom/primitives-v2",
   "version": "3.1.0",
-  "private": false,
+  "private": true,
   "sideEffects": false,
   "description": "Reatom helpers to create atoms around data primitives",
   "source": "index.ts",

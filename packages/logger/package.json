@@ -1,7 +1,7 @@
 {
   "name": "@reatom/logger",
   "version": "3.8.4",
-  "private": false,
+  "private": true,
   "sideEffects": false,
   "description": "A logger for the Reatom state manager",
   "exports": {

@@ -1,7 +1,7 @@
 {
   "name": "@reatom/effects",
   "version": "3.11.3",
-  "private": false,
+  "private": true,
   "sideEffects": false,
   "description": "Reatom for effects",
   "exports": {

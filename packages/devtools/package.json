@@ -3,7 +3,7 @@
   "version": "0.13.0",
   "description": "Reatom developer tools for states and actions inspecting",
   "type": "module",
-  "private": false,
+  "private": true,
   "sideEffects": false,
   "exports": {
     "types": "./build/index.d.ts",

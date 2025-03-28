@@ -1,7 +1,7 @@
 {
   "name": "@reatom/all-settled",
   "version": "3.1.4",
-  "private": false,
+  "private": true,
   "sideEffects": false,
   "description": "Reatom for allSettled",
   "exports": {

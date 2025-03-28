@@ -1,7 +1,7 @@
 {
   "name": "@reatom/npm-cookie-baker",
   "version": "3.1.5",
-  "private": false,
+  "private": true,
   "sideEffects": false,
   "description": "Reatom for cookies by cookie-baker",
   "exports": {

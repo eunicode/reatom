@@ -1,7 +1,7 @@
 {
   "name": "@reatom/core-v2",
   "version": "3.1.4",
-  "private": false,
+  "private": true,
   "sideEffects": false,
   "description": "Reatom adapter for core-v2",
   "main": "build/index.js",

@@ -1,7 +1,7 @@
 {
   "name": "@reatom/primitives",
   "version": "3.9.0",
-  "private": false,
+  "private": true,
   "sideEffects": false,
   "description": "Reatom for primitives",
   "exports": {

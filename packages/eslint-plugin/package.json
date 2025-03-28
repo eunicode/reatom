@@ -4,7 +4,7 @@
   "publishConfig": {
     "tag": "experimental"
   },
-  "private": false,
+  "private": true,
   "sideEffects": false,
   "description": "Reatom-specific ESLint rules",
   "exports": {

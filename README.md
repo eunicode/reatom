@@ -326,6 +326,5 @@ Special thanks to:
 
 - [React](https://reactjs.org), [Redux](https://redux.js.org), [Effector](https://effector.dev/) and [$mol](https://github.com/hyoo-ru/mam_mol) for inspiration
 - [Quokka](https://wallabyjs.com/oss/) and [vitest](https://vitest.dev/) for incredible testing experience
-- [TURBO](https://turbo.build) for simple monorepo management
 - [Astro](https://astro.build) for best in class combine of performance and developer experience
 - [Vercel](https://vercel.com/) for free hosting and perfect CI/CD (preview branches are <3)
