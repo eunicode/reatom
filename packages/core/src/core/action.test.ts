@@ -1,6 +1,6 @@
 import { expect, getStackTrace, test } from 'test'
 import { action } from './action'
-import { atom, Frame, root } from './atom'
+import { _read, atom, Frame, root } from './atom'
 import { notify } from 'src/methods'
 
 test('action', () => {
@@ -31,7 +31,7 @@ test('action cause stack', () => {
   notify()
 
   expect(logData).toBe(' <-- log <-- a2 <-- a1 <-- act')
-  expect(getTrace(root().state.store.get(log)!)).toBe(
+  expect(getTrace(_read(log)!)).toBe(
     ' <-- log <-- a2 <-- a1 <-- act',
   )
 })
@@ -42,11 +42,11 @@ test('actionState', () => {
 
   act(0, 1)
   act(1, 2)
-  expect(root().state.store.get(act)!.state).toEqual([
+  expect(_read(act)!.state).toEqual([
     { params: [0, 1], payload: 1 },
     { params: [1, 2], payload: 3 },
   ])
 
   notify()
-  expect(root().state.store.get(act)!.state).toEqual([])
+  expect(_read(act)!.state).toEqual([])
 })

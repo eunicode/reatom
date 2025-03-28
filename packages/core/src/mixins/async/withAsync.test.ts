@@ -1,4 +1,4 @@
-import { action, atom, root } from 'src/core'
+import { _read, action, atom, root } from 'src/core'
 import { expect, test, vi } from 'test'
 import { withAsync, withAsyncData } from './withAsync'
 import { withOnCall } from '../withOnChange'
@@ -36,38 +36,38 @@ test('withAsync for atom', async () => {
 
   expect(data.pending()).toBe(1)
   expect(data.ready()).toBe(false)
+  expect(_read(data.pending)?.state).toBe(1)
   expect(data.pending()).toBe(1)
-  // should run by a computed
-  expect(root().state.store.get(data)?.state).instanceOf(Promise)
+  // the async target should run by a computed
+  expect(_read(data)?.state).instanceOf(Promise)
 
   expect(await wrap(data())).toBe(0)
   expect(data.pending()).toBe(0)
   expect(data.ready()).toBe(true)
 })
 
-// test('withAsyncData for action', async () => {
-//   const name = 'actionAsyncData'
-//   const fetch = action(async (param: number) => param + 1, `${name}.fetch`).mix(
-//     withAsyncData(),
-//   )
+test('withAsyncData for action', async () => {
+  const name = 'actionAsyncData'
+  const fetch = action(async (param: number) => param + 1, `${name}.fetch`).mix(
+    withAsyncData(),
+  )
+  const onFulfill = vi.fn()
+  fetch.onFulfill.mix(withOnCall(onFulfill))
 
-//   expect(fetch.data()).toBeUndefined()
-//   expect(fetch.ready()).toBe(true)
+  expect(fetch.data()).toBeUndefined()
+  expect(fetch.ready()).toBe(true)
 
-//   const promise = fetch(1)
-//   expect(fetch.pending()).toBe(1)
-//   expect(fetch.ready()).toBe(false)
+  const promise = fetch(1)
+  expect(fetch.pending()).toBe(1)
+  expect(fetch.ready()).toBe(false)
 
-//   fetch.onFulfill.mix(withOnCall((payload, params) => {
-//     expect(payload).toBe(2)
-//     expect(params).toEqual([2, [1]])
-//   }))
-
-//   await wrap(promise)
-//   expect(fetch.pending()).toBe(0)
-//   expect(fetch.ready()).toBe(true)
-//   expect(fetch.data()).toBe(2)
-// })
+  await wrap(promise)
+  expect(fetch.pending()).toBe(0)
+  expect(fetch.ready()).toBe(true)
+  expect(fetch.data()).toBe(2)
+  expect(onFulfill).toBeCalledTimes(1)
+  expect(onFulfill).toBeCalledWith({ payload: 2, params: [1] })
+})
 
 // test('withAsyncData - basic async atom', async () => {
 //   const name = 'asyncDataAtom'

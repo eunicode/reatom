@@ -1,8 +1,9 @@
 import { expect, vi, test, subscribe } from 'test'
 
-import { atom, isConnected, root } from './atom'
+import { _read, atom, AtomLike, isConnected, root } from './atom'
 import { withComputed } from 'src/mixins'
 import { notify } from '../methods/queues'
+import { Middleware } from './mix'
 
 test('linking', () => {
   const name = 'linking'
@@ -38,6 +39,20 @@ test('linking', () => {
   expect(a1Frame.subs.length).toBe(0)
   expect(a2Frame.subs.length).toBe(0)
   expect(testEffectFrame.subs.length).toBe(0)
+})
+
+test('reading', () => {
+  const name = 'reading'
+  const a = atom(0, `${name}.a`)
+  const bFn = vi.fn(() => a())
+  const bMiddleware = vi.fn<ReturnType<Middleware<AtomLike>>>((next, ...a) => next(...a))
+  const b = atom(bFn, `${name}.b`).mix(bMiddleware)
+
+  expect(b()).toBe(0)
+  expect(b()).toBe(0)
+  expect(b()).toBe(0)
+  expect(bFn).toBeCalledTimes(1)
+  expect(bMiddleware).toBeCalledTimes(1)
 })
 
 test('disconnect tail deps', () => {
@@ -96,7 +111,7 @@ test('subscribe to cached atom', () => {
   a2.subscribe()
 
   // Check that a1 has exactly one subscriber
-  const a1Frame = root().state.store.get(a1)
+  const a1Frame = _read(a1)
   expect(a1Frame?.subs.length).toBe(1)
 })
 
@@ -121,18 +136,18 @@ test('update propagation for atom with listener', () => {
   expect(cb3).toBeCalledWith(1)
 
   cb3.unsubscribe()
-  expect(root().state.store.get(a2)!.subs.length).toBe(1)
-  expect(root().state.store.get(a3)!.subs.length).toBe(0)
+  expect(_read(a2)!.subs.length).toBe(1)
+  expect(_read(a3)!.subs.length).toBe(0)
   a1(2)
   notify()
   expect(cb2).toBeCalledTimes(3)
   expect(cb2).toBeCalledWith(2)
 
   a3.subscribe(cb3)
-  expect(root().state.store.get(a2)!.subs.length).toBe(2)
+  expect(_read(a2)!.subs.length).toBe(2)
 
   atom(() => a3()).subscribe()
-  expect(root().state.store.get(a2)!.subs.length).toBe(2)
+  expect(_read(a2)!.subs.length).toBe(2)
 })
 
 test('conditional deps duplication', () => {
@@ -204,7 +219,6 @@ test('computed without dependencies', () => {
   expect(a()).toBe(11)
   expect(a(100)).toBe(101)
 })
-
 
 test('error tracking', () => {
   const name = 'errorTracking'

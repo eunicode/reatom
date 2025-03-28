@@ -83,6 +83,7 @@ export const ifCalled = <Params extends any[], Payload>(
 
   let idx = history.next.push(targetFrame) - 1
   if (
+    // FIXME cleanup
     targetFrame.state.length &&
     (history.prev[idx]?.atom !== target ||
       !Object.is(history.prev[idx]!.state, targetFrame.state))

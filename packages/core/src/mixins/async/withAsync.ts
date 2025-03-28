@@ -17,8 +17,14 @@ import { withComputed } from '../withComputed'
 
 type AsyncMethods<Params extends any[] = any[], Payload = any, Error = any> = {
   ready: Computed<boolean>
-  onFulfill: Action<[payload: Payload, params: Params], Payload>
-  onReject: Action<[error: Error, params: Params], Error>
+  onFulfill: Action<
+    [payload: Payload, params: Params],
+    { payload: Payload; params: Params }
+  >
+  onReject: Action<
+    [error: Error, params: Params],
+    { error: Error; params: Params }
+  >
   onSettle: Action<
     [{ payload: Payload; params: Params } | { error: Error; params: Params }],
     { payload: Payload; params: Params } | { error: Error; params: Params }
@@ -40,28 +46,26 @@ export let withAsync: {
   let itAction = isAction(target)
 
   let onFulfill: AsyncMethods['onFulfill'] = action((payload, params) => {
-    onSettle({ payload, params })
-    pending((state) => state - 1)
-    ready()
-    return payload
+    return onSettle({ payload, params }) as any // TODO
   }, `${target.name}.onFulfill`)
   let onReject: AsyncMethods['onReject'] = action((error, params) => {
-    onSettle({ error, params })
+    return onSettle({ error, params }) as any // TODO
+  }, `${target.name}.onReject`)
+  let onSettle: AsyncMethods['onSettle'] = action((call) => {
     pending((state) => state - 1)
     ready()
-    return error
-  }, `${target.name}.onReject`)
-  let onSettle: AsyncMethods['onSettle'] = action(
-    identity,
-    `${target.name}.onSettle`,
-  )
+    return call
+  }, `${target.name}.onSettle`)
 
   let pending = atom(0, `${target.name}.pending`)
     // computed needed to ensure that `pending` (and `ready`) connection will connect the target
     .mix(
       withComputed((state) => {
-        if (itAction) ifCalled(target as Action, () => state++)
-        else ifChanged(target, () => state++)
+        if (itAction) {
+          ifCalled(target as Action, () => state++)
+        } else {
+          ifChanged(target, () => state++)
+        }
         return state
       }),
     )
@@ -129,20 +133,28 @@ export let withAsyncData: {
     AsyncDataMethods<Array<Frame>, Payload, Payload | undefined>
   >
 
-  <Params extends any[], Payload>(initState: Payload): Assigner<
+  <Params extends any[], Payload>(
+    initState: Payload,
+  ): Assigner<
     Action<Params, Promise<Payload>>,
     AsyncDataMethods<Params, Payload, Payload>
   >
-  <Payload>(initState: Payload): Assigner<
+  <Payload>(
+    initState: Payload,
+  ): Assigner<
     AtomLike<Promise<Payload>>,
     AsyncDataMethods<Array<Frame>, Payload, Payload>
   >
 
-  <Params extends any[], Payload, State>(initState: State): Assigner<
+  <Params extends any[], Payload, State>(
+    initState: State,
+  ): Assigner<
     Action<Params, Promise<Payload>>,
     AsyncDataMethods<Params, Payload, Payload | State>
   >
-  <Payload, State>(initState: State): Assigner<
+  <Payload, State>(
+    initState: State,
+  ): Assigner<
     AtomLike<Promise<Payload>>,
     AsyncDataMethods<Array<Frame>, Payload, Payload | State>
   >
@@ -187,7 +199,7 @@ export let withAsyncData: {
 
     let data = atom(initState, `${target.name}.data`).mix(
       withComputed((state) => {
-        ifCalled(asyncMethods.onFulfill, (payload, params) => {
+        ifCalled(asyncMethods.onFulfill, ({ payload, params }) => {
           state = map(payload, params, state)
         })
         return state

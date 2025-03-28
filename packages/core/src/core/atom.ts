@@ -111,12 +111,9 @@ export function run<I extends any[], O>(
 export let _copy = (rootFrame: RootFrame, frame: Frame) => {
   // console.log(COLOR.dimGreen('copy'), frame.atom.name)
 
-  let pubs = frame.pubs.slice() as typeof frame.pubs
-
-  // let pubs = new Array(frame.pubs.length) as typeof frame.pubs
-  // for (let i = 1; i < frame.pubs.length; i++) {
-  //   pubs[i] = frame.pubs[i]!
-  // }
+  let pubs = (
+    frame.pubs.length === 1 ? [null] : frame.pubs.slice()
+  ) as typeof frame.pubs
 
   pubs[0] = null
 
@@ -336,31 +333,34 @@ function middleware(next: Fn) {
   if (invalid && reactive) {
     invalid = false
     // use current frame to reduce `copy` operations, reset pubs **temporally**
-    frame.pubs = [null]
+    frame.pubs = getDefaultComputedPubs(next)
     for (let i = 1; i < pubs.length; i++) {
-      let { error, state, atom } = pubs[i]!
-      let freshState = state
-      let freshError = state
+      let { error: pubError, state: pubState, atom: pubAtom } = pubs[i]!
+      let pubFreshState = pubState
+      let pubFreshError = pubError
 
       // try to reduce extra atom calls
-      let pubFrame = rootFrame.state.store.get(atom)!
+      let pubFrame = rootFrame.state.store.get(pubAtom)!
       if (
         pubFrame.pubs[0] !== null &&
         (pubFrame.pubs.length === 1 || pubFrame.subs.length !== 0)
       ) {
-        freshState = pubFrame.state
-        freshError = pubFrame.error
+        pubFreshState = pubFrame.state
+        pubFreshError = pubFrame.error
         frame.pubs.push(pubFrame)
       } else {
         try {
-          freshState = atom()
+          pubFreshState = pubAtom()
         } catch (error) {
           // we should give an ability to handle errors in computer by a user himself
-          freshError = error
+          pubFreshError = error as Frame['error']
         }
       }
 
-      if (!Object.is(state, freshState) || !Object.is(error, freshError)) {
+      if (
+        !Object.is(pubState, pubFreshState) ||
+        !Object.is(pubError, pubFreshError)
+      ) {
         invalid = true
       }
     }
@@ -372,7 +372,7 @@ function middleware(next: Fn) {
       STACK[STACK.length - 1] = frame = _copy(rootFrame, frame)
     }
 
-    frame.pubs = [null]
+    frame.pubs = getDefaultComputedPubs(next)
     newState = next(newState)
 
     if (frame.subs.length) {
@@ -392,7 +392,8 @@ assert(!globalThis.__REATOM, 'root duplication', ReatomError)
 globalThis.__REATOM = []
 
 //Try to reduce mem usage
-let getDefaultComputedPubs = () => {
+let getDefaultComputedPubs = (setup: any) => {
+  if (typeof setup === 'function') return [null] as Frame['pubs']
   let pubs = Array.from({ length: 4 }) as Frame['pubs']
   pubs[0] = null
   pubs.length = 1
@@ -420,7 +421,7 @@ export let atom: {
         error: null,
         state: initState,
         atom,
-        pubs: typeof setup === 'function' ? getDefaultComputedPubs() : [null],
+        pubs: getDefaultComputedPubs(setup),
         subs: [],
         run,
       }
@@ -437,11 +438,22 @@ export let atom: {
     if (push || dirty || (reactive && !subscribed)) {
       STACK.push(frame)
 
-      try {
-        let fn = typeof setup === 'function' ? setup : identity
+      middlewares: try {
+        let fn: Fn = identity
+
+        if (typeof setup === 'function') {
+          if (middlewares.length === 1) {
+            newState = middleware(setup as Fn)
+            break middlewares
+          }
+
+          fn = setup as Fn
+        }
+
         for (let middleware of middlewares) {
           fn = middleware.bind(null, fn)
         }
+        // @ts-ignore TODO
         newState = fn.apply(null, arguments)
       } catch (error) {
         // console.log(COLOR.red('error'), atom.name)
@@ -525,7 +537,7 @@ root.start = (cb) => {
         scheduled: false,
       },
       atom: root,
-      pubs: [null],
+      pubs: getDefaultComputedPubs(null),
       subs: [],
       run,
     } satisfies RootFrame
@@ -538,6 +550,9 @@ root.context = (name: string) => {
   }
   return context.get(name)!
 }
+
+export let _read = <T>(target: AtomLike<T>): undefined | Frame<T> =>
+  root().state.store.get(target)
 
 export let STACK: Array<Frame> = []
 

@@ -1,4 +1,4 @@
-import { action, atom, root } from 'src/core'
+import { _read, action, atom, root } from 'src/core'
 import { expect, test, vi } from 'test'
 import { ifChanged, ifCalled } from './ifChanged'
 import { sleep } from 'src/utils'
@@ -46,7 +46,7 @@ test('ifCalled', async () => {
   data.subscribe()
 
   expect(log).toBeCalledTimes(0)
-  expect(root().state.store.get(sum)?.subs).toEqual([data])
+  expect(_read(sum)?.subs).toEqual([data])
 
   sum(1, 2)
   expect(log).toBeCalledTimes(0)
