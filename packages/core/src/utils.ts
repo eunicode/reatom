@@ -25,12 +25,12 @@ export type Plain<Intersection> = Intersection extends (
       [Key in keyof Intersection]: Intersection[Key]
     }
   : Intersection extends new (...params: any[]) => any
-  ? Intersection
-  : Intersection extends object
-  ? {
-      [Key in keyof Intersection]: Intersection[Key]
-    }
-  : Intersection
+    ? Intersection
+    : Intersection extends object
+      ? {
+          [Key in keyof Intersection]: Intersection[Key]
+        }
+      : Intersection
 
 export type Shallow<T> = {
   [K in keyof T]: T[K]
@@ -171,8 +171,8 @@ export let defineName = <T extends Fn | Function>(
   target: T,
   name: string,
 ): T => {
-  // TODO this creates new hidden shapes (classes / maps) which leads to deopts
-  Reflect.defineProperty(target as Fn, 'name', { value: name })
+  // TODO Enable by a flag in devtools. This enables beautiful readable stacktraces, but lead to deopts with 1.5x the whole code slowdown
+  // Object.defineProperty(target as Fn, 'name', { value: name })
   return target
 }
 
@@ -186,12 +186,12 @@ export type Assign<T1, T2, T3 = {}, T4 = {}> = Plain<
 
 /** `Object.assign` with fixed types, equal properties replaced instead of changed to a union */
 export const assign: {
-  <T1, T2, T3 = {}, T4 = {}>(a1: T1, a2: T2, a3?: T3, a4?: T4): Assign<
-    T1,
-    T2,
-    T3,
-    T4
-  >
+  <T1, T2, T3 = {}, T4 = {}>(
+    a1: T1,
+    a2: T2,
+    a3?: T3,
+    a4?: T4,
+  ): Assign<T1, T2, T3, T4>
 } = Object.assign
 
 /** `Object.assign` which set an empty object to the first argument */

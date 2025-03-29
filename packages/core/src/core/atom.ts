@@ -38,7 +38,7 @@ export interface Frame<State = any> {
   /** Immutable list of dependencies.
    * The first element is actualization flag and an imperative write cause. */
   pubs: [actualization: null | Frame, ...dependencies: Array<Frame>]
-  subs: Array<Fn | AtomLike>
+  subs: Array<AtomLike>
   /** Run the callback in this context. DO NOT USE directly, use `wrap` instead. */
   run<I extends any[], O>(fn: (...params: I) => O, ...params: I): O
 }
@@ -128,7 +128,7 @@ export let _copy = (rootFrame: RootFrame, frame: Frame) => {
 }
 
 export const isAtom = (value: any): value is AtomLike => {
-  return typeof value === 'function' && typeof value.__reatom !== 'undefined'
+  return typeof value === 'function' && '__reatom' in value
 }
 
 let enqueue = (rootFrame: RootFrame, frame: Frame) => {
@@ -136,13 +136,14 @@ let enqueue = (rootFrame: RootFrame, frame: Frame) => {
 
   for (let i = 0; i < frame.subs.length; i++) {
     let sub = frame.subs[i]!
-    if (isAtom(sub)) {
+
+    if (sub === frame.atom) {
+      schedule(sub, 'compute')
+    } else {
       let subFrame = rootFrame.state.store.get(sub as Atom)!
       if (subFrame.pubs[0] !== null) {
         enqueue(rootFrame, _copy(rootFrame, subFrame))
       }
-    } else {
-      schedule(sub, 'compute')
     }
   }
 }
@@ -163,7 +164,7 @@ let link = (frame: Frame) => {
 // but in the real data, it is in the best case quite often (pub.subs.pop()).
 // For example, as we run `link` before `unlink` during deps invalidation,
 // for deps duplication we want to find just added dep.
-let unlink = (sub: Atom | Fn, oldPubs: Frame['pubs']) => {
+let unlink = (sub: Atom, oldPubs: Frame['pubs']) => {
   // console.log(COLOR.red('unlink'), sub.name)
 
   // Start from the end to try to revet the link sequence with just "pop" complexity.
@@ -239,34 +240,20 @@ let mix = (target: AtomLike, ext: Extension<AtomLike>): AtomLike => {
   return target
 }
 
-function subscribe(this: AtomLike, userCb = noop) {
+function subscribe(this: AtomLike, userCb?: Fn) {
   // console.log('subscribe', this.name)
+
+  if (userCb !== undefined) {
+    return atom(() => userCb(this()), `${this.name}.subscribe`).subscribe()
+  }
+
+  this()
 
   let rootFrame = root()
 
-  let lastState = {}
-  let cb = defineName(() => {
-    try {
-      if (!Object.is(lastState, (lastState = this()))) {
-        if (!frame) {
-          userCb(lastState)
-        } else {
-          let _lastSate = lastState
-          schedule(() => {
-            if (Object.is(lastState, _lastSate)) userCb(lastState)
-          })
-        }
-      }
-    } catch (error) {
-      // do not allow to subscribe for error state
-      if (!frame) throw error
-    }
-  }, `${this.name}.subscription`)
-  cb()
+  let frame = rootFrame.state.store.get(this)
 
-  var frame = rootFrame.state.store.get(this)
-
-  if (frame!.subs.push(cb) === 1) {
+  if (frame!.subs.push(this) === 1) {
     relink(frame!, [null])
   }
 
@@ -276,7 +263,7 @@ function subscribe(this: AtomLike, userCb = noop) {
     if (!frame) return
 
     // TODO optimize
-    frame.subs.splice(frame.subs.indexOf(cb), 1)
+    frame.subs.splice(frame.subs.lastIndexOf(this), 1)
 
     if (frame.subs.length === 0) {
       unlink(this, rootFrame.state.store.get(this as Atom)!.pubs)
@@ -416,97 +403,103 @@ export let atom: {
     initState = undefined as T
   }
 
-  let atom = castAtom<Atom<T>>(function (): T {
-    let rootFrame = root()
-    let topFrame = top()
-    let frame = rootFrame.state.store.get(atom)!
-    let push = arguments.length !== 0
+  let atom = castAtom<Atom<T>>(
+    {
+      // Use computed property name to setup the function name for better stack traces
+      [name](): T {
+        let rootFrame = root()
+        let topFrame = top()
+        let frame = rootFrame.state.store.get(atom)!
+        let push = arguments.length !== 0
 
-    if (frame === undefined) {
-      frame = {
-        error: null,
-        state: initState,
-        atom,
-        pubs: getDefaultComputedPubs(setup),
-        subs: [],
-        run,
-      }
-      rootFrame.state.store.set(atom, frame)
-    }
+        if (frame === undefined) {
+          frame = {
+            error: null,
+            state: initState,
+            atom,
+            pubs: getDefaultComputedPubs(setup),
+            subs: [],
+            run,
+          }
+          rootFrame.state.store.set(atom, frame)
+        }
 
-    let { error, state } = frame
-    let newState = state
-    let newError = null
-    let dirty = frame.pubs[0] === null
-    let reactive = frame.pubs.length !== 1
-    let subscribed = frame.subs.length !== 0
+        let { error, state } = frame
+        let newState = state
+        let newError = null
+        let dirty = frame.pubs[0] === null
+        let reactive = frame.pubs.length !== 1
+        let subscribed = frame.subs.length !== 0
 
-    if (push || dirty || (reactive && !subscribed)) {
-      STACK.push(frame)
+        if (push || dirty || (reactive && !subscribed)) {
+          STACK.push(frame)
 
-      middlewares: try {
-        let fn: Fn = identity
+          middlewares: try {
+            let fn: Fn = identity
 
-        if (typeof setup === 'function') {
-          if (middlewares.length === 1) {
-            newState = middleware(setup as Fn)
-            break middlewares
+            if (typeof setup === 'function') {
+              if (middlewares.length === 1) {
+                newState = middleware(setup as Fn)
+                break middlewares
+              }
+
+              fn = setup as Fn
+            }
+
+            for (let middleware of middlewares) {
+              fn = middleware.bind(null, fn)
+            }
+            // @ts-ignore TODO
+            newState = fn.apply(null, arguments)
+          } catch (error) {
+            // console.log(COLOR.red('error'), atom.name)
+            let copied = frame !== STACK[STACK.length - 1]
+            if (!copied && !push && !dirty) {
+              STACK[STACK.length - 1] = frame = _copy(rootFrame, frame)
+            }
+            newError = error ?? new ReatomError('Unknown error')
           }
 
-          fn = setup as Fn
+          frame = STACK[STACK.length - 1]!
+          frame.error = newError
+          frame.state = newState
+          frame.pubs[0] ??= push ? topFrame : rootFrame
+
+          // if the puller is an action it will cleanup itself by itself
+          if (!push && topFrame !== rootFrame) {
+            // if (topFrame.atom === frame.atom) console.log(COLOR.bgRed('topFrame.atom === frame.atom')) // prettier-ignore
+            topFrame.pubs.push(frame)
+          }
+
+          if (
+            !dirty &&
+            subscribed &&
+            (!Object.is(state, frame.state) || !Object.is(error, frame.error))
+          ) {
+            enqueue(rootFrame, frame)
+          }
+
+          STACK.pop()
+        } else if (topFrame !== rootFrame) {
+          topFrame.pubs.push(frame)
         }
 
-        for (let middleware of middlewares) {
-          fn = middleware.bind(null, fn)
+        if (frame.error != null) {
+          throw frame.error
         }
-        // @ts-ignore TODO
-        newState = fn.apply(null, arguments)
-      } catch (error) {
-        // console.log(COLOR.red('error'), atom.name)
-        let copied = frame !== STACK[STACK.length - 1]
-        if (!copied && !push && !dirty) {
-          STACK[STACK.length - 1] = frame = _copy(rootFrame, frame)
+
+        if (isAction(atom)) {
+          // @ts-ignore TODO
+          return frame.state.at(-1).payload
         }
-        newError = error ?? new ReatomError('Unknown error')
-      }
 
-      frame = STACK[STACK.length - 1]!
-      frame.error = newError
-      frame.state = newState
-      frame.pubs[0] ??= push ? topFrame : rootFrame
-
-      // if the puller is an action it will cleanup itself by itself
-      if (!push && topFrame !== rootFrame) {
-        // if (topFrame.atom === frame.atom) console.log(COLOR.bgRed('topFrame.atom === frame.atom')) // prettier-ignore
-        topFrame.pubs.push(frame)
-      }
-
-      if (
-        !dirty &&
-        subscribed &&
-        (!Object.is(state, frame.state) || !Object.is(error, frame.error))
-      ) {
-        enqueue(rootFrame, frame)
-      }
-
-      STACK.pop()
-    } else if (topFrame !== rootFrame) {
-      topFrame.pubs.push(frame)
-    }
-
-    if (frame.error != null) {
-      throw frame.error
-    }
-
-    if (isAction(atom)) {
-      // @ts-ignore TODO
-      return frame.state.at(-1).payload
-    }
-
-    return frame.state
-    // TODO if `isInit` triggers some logic which change (with a new frame) the atom, what state should we return??
-    return rootFrame.state.store.get(atom)!.state
-  }, name)
+        return frame.state
+        // TODO if `isInit` triggers some logic which change (with a new frame) the atom, what state should we return??
+        return rootFrame.state.store.get(atom)!.state
+      },
+    }[name]!,
+    name,
+  )
 
   let middlewares = atom.__reatom
   middlewares.push(middleware)
