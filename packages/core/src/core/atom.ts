@@ -61,10 +61,10 @@ export interface RootState {
   store: Store
   /** @internal DO NOT USE IN PRODUCT CODE */
   context: Map<string, WeakMap>
+  hook: Queue
   compute: Queue
   cleanup: Queue
   effect: Queue
-  scheduled: boolean
 }
 
 export interface RootFrame extends Frame<RootState> {}
@@ -530,10 +530,10 @@ root.start = (cb) => {
       state: {
         store: new WeakMap() as Store,
         context: new Map(),
+        hook: [],
         compute: [],
         cleanup: [],
         effect: [],
-        scheduled: false,
       },
       atom: root,
       pubs: getDefaultComputedPubs(null),

@@ -18,7 +18,7 @@ export let withOnChange =
       let prevState = top().state
       let state = next(...params)
       if (!Object.is(prevState, state)) {
-        schedule(() => cb(state, prevState), 'compute')
+        schedule(() => cb(state, prevState), 'hook')
       }
       return state
     }, `${_target.name}.withOnChange`)

@@ -94,7 +94,7 @@ export let withAsync: {
     touched.add(promise)
 
     // schedule before `then` to step into microtasks before possible seal
-    schedule(ready, 'compute')
+    schedule(ready, 'hook')
 
     // outer promise handlers should tick after the async handlers
     promise = promise.then(

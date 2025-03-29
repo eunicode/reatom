@@ -1,13 +1,22 @@
 import { root } from '../core/atom'
-import { noop } from '../utils'
 import { wrap } from './wrap'
 
 export let schedule = async <T>(
   fn: (...params: any[]) => T,
-  queue: 'compute' | 'cleanup' | 'effect' = 'effect',
+  queue: 'hook' | 'compute' | 'cleanup' | 'effect' = 'effect',
 ): Promise<T> =>
   new Promise((res, rej) => {
     let rootFrame = root()
+
+    if (
+      rootFrame.state.hook.length === 0 &&
+      rootFrame.state.compute.length === 0 &&
+      rootFrame.state.cleanup.length === 0 &&
+      rootFrame.state.effect.length === 0
+    ) {
+      Promise.resolve().then(wrap(notify, rootFrame))
+    }
+
     rootFrame.state[queue].push(() => {
       try {
         res(fn())
@@ -15,48 +24,29 @@ export let schedule = async <T>(
         rej(e)
       }
     })
-    if (!rootFrame.state.scheduled) {
-      Promise.resolve().then(wrap(notify, rootFrame))
-      rootFrame.state.scheduled = true
-    }
   })
-
-let error = (e: any, name: string) =>
-  console.log(`Reatom ${name} queue error:`, e)
 
 export let notify = async (): Promise<void> => {
   let { state } = root()
-  let { compute, cleanup, effect } = state
 
-  // Without this we need to move the loop logic to separate function for calling it in a two places, it will increase call stack (ugly)
-  if (effect.length === 0) effect.push(noop)
+  let queues = [
+    state.hook[Symbol.iterator](),
+    state.compute[Symbol.iterator](),
+    state.cleanup[Symbol.iterator](),
+    state.effect[Symbol.iterator](),
+  ]
 
-  while (compute.length || cleanup.length || effect.length) {
-    for (const cb of effect) {
-      for (const cb of compute) {
-        try {
-          cb()
-        } catch (e) {
-          error(e, 'compute')
-        }
-      }
-      compute.length = 0
-      for (const cb of cleanup) {
-        try {
-          cb()
-        } catch (e) {
-          error(e, 'cleanup')
-        }
-      }
-      cleanup.length = 0
-      try {
-        cb()
-      } catch (e) {
-        error(e, 'effect')
-      }
+  let priority = 0
+  while (priority < queues.length) {
+    let next = queues[priority++]!.next()
+    if (!next.done) {
+      priority = 0 // need to recheck queues after the cb
+      next.value()
     }
-    effect.length = 0
   }
 
-  state.scheduled = false
+  state.hook = []
+  state.compute = []
+  state.cleanup = []
+  state.effect = []
 }
