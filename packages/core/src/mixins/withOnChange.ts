@@ -1,3 +1,4 @@
+import { schedule } from '../methods'
 import {
   Action,
   AtomLike,
@@ -6,21 +7,21 @@ import {
   ReatomError,
   top,
 } from '../core'
-import { assert, Fn } from '../utils'
+import { assert, defineName, Fn } from '../utils'
 
 export let withOnChange =
   <T extends AtomLike>(
     cb: (state: AtomState<T>, prevState?: AtomState<T>) => void,
   ) =>
   (_target: T) =>
-  (next: Fn, ...params: any[]) => {
-    let prevState = top().state
-    let state = next(...params)
-    if (!Object.is(prevState, state)) {
-      cb(state, prevState)
-    }
-    return state
-  }
+    defineName((next: Fn, ...params: any[]) => {
+      let prevState = top().state
+      let state = next(...params)
+      if (!Object.is(prevState, state)) {
+        schedule(() => cb(state, prevState), 'compute')
+      }
+      return state
+    }, `${_target.name}.withOnChange`)
 
 export let withOnCall =
   <Params extends any[], Payload>(
@@ -33,12 +34,18 @@ export let withOnCall =
       ReatomError,
     )
 
-    return withOnChange(
-      (state: Array<{ params: Params; payload: Payload }>) => {
-        if (state.length) {
-          let { params, payload } = state[state.length - 1]!
-          cb(payload, params)
-        }
-      },
-    )(target)
+    return defineName(
+      withOnChange(
+        (
+          state: Array<{ params: Params; payload: Payload }>,
+          prevState?: Array<{ params: Params; payload: Payload }>,
+        ) => {
+          for (let i = prevState?.length ?? 0; i < state.length; i++) {
+            let { params, payload } = state[i]!
+            cb(payload, params)
+          }
+        },
+      )(target),
+      `${target.name}.withOnCall`,
+    )
   }

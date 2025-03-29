@@ -1,6 +1,7 @@
 import { expect, test, vi } from 'test'
 import { action, atom } from '../core'
 import { withOnChange, withOnCall } from './withOnChange'
+import { notify } from '../methods'
 
 test('atomChange', () => {
   const name = 'atomChange'
@@ -10,21 +11,26 @@ test('atomChange', () => {
   const a3 = atom(() => a2(), `${name}.a2`).mix(withOnChange(cb))
 
   a1()
+  notify()
   expect(cb).toBeCalledTimes(0)
   a1(1)
+  notify()
   expect(cb).toBeCalledWith(1, 0)
   a1(1)
+  notify()
   expect(cb).toBeCalledTimes(1)
 
   cb.mockClear()
 
   a2(1)
+  notify()
   expect(cb).toBeCalledTimes(1)
   expect(cb).toBeCalledWith(1, 0)
 
   cb.mockClear()
 
   a3()
+  notify()
   expect(cb).toBeCalledTimes(1)
   expect(cb).toBeCalledWith(1, undefined)
 })
@@ -37,5 +43,6 @@ test('actionCall', () => {
   )
 
   sum(1, 2)
+  notify()
   expect(cb).toBeCalledWith(3, [1, 2])
 })

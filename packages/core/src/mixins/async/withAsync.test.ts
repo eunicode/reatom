@@ -11,22 +11,20 @@ test('withAsync for action', async () => {
   let settleTrack = vi.fn()
   const fetch = action(async (param: number) => param, `${name}.fetch`).mix(
     withAsync(),
-    withOnCall(fetchTrack),
+    withOnCall((payload, params) => fetchTrack({ payload, params })),
   )
-  fetch.onFulfill.mix(withOnCall(fulfilLTrack))
-  fetch.onSettle.mix(withOnCall(settleTrack))
+  fetch.onFulfill.mix(withOnCall((call) => fulfilLTrack(call)))
+  fetch.onSettle.mix(withOnCall((call) => settleTrack(call)))
 
   const promise = fetch(1)
   await wrap(promise)
 
   expect(fetchTrack).toBeCalledTimes(1)
-  expect(fetchTrack).toBeCalledWith(promise, [1])
+  expect(fetchTrack).toBeCalledWith({ payload: promise, params: [1] })
   expect(fulfilLTrack).toBeCalledTimes(1)
-  expect(fulfilLTrack).toBeCalledWith(1, [1, [1]])
+  expect(fulfilLTrack).toBeCalledWith({ payload: 1, params: [1] })
   expect(settleTrack).toBeCalledTimes(1)
-  expect(settleTrack).toBeCalledWith({ payload: 1, params: [1] }, [
-    { payload: 1, params: [1] },
-  ])
+  expect(settleTrack).toBeCalledWith({ payload: 1, params: [1] })
 })
 
 test('withAsync for atom', async () => {
@@ -52,7 +50,7 @@ test('withAsyncData for action', async () => {
     withAsyncData(),
   )
   const onFulfill = vi.fn()
-  fetch.onFulfill.mix(withOnCall(call => onFulfill(call)))
+  fetch.onFulfill.mix(withOnCall((call) => onFulfill(call)))
 
   expect(fetch.data()).toBeUndefined()
   expect(fetch.ready()).toBe(true)

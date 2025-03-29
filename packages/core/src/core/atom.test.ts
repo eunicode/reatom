@@ -45,7 +45,9 @@ test('reading', () => {
   const name = 'reading'
   const a = atom(0, `${name}.a`)
   const bFn = vi.fn(() => a())
-  const bMiddleware = vi.fn<ReturnType<Middleware<AtomLike>>>((next, ...a) => next(...a))
+  const bMiddleware = vi.fn<ReturnType<Middleware<AtomLike>>>((next, ...a) =>
+    next(...a),
+  )
   const b = atom(bFn, `${name}.b`).mix(bMiddleware)
 
   expect(b()).toBe(0)

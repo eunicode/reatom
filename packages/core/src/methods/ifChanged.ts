@@ -8,60 +8,56 @@ import {
   Frame,
   AtomLike,
   AtomState,
+  getPrevPubs,
 } from '../core'
 import { assert } from '../utils'
-
-let getHistory = (targetFrame: Frame) => {
-  let history = root.context('ifChanged').get(targetFrame.atom, () => ({
-    // We should handle multiple `ifChanged` calls for the same target
-    prev: [] as Array<Frame>,
-    next: [] as Array<Frame>,
-    frame: targetFrame,
-  }))
-
-  if (history.frame !== targetFrame) {
-    history.prev = history.next
-    history.next = []
-    history.frame = targetFrame
-  }
-
-  return history
-}
 
 export const ifChanged = <T extends AtomLike>(
   target: T,
   cb: (newState: AtomState<T>, oldState?: AtomState<T>) => void,
 ) => {
+  assert(
+    !isAction(target as any),
+    'ifChanged can be used only with atoms, use `ifCalled` for actions',
+    ReatomError,
+  )
+
+  let frame = top()
+  let prevPubs = getPrevPubs(frame)
+  let prevTargetFrame = prevPubs[frame.pubs.length]
+
   target()
   let targetFrame = root().state.store.get(target)!
 
-  let history = getHistory(targetFrame)
-
-  let idx = history.next.push(targetFrame) - 1
-  if (
-    history.prev[idx]?.atom !== target ||
-    !Object.is(history.prev[idx]!.state, targetFrame.state)
-  ) {
-    cb(targetFrame.state, history.prev[idx]?.state)
+  if (targetFrame.atom !== prevTargetFrame?.atom) {
+    cb(targetFrame.state)
+  } else if (!Object.is(targetFrame.state, prevTargetFrame.state)) {
+    cb(targetFrame.state, prevTargetFrame.state)
   }
 }
+
+type ActionFrame = Frame<AtomState<Action>>
 
 /** Allow to react to action calls, works only in reactive (atom) context */
 export const ifCalled = <Params extends any[], Payload>(
   target: Action<Params, Payload>,
   cb: (payload: Payload, params: Params) => void,
 ) => {
-  type Calls = Array<{
-    params: Params
-    payload: Payload
-  }>
+  assert(
+    isAction(target),
+    'ifCalled can be used only with actions, use `ifChanged` for atoms',
+    ReatomError,
+  )
+
+  let frame = top()
+  let prevPubs = getPrevPubs(frame)
+  let prevTargetFrame = prevPubs[frame.pubs.length] as undefined | ActionFrame
 
   let rootFrame = root()
-  let topFrame = top()
-  let targetFrame = root().state.store.get(target)
+  let targetFrame = rootFrame.state.store.get(target)
 
   assert(
-    rootFrame !== topFrame && !isAction(topFrame.atom),
+    rootFrame !== frame && !isAction(frame.atom),
     'invalid context',
     ReatomError,
   )
@@ -77,23 +73,18 @@ export const ifCalled = <Params extends any[], Payload>(
     }
     rootFrame.state.store.set(target, targetFrame)
   }
-  topFrame.pubs.push(targetFrame)
+  frame.pubs.push(targetFrame)
 
-  let history = getHistory(targetFrame)
-
-  let idx = history.next.push(targetFrame) - 1
-  if (
-    // FIXME cleanup
-    targetFrame.state.length &&
-    (history.prev[idx]?.atom !== target ||
-      !Object.is(history.prev[idx]!.state, targetFrame.state))
-  ) {
-    let oldState = (history.prev[idx]?.state ?? []) as Calls
-    let state = targetFrame.state as Calls
-    let { params, payload } = oldState.length
-      ? state[oldState.length - 1]!
-      : state[0]!
-
-    cb(payload, params)
+  if (targetFrame.atom !== prevTargetFrame?.atom) {
+    targetFrame.state.forEach(({ params, payload }) => cb(payload, params))
+  } else if (!Object.is(targetFrame.state, prevTargetFrame.state)) {
+    for (
+      let i = prevTargetFrame.state.length;
+      i < targetFrame.state.length;
+      i++
+    ) {
+      const { params, payload } = targetFrame.state[i]!
+      cb(payload, params)
+    }
   }
 }

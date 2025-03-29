@@ -30,7 +30,7 @@ export interface Computed<State = any> extends AtomLike<State> {
   (): State
 }
 
-/** Callstack snapshot */
+/** Call(atom)stack snapshot */
 export interface Frame<State = any> {
   error: null | NonNullable<unknown>
   state: State
@@ -60,7 +60,7 @@ export interface Store extends WeakMap<Atom, Frame> {
 export interface RootState {
   store: Store
   /** @internal DO NOT USE IN PRODUCT CODE */
-  context: Map<string, SmartWeakMap>
+  context: Map<string, WeakMap>
   compute: Queue
   cleanup: Queue
   effect: Queue
@@ -73,21 +73,19 @@ export interface RootAtom extends AtomLike<RootState> {
   (): RootFrame
   start<T>(cb: () => T): T
   /** @internal DO NOT USE IN PRODUCT CODE */
-  context<K extends WeakKey, V>(key: string): SmartWeakMap<K, V>
+  context<K extends WeakKey, V>(key: string): WeakMap<K, V>
 }
 
-export class SmartWeakMap<K extends WeakKey = WeakKey, V = any> extends WeakMap<
-  K,
-  V
-> {
-  override get<T extends V>(key: K, create: () => T): T
-  override get<T extends V>(key: K, create?: () => T): undefined | T
-  override get(key: K, create: Fn): undefined | V {
+// TODO rename
+export class WeakMap<
+  K extends WeakKey = WeakKey,
+  V = any,
+> extends globalThis.WeakMap<K, V> {
+  create<T extends V>(key: K, create: () => T): T {
     if (create && !this.has(key)) {
       this.set(key, create())
     }
-
-    return super.get(key)
+    return super.get(key) as T
   }
 }
 
@@ -250,7 +248,14 @@ function subscribe(this: AtomLike, userCb = noop) {
   let cb = defineName(() => {
     try {
       if (!Object.is(lastState, (lastState = this()))) {
-        userCb(lastState)
+        if (!frame) {
+          userCb(lastState)
+        } else {
+          let _lastSate = lastState
+          schedule(() => {
+            if (Object.is(lastState, _lastSate)) userCb(lastState)
+          })
+        }
       }
     } catch (error) {
       // do not allow to subscribe for error state
@@ -342,8 +347,8 @@ function middleware(next: Fn) {
       // try to reduce extra atom calls
       let pubFrame = rootFrame.state.store.get(pubAtom)!
       if (
-        pubFrame.pubs[0] !== null &&
-        (pubFrame.pubs.length === 1 || pubFrame.subs.length !== 0)
+        pubFrame.pubs.length === 1 ||
+        (pubFrame.pubs[0] !== null && pubFrame.subs.length !== 0)
       ) {
         pubFreshState = pubFrame.state
         pubFreshError = pubFrame.error
@@ -407,7 +412,7 @@ export let atom: {
 } = <T>(setup: {} | ((state?: T) => T), name = named('atom')): Atom<T> => {
   let initState = setup as T
   if (typeof setup === 'function') {
-    defineName(setup, name + '.computed')
+    // defineName(setup, name + '.computed')
     initState = undefined as T
   }
 
@@ -547,7 +552,7 @@ root.start = (cb) => {
 root.context = (name: string) => {
   const { context } = root().state
   if (!context.has(name)) {
-    context.set(name, new SmartWeakMap())
+    context.set(name, new WeakMap())
   }
   return context.get(name)!
 }
@@ -569,3 +574,22 @@ export let top = (): Frame => {
   }
   return STACK[STACK.length - 1]!
 }
+
+// TODO move to separate file
+export let getPrevPubs = (frame: Frame) => {
+  let rec = root.context('pubs').create(frame.atom, () => ({
+    prev: [null] as Frame['pubs'],
+    next: frame.pubs,
+  }))
+  if (rec.next !== frame.pubs) {
+    rec.prev = rec.next
+    rec.next = frame.pubs
+  }
+  return rec.prev
+}
+
+// TODO move to separate file
+export let isCausedBy = (target: AtomLike, frame = top()): boolean =>
+  frame.pubs.some(
+    (pub) => pub && (pub.atom === target || isCausedBy(target, pub)),
+  )

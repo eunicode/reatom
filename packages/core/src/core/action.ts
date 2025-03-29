@@ -24,10 +24,7 @@ let actionMiddleware = (next: Fn, ...params: any[]) => {
     return [...frame.state, { params, payload: next(...params) }]
   } finally {
     frame.pubs.length = 1
-    schedule(
-      () => (rootFrame.state.store.get(frame.atom)!.state = []),
-      'cleanup',
-    )
+    schedule(() => (frame.state = []), 'cleanup')
   }
 }
 

@@ -24,14 +24,24 @@ test('init callback', () => {
 
 test('different roots', () => {
   const name = 'initRoots'
-  let init = vi.fn(() => 1)
-  const data = atom(0, `${name}.data`).mix(withInit(init))
+  let i = 0
+  const data = atom(0, `${name}.data`).mix(withInit(() => i++))
+
+  expect(data()).toBe(0)
+  expect(data()).toBe(0)
+  expect(data()).toBe(0)
 
   clearStack()
 
-  expect(root.start(data)).toBe(1)
-  expect(root.start(data)).toBe(1)
-  expect(init).toBeCalledTimes(2)
+  expect(() => data()).toThrow()
+
+  expect(root.start(() => data())).toBe(1)
+  expect(root.start(() => data())).toBe(2)
+  root.start(() => {
+    expect(data()).toBe(3)
+    expect(data()).toBe(3)
+    expect(data()).toBe(3)
+  })
 })
 
 test('recursion', () => {

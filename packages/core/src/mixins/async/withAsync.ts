@@ -12,6 +12,7 @@ import {
   top,
 } from '../../core'
 import { ifCalled, ifChanged, schedule, wrap } from '../../methods'
+import { withOnCall } from '../../mixins'
 import { assert, Fn, identity } from '../../utils'
 import { withComputed } from '../withComputed'
 
@@ -70,7 +71,9 @@ export let withAsync: {
       }),
     )
 
-  let ready = atom(() => pending() === 0, `${target.name}.ready`)
+  let ready = atom(() => {
+    return pending() === 0
+  }, `${target.name}.ready`)
 
   let touched = new WeakSet<Promise<any>>()
 
@@ -206,6 +209,12 @@ export let withAsyncData: {
       }),
       () => ({
         reset: () => data(initState),
+      }),
+    )
+
+    asyncMethods.onFulfill.mix(
+      withOnCall((call) => {
+        data()
       }),
     )
 
