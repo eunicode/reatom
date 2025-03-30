@@ -8,19 +8,10 @@ import {
   isAtom,
 } from '../core'
 
-import { isObject } from '@reatom/utils'
-import { Fn, Rec } from '../utils'
+import { isObject, Fn, Rec } from '../utils'
 import { withInit } from '../mixins'
 
 type State<T> = T extends Atom<infer Value> ? Value : T
-
-const readonly = <T extends Atom>(
-  anAtom: T,
-): {
-  [K in keyof T]: T[K]
-} => ({
-  ...anAtom,
-})
 
 export const LL_PREV = Symbol('Reatom linked list prev')
 export const LL_NEXT = Symbol('Reatom linked list next')
@@ -75,7 +66,9 @@ export interface LinkedListAtom<
   map: Key extends never ? never : Atom<Map<State<Node[Key]>, LLNode<Node>>>
 
   initiateFromState: (initState: Array<Node>) => LinkedList<LLNode<Node>>
-  initiateFromSnapshot: (initSnapshot: Array<Params>) => LinkedList<LLNode<Node>>
+  initiateFromSnapshot: (
+    initSnapshot: Array<Params>,
+  ) => LinkedList<LLNode<Node>>
 
   reatomMap: <T extends Rec>(
     cb: (node: LLNode<Node>) => T,
@@ -254,81 +247,106 @@ const toArray = <T extends Rec>(
   return arr.length === prev?.length ? prev : arr
 }
 
-export function reatomLinkedList<Node extends Rec, Params extends any[] = [Node], Key extends keyof Node = never>(
-  initState: Array<Node>,
-  name?: string
-): LinkedListAtom<Params, Node, Key>;
+export function reatomLinkedList<
+  Node extends Rec,
+  Params extends any[] = [Node],
+  Key extends keyof Node = never,
+>(initState: Array<Node>, name?: string): LinkedListAtom<Params, Node, Key>
 
-export function reatomLinkedList<Params extends any[], Node extends Rec, Key extends keyof Node = never>(
-  initState: ((...params: Params) => Node),
-  name?: string
-): LinkedListAtom<Params, Node, Key>;
+export function reatomLinkedList<
+  Params extends any[],
+  Node extends Rec,
+  Key extends keyof Node = never,
+>(
+  initState: (...params: Params) => Node,
+  name?: string,
+): LinkedListAtom<Params, Node, Key>
 
-export function reatomLinkedList<Params extends any[], Node extends Rec, Key extends keyof Node = never>(
+export function reatomLinkedList<
+  Params extends any[],
+  Node extends Rec,
+  Key extends keyof Node = never,
+>(
   initState: {
     create: (...params: Params) => Node
     initState?: Array<Node>
     key?: Key
   },
-  name?: string
-): LinkedListAtom<Params, Node, Key>;
+  name?: string,
+): LinkedListAtom<Params, Node, Key>
 
-export function reatomLinkedList<Params extends any[], Node extends Rec, Key extends keyof Node = never>(
+export function reatomLinkedList<
+  Params extends any[],
+  Node extends Rec,
+  Key extends keyof Node = never,
+>(
   initState: {
-    create?: (...params: Params) => Node,
-    initState: Array<Node>,
+    create?: (...params: Params) => Node
+    initState: Array<Node>
     key?: Key
   },
-  name?: string
-): LinkedListAtom<Params, Node, Key>;
+  name?: string,
+): LinkedListAtom<Params, Node, Key>
 
-export function reatomLinkedList<Params extends any[], Node extends Rec, Key extends keyof Node = never>(
+export function reatomLinkedList<
+  Params extends any[],
+  Node extends Rec,
+  Key extends keyof Node = never,
+>(
   initSnapshot: {
-    create: (...params: Params) => Node,
-    initSnapshot?: Array<Params>,
+    create: (...params: Params) => Node
+    initSnapshot?: Array<Params>
     key?: Key
   },
-  name?: string
-): LinkedListAtom<Params, Node, Key>;
+  name?: string,
+): LinkedListAtom<Params, Node, Key>
 
-export function reatomLinkedList<Params extends any[], Node extends Rec, Key extends keyof Node = never>(
+export function reatomLinkedList<
+  Params extends any[],
+  Node extends Rec,
+  Key extends keyof Node = never,
+>(
   options:
     | Array<Node>
     | ((...params: Params) => Node)
     | {
-      create?: (...params: Params) => Node
-      initState?: Array<Node>
-      key?: Key
-    }
+        create?: (...params: Params) => Node
+        initState?: Array<Node>
+        key?: Key
+      }
     | {
-      create: (...params: Params) => Node
-      initSnapshot?: Array<Params>
-      key?: Key
-    },
+        create: (...params: Params) => Node
+        initSnapshot?: Array<Params>
+        key?: Key
+      },
   name = named('linkedListAtom'),
 ): LinkedListAtom<Params, Node, Key> {
   const {
     create: userCreate = (...params: Params) => params[0],
     key = undefined,
     ...restOptions
-  } = typeof options === 'function' ? {
-    create: options
-  } : Array.isArray(options) ? {
-    create: (...params: Params) => params[0],
-    initState: options,
-  } : options;
+  } = typeof options === 'function'
+    ? {
+        create: options,
+      }
+    : Array.isArray(options)
+      ? {
+          create: (...params: Params) => params[0],
+          initState: options,
+        }
+      : options
 
-  const _name = name;
+  const _name = name
 
   const isLL = (node: Node): node is LLNode<Node> =>
     !!node && LL_NEXT in node && LL_PREV in node
 
   const throwModel = (node: Node) => {
-    if(isLL(node))
+    if (isLL(node))
       throw new ReatomError('The data is already in a linked list.')
   }
   const throwNotModel = (node: Node) => {
-    if(!isLL(node))
+    if (!isLL(node))
       throw new ReatomError('The passed data is not a linked list node.')
   }
 
@@ -342,15 +360,16 @@ export function reatomLinkedList<Params extends any[], Node extends Rec, Key ext
           return createLinkedListFromState(restOptions.initState ?? [])
         else if ('initSnapshot' in restOptions)
           return createLinkedListFromSnapshot(restOptions.initSnapshot ?? [])
-        else 
-          return createLinkedListFromState([])
+        else return createLinkedListFromState([])
       } finally {
         STATE = null
       }
-    })
+    }),
   )
 
-  const createLinkedListFromState = (initState: Node[]): LinkedList<LLNode<Node>> => {
+  const createLinkedListFromState = (
+    initState: Node[],
+  ): LinkedList<LLNode<Node>> => {
     const state = {
       size: 0,
       version: 1,
@@ -367,7 +386,9 @@ export function reatomLinkedList<Params extends any[], Node extends Rec, Key ext
     return state
   }
 
-  const createLinkedListFromSnapshot = (initSnapshot: Params[]): LinkedList<LLNode<Node>> => {
+  const createLinkedListFromSnapshot = (
+    initSnapshot: Params[],
+  ): LinkedList<LLNode<Node>> => {
     const initState = initSnapshot.map((params) => userCreate(...params))
     const state = {
       size: 0,
@@ -398,6 +419,8 @@ export function reatomLinkedList<Params extends any[], Node extends Rec, Key ext
 
     try {
       return cb()
+    } catch (e) {
+      throw e
     } finally {
       STATE = null
     }
@@ -409,8 +432,10 @@ export function reatomLinkedList<Params extends any[], Node extends Rec, Key ext
     return batchFn(() => {
       const node = userCreate(...params) as LLNode<Node>
 
-      if(!isObject(node) && typeof node !== 'function')
-        throw new ReatomError(`reatomLinkedList can operate only with objects or functions, received "${node}".`)
+      if (!isObject(node) && typeof node !== 'function')
+        throw new ReatomError(
+          `reatomLinkedList can operate only with objects or functions, received "${node}".`,
+        )
 
       throwModel(node)
 
@@ -483,8 +508,7 @@ export function reatomLinkedList<Params extends any[], Node extends Rec, Key ext
   }
 
   const array: LinkedListAtom<Params, Node, Key>['array'] = atom(
-    (state: Array<LLNode<Node>> = []) =>
-      toArray(linkedList().head, state),
+    (state: Array<LLNode<Node>> = []) => toArray(linkedList().head, state),
     `${name}.array`,
   )
 
@@ -495,10 +519,7 @@ export function reatomLinkedList<Params extends any[], Node extends Rec, Key ext
             // use array as it already memoized and simplifies the order tracking
             array().map((node) => {
               const keyValue = node[key]
-              return [
-                isAtom(keyValue) ? keyValue() : keyValue,
-                node,
-              ] as const
+              return [isAtom(keyValue) ? keyValue() : keyValue, node] as const
             }),
           ),
       ) as LinkedListAtom<Params, Node, Key>['map'])
@@ -615,15 +636,16 @@ export function reatomLinkedList<Params extends any[], Node extends Rec, Key ext
         }
       }
 
-      if(mapList.size !== ll.size)
-        throw new ReatomError("Inconsistent linked list, is's a bug, please report an issue")
+      if (mapList.size !== ll.size)
+        throw new ReatomError(
+          "Inconsistent linked list, is's a bug, please report an issue",
+        )
 
       return mapList
     }, name)
 
     const array: LinkedListDerivedAtom<LLNode<Node>, LLNode<T>>['array'] = atom(
-      (state: Array<LLNode<T>> = []) =>
-        toArray(mapList().head, state),
+      (state: Array<LLNode<T>> = []) => toArray(mapList().head, state),
       `${name}.array`,
     )
 

@@ -432,7 +432,7 @@ export let atom: {
         let rootFrame = root()
         let topFrame = top()
         let frame = rootFrame.state.store.get(atom)!
-        let push = arguments.length !== 0
+        let push = !atom.__reatom.reactive || arguments.length !== 0
 
         if (frame === undefined) {
           frame = {
