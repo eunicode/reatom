@@ -172,7 +172,9 @@ export let defineName = <T extends Fn | Function>(
   name: string,
 ): T => {
   // TODO Enable by a flag in devtools. This enables beautiful readable stacktraces, but lead to deopts with 1.5x the whole code slowdown
-  // Object.defineProperty(target as Fn, 'name', { value: name })
+  // if (import.meta?.env?.TEST) {
+  //   Object.defineProperty(target as Fn, 'name', { value: name })
+  // }
   return target
 }
 

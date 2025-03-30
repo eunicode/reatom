@@ -32,8 +32,7 @@ let actionMiddleware = (next: Fn, ...params: any[]) => {
 export let isAction: {
   <T extends Action>(target: T): target is T
   (target: any): target is Action
-} = (target: any) =>
-  isAtom(target) && target.__reatom.middlewares.includes(actionMiddleware)
+} = (target: any) => isAtom(target) && !target.__reatom.reactive
 
 // TODO support generics
 export let action = <Params extends any[] = any[], Payload = any>(
@@ -42,12 +41,12 @@ export let action = <Params extends any[] = any[], Payload = any>(
 ): Action<Params, Payload> => {
   let target = atom([], name) as Action
 
-  target.__reatom.middlewares.length = 0
+  target.__reatom.reactive = false
 
-  target.__reatom.middlewares.push(
+  target.__reatom.middlewares = [
     (_next, ...params: Params) => cb(...params),
     actionMiddleware,
-  )
+  ]
 
   return target as Action<Params, Payload>
 }

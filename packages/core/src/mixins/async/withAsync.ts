@@ -7,7 +7,6 @@ import {
   AtomLike,
   Computed,
   Frame,
-  isAction,
   ReatomError,
   top,
 } from '../../core'
@@ -44,7 +43,7 @@ export let withAsync: {
     AsyncMethods<Array<Frame>, Payload>
   >
 } = () => (target: AtomLike<Promise<any>> | Action<any[], Promise<any>>) => {
-  let itAction = isAction(target)
+  let { reactive } = target.__reatom
 
   let onFulfill: AsyncMethods['onFulfill'] = action((payload, params) => {
     return onSettle({ payload, params }) as any // TODO
@@ -62,7 +61,7 @@ export let withAsync: {
     // computed needed to ensure that `pending` (and `ready`) connection will connect the target
     .mix(
       withComputed((state) => {
-        if (itAction) {
+        if (!reactive) {
           ifCalled(target as Action, () => state++)
         } else {
           ifChanged(target, () => state++)
@@ -82,7 +81,7 @@ export let withAsync: {
     let state = next(...params)
     let promise = state
 
-    if (itAction) {
+    if (!reactive) {
       promise = state.at(-1)?.payload
     } else {
       params = top().pubs
@@ -102,7 +101,7 @@ export let withAsync: {
       wrap((error) => onReject(error, params)),
     )
 
-    if (itAction) {
+    if (!reactive) {
       state.at(-1)!.payload = promise
     }
 

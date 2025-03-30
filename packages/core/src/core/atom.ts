@@ -1,7 +1,7 @@
 import type { Fn, Rec, Unsubscribe } from '../utils'
-import { assert, defineName, identity, noop } from '../utils'
+import { assert, defineName, identity } from '../utils'
 import type { Assigner, Extension, Mix } from './mix'
-import { Action, action, isAction, TemporalArray } from './action'
+import { Action, action, TemporalArray } from './action'
 import { schedule } from '../methods/queues'
 
 // import { COLOR } from '../picocolors'
@@ -17,6 +17,7 @@ export interface AtomLike<State = any> {
 
   /** @internal The list of applied mixins (middlewares). */
   __reatom: {
+    reactive: boolean
     middlewares: Array<Fn>
     onConnect?: Fn
     onDisconnect?: Fn
@@ -197,10 +198,9 @@ let unlink = (sub: Atom, oldPubs: Frame['pubs']) => {
       pub.subs.pop()
     } else {
       // Search the suitable element (not effect) from the end to reduce the shift (`splice`) complexity.
-      let shiftIdx = pub.subs.findLastIndex((el) => isAtom(el))
+      let shiftIdx = pub.subs.findLastIndex((el) => el !== sub)
 
       if (shiftIdx === -1) {
-        console.warn('IS IT OK???')
         shiftIdx = idx
       }
       pub.subs[idx] = pub.subs[shiftIdx]!
@@ -293,12 +293,13 @@ function subscribe(this: AtomLike, userCb?: Fn) {
 let castAtom = <T extends AtomLike>(
   target: Fn,
   name: string,
-  // type: 'atom' | 'action' = 'atom',
+  reactive: boolean,
 ): T =>
   Object.assign(defineName(target, name), {
     toString: () => `[Atom ${name}]`,
 
     __reatom: {
+      reactive,
       middlewares: [],
       onConnect: undefined,
       onDisconnect: undefined,
@@ -320,7 +321,7 @@ function middleware(next: Fn) {
   let update = arguments[1]
   let { state, pubs } = frame
   let dirty = pubs[0] === null
-  let reactive = pubs.length !== 1
+  let dependent = pubs.length !== 1
   let subscribed = frame.subs.length !== 0
   let newState = state
 
@@ -337,13 +338,13 @@ function middleware(next: Fn) {
   let invalid =
     next !== identity &&
     (dirty ||
-      (reactive
+      (dependent
         ? !subscribed
         : // computed without dependencies should rerun only after direct state change
           push && !Object.is(state, frame.state)))
 
   // pubs invalidation check to memoize the computed
-  if (invalid && reactive) {
+  if (invalid && dependent) {
     invalid = false
     // use current frame to reduce `copy` operations, reset pubs **temporally**
     frame.pubs = getDefaultComputedPubs(next)
@@ -449,17 +450,17 @@ export let atom: {
         let newState = state
         let newError = null
         let dirty = frame.pubs[0] === null
-        let reactive = frame.pubs.length !== 1
+        let dependent = frame.pubs.length !== 1
         let subscribed = frame.subs.length !== 0
 
-        if (push || dirty || (reactive && !subscribed)) {
+        if (push || dirty || (dependent && !subscribed)) {
           STACK.push(frame)
 
           middlewares: try {
             let fn: Fn = identity
 
             if (typeof setup === 'function') {
-              if (middlewares.length === 1) {
+              if (atom.__reatom.middlewares.length === 1) {
                 newState = middleware(setup as Fn)
                 break middlewares
               }
@@ -467,7 +468,7 @@ export let atom: {
               fn = setup as Fn
             }
 
-            for (let middleware of middlewares) {
+            for (let middleware of atom.__reatom.middlewares) {
               fn = middleware.bind(null, fn)
             }
             // @ts-ignore TODO
@@ -486,8 +487,7 @@ export let atom: {
           frame.state = newState
           frame.pubs[0] ??= push ? topFrame : rootFrame
 
-          // if the puller is an action it will cleanup itself by itself
-          if (!push && topFrame !== rootFrame) {
+          if (!push && topFrame.atom.__reatom.reactive) {
             // if (topFrame.atom === frame.atom) console.log(COLOR.bgRed('topFrame.atom === frame.atom')) // prettier-ignore
             topFrame.pubs.push(frame)
           }
@@ -501,7 +501,7 @@ export let atom: {
           }
 
           STACK.pop()
-        } else if (topFrame !== rootFrame) {
+        } else if (topFrame.atom.__reatom.reactive) {
           topFrame.pubs.push(frame)
         }
 
@@ -509,7 +509,7 @@ export let atom: {
           throw frame.error
         }
 
-        if (isAction(atom)) {
+        if (!atom.__reatom.reactive) {
           // @ts-ignore TODO
           return frame.state.at(-1).payload
         }
@@ -520,10 +520,10 @@ export let atom: {
       },
     }[name]!,
     name,
+    true,
   )
 
-  let { middlewares } = atom.__reatom
-  middlewares.push(middleware)
+  atom.__reatom.middlewares.push(middleware)
 
   return atom.mix(...globalThis.__REATOM)
 }
@@ -536,13 +536,17 @@ export let atom: {
 //   run<I extends any[], O>(value: T, fn: (...params: I) => O, ...params: I): O
 // }
 
-export let root = castAtom<RootAtom>(() => {
-  let rootFrame = STACK[0] as RootFrame
-  if (rootFrame?.atom !== root) {
-    throw new ReatomError('broken async stack')
-  }
-  return rootFrame
-}, 'root')
+export let root = castAtom<RootAtom>(
+  () => {
+    let rootFrame = STACK[0] as RootFrame
+    if (rootFrame?.atom !== root) {
+      throw new ReatomError('broken async stack')
+    }
+    return rootFrame
+  },
+  'root',
+  false,
+)
 root.start = (cb) => {
   assert(!STACK.length, 'root collision', ReatomError)
   return (

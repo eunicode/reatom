@@ -3,7 +3,6 @@ import {
   Action,
   AtomLike,
   AtomState,
-  isAction,
   ReatomError,
   top,
 } from '../core'
@@ -29,7 +28,7 @@ export let withOnCall =
   ) =>
   (target: Action<Params, Payload>) => {
     assert(
-      isAction(target),
+      !target.__reatom.reactive,
       'withOnCall can be used only with actions',
       ReatomError,
     )

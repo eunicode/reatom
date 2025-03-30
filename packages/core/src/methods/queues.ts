@@ -41,7 +41,7 @@ export let notify = async (): Promise<void> => {
   while (priority < queues.length) {
     let next = queues[priority++]!.next()
     if (!next.done) {
-      priority = 0 // need to recheck queues after the cb
+      priority = 0 // need to recheck queues after use code
       next.value()
     }
   }
