@@ -12,7 +12,7 @@ import {
 } from '../core'
 import { ifCalled, ifChanged, schedule, wrap } from '../methods'
 import { withCallHook } from '../mixins'
-import { assert, Fn, identity } from '../utils'
+import { assert, Fn, identity, noop } from '../utils'
 import { withComputed } from '../mixins/withComputed'
 
 type AsyncMethods<Params extends any[] = any[], Payload = any, Error = any> = {
@@ -116,7 +116,8 @@ export let withAsync: {
     touched.add(promise)
 
     // schedule before `then` to step into microtasks before possible seal
-    schedule(ready, 'hook')
+    // TODO add `top()`
+    schedule(ready, 'hook').catch(noop)
 
     // outer promise handlers should tick after the async handlers
     promise = promise.then(

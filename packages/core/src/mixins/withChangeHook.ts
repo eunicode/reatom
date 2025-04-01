@@ -7,7 +7,7 @@ import {
   ReatomError,
   top,
 } from '../core'
-import { assert, defineName, Fn } from '../utils'
+import { assert, defineName, Fn, noop } from '../utils'
 
 export let withChangeHook =
   <T extends AtomLike>(
@@ -20,7 +20,7 @@ export let withChangeHook =
       let state = next(...params)
       if (!Object.is(prevState, state)) {
         frame = top()
-        schedule(() => cb(state, prevState), 'hook', frame)
+        schedule(() => cb(state, prevState), 'hook', frame).catch(noop)
       }
       return state
     }, `${_target.name}.onChange`)

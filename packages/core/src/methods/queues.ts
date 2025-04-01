@@ -31,16 +31,18 @@ export let schedule: {
       rootFrame.state.effect.length === 0
     ) {
       Promise.resolve().then(wrap(notify, rootFrame))
+      //.catch(noop) // TODO ?
     }
 
-    rootFrame.state[queue].push(() => {
+    rootFrame.state.pushQueue(() => {
       try {
         let result = frame ? frame.run(fn) : fn()
-        result instanceof Promise ? result.then(res, rej) : res(result)
+        return result instanceof Promise ? result.then(res, rej) : res(result)
       } catch (e) {
         rej(e)
+        throw e
       }
-    })
+    }, queue)
   }
 
   return frame === null ? cb(noop, noop) : new Promise(cb)

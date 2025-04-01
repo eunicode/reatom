@@ -70,6 +70,7 @@ export interface RootState {
   compute: Queue
   cleanup: Queue
   effect: Queue
+  pushQueue(cb: Fn, queue: 'hook' | 'compute' | 'cleanup' | 'effect'): void
 }
 
 export interface RootFrame extends Frame<RootState> {}
@@ -560,6 +561,9 @@ root.start = (cb) => {
         compute: [],
         cleanup: [],
         effect: [],
+        pushQueue(cb: Fn, queue: 'hook' | 'compute' | 'cleanup' | 'effect') {
+          this[queue].push(cb)
+        }
       },
       atom: root,
       pubs: getDefaultComputedPubs(null),

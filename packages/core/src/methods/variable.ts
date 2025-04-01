@@ -48,6 +48,10 @@ export let variable: {
     get() {
       let value = get()
 
+      if (value === undefined) {
+        debugger
+      }
+
       assert(value !== undefined, 'Variable not found')
 
       return value

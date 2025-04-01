@@ -1,6 +1,6 @@
 import { expect, test, vi } from 'test'
 import { variable } from './variable'
-import { action, atom, isAtom } from '../core'
+import { action, atom, root } from '../core'
 import { withAsyncData } from '../async/withAsync'
 import { wrap } from '../methods'
 import { sleep } from '../utils'
@@ -30,6 +30,17 @@ test('scope propagation for actions', async () => {
 })
 
 test('scope propagation for atoms', async () => {
+  const { state } = root()
+  state.pushQueue = function (cb, queue) {
+    this[queue].push(async () => {
+      try {
+        await cb()
+      } catch (error) {
+        // nothing
+      }
+    })
+  }
+
   const param = atom(0)
   const paramVar = variable<number>()
   const resource = atom(async () => param()).mix(
