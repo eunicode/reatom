@@ -35,7 +35,8 @@ export let schedule: {
 
     rootFrame.state[queue].push(() => {
       try {
-        res(frame ? frame.run(fn) : fn())
+        let result = frame ? frame.run(fn) : fn()
+        result instanceof Promise ? result.then(res, rej) : res(result)
       } catch (e) {
         rej(e)
       }
