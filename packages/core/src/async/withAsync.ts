@@ -147,6 +147,7 @@ type AsyncDataMethods<Params extends any[], Payload, State> = AsyncMethods<
   data: Atom<State>
 }
 
+// @ts-ignore TODO
 export let withAsyncData: {
   <Params extends any[], Payload>(): Assigner<
     Action<Params, Promise<Payload>>,

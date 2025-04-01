@@ -1,13 +1,28 @@
-import { Frame, root } from '../core/atom'
+import { Frame, root, STACK } from '../core/atom'
+import { Fn, noop } from '../utils'
 import { wrap } from './wrap'
 
-export let schedule = async <T>(
-  fn: (...params: any[]) => T,
+// @ts-expect-error TODO
+export let schedule: {
+  <T>(
+    fn: (...params: any[]) => T,
+    queue?: 'hook' | 'compute' | 'cleanup' | 'effect',
+    frame?: Frame,
+  ): Promise<T>
+  (
+    fn: (...params: any[]) => any,
+    queue: 'hook' | 'compute' | 'cleanup' | 'effect',
+    frame: null,
+  ): void
+} = (
+  fn: Fn,
   queue: 'hook' | 'compute' | 'cleanup' | 'effect' = 'effect',
-  frame?: Frame,
-): Promise<T> =>
-  new Promise((res, rej) => {
+  frame?: null | Frame,
+): void | Promise<any> => {
+  let cb = (res: Fn, rej: Fn) => {
     let rootFrame = root()
+    // TODO
+    // if (frame === undefined) frame = STACK[STACK.length - 1]!
 
     if (
       rootFrame.state.hook.length === 0 &&
@@ -25,7 +40,10 @@ export let schedule = async <T>(
         rej(e)
       }
     })
-  })
+  }
+
+  return frame === null ? cb(noop, noop) : new Promise(cb)
+}
 
 export let notify = async (): Promise<void> => {
   let { state } = root()

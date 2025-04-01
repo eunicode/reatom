@@ -15,10 +15,12 @@ export let withChangeHook =
   ) =>
   (_target: T) =>
     defineName((next: Fn, ...params: any[]) => {
-      let prevState = top().state
+      let frame = top()
+      let prevState = frame.state
       let state = next(...params)
       if (!Object.is(prevState, state)) {
-        schedule(() => cb(state, prevState), 'hook', top())
+        frame = top()
+        schedule(() => cb(state, prevState), 'hook', frame)
       }
       return state
     }, `${_target.name}.onChange`)

@@ -141,7 +141,7 @@ let enqueue = (rootFrame: RootFrame, frame: Frame) => {
     let sub = frame.subs[i]!
 
     if (sub === frame.atom) {
-      schedule(sub, 'compute')
+      schedule(sub, 'compute', null)
     } else {
       let subFrame = rootFrame.state.store.get(sub as Atom)!
       if (subFrame.pubs[0] !== null) {
@@ -160,7 +160,7 @@ let link = (frame: Frame) => {
     let pub = pubs[i]!
     if (pub.subs.push(atom) === 1) {
       if (pub.atom.__reatom.onConnect !== undefined) {
-        schedule(pub.atom.__reatom.onConnect, 'effect')
+        schedule(pub.atom.__reatom.onConnect, 'effect', null)
       }
       link(pub)
     }
@@ -187,7 +187,7 @@ let unlink = (sub: Atom, oldPubs: Frame['pubs']) => {
     if (pub.subs.length === 1) {
       pub.subs.length = 0
       if (pub.atom.__reatom.onDisconnect !== undefined) {
-        schedule(pub.atom.__reatom.onDisconnect, 'effect')
+        schedule(pub.atom.__reatom.onDisconnect, 'effect', null)
       }
       unlink(pub.atom, pub.pubs)
     }
@@ -264,7 +264,7 @@ function subscribe(this: AtomLike, userCb?: Fn) {
 
   if (frame!.subs.push(this) === 1) {
     if (frame!.atom.__reatom.onConnect !== undefined) {
-      schedule(frame!.atom.__reatom.onConnect, 'effect')
+      schedule(frame!.atom.__reatom.onConnect, 'effect', null)
     }
     relink(frame!, [null])
   }
@@ -279,7 +279,7 @@ function subscribe(this: AtomLike, userCb?: Fn) {
 
     if (frame.subs.length === 0) {
       if (frame.atom.__reatom.onDisconnect !== undefined) {
-        schedule(frame.atom.__reatom.onDisconnect, 'effect')
+        schedule(frame.atom.__reatom.onDisconnect, 'effect', null)
       }
       unlink(this, rootFrame.state.store.get(this as Atom)!.pubs)
     }
@@ -586,9 +586,3 @@ export let top = (): Frame => {
   }
   return STACK[STACK.length - 1]!
 }
-
-// TODO move to separate file
-export let isCausedBy = (target: AtomLike, frame = top()): boolean =>
-  frame.pubs.some(
-    (pub) => pub && (pub.atom === target || isCausedBy(target, pub)),
-  )
