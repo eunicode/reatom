@@ -1,11 +1,11 @@
-import { AtomMut, atom, action } from '@reatom/framework'
+import { AtomMut, atom, action, select } from '@reatom/framework'
 import { h, hf, JSX } from '../../jsx'
 import { Filters } from '../reatomFilters'
 import { FilterView } from './FilterView'
 import { ActionButton } from './ActionButton'
 import { ActionLabel } from './ActionLabel'
 import { Lines } from '../reatomLines'
-import { GraphList } from '../../Graph'
+import { GraphList } from '../reatomGraph'
 
 type FiltersComponentProps = {
   name: string
@@ -87,7 +87,7 @@ export const FiltersComponent = ({
             filters.search.active(ctx, true)
             filters.search.search(ctx, '')
             filters.search.stateSearch(ctx, '')
-            filters.search.type.reset(ctx)
+            filters.search.type.setFilter(ctx)
             filters.search.color(ctx, HIGHLIGHT_COLOR)
           }}
           css={`
@@ -115,49 +115,32 @@ export const FiltersComponent = ({
             save
           </button>
         </form>
-        <hr
-          css={`
-            width: 100%;
-            border-top: 1px solid gray;
-            border-bottom: none;
-          `}
-        />
-        <table
-          css={`
-            width: fit-content;
-          `}
-        >
-          {filters.list.reatomMap((ctx, filter) => (
-            <FilterView
-              filter={filter}
-              remove={(ctx) => filters.list.remove(ctx, filter)}
-            />
-          ))}
-        </table>
-        <hr
-          css={`
-            width: 100%;
-            border-top: 1px solid gray;
-            border-bottom: none;
-          `}
-        />
-        <span>
-          <input
-            title="Exclude"
-            aria-label="Exclude"
-            model:value={filters.exclude}
-            placeholder="Exclude"
-            type="search"
-            css={`
-              width: 200px;
-              height: 30px;
-              padding: 0 4px;
-              border: 1px solid #151134;
-              border-radius: 2px;
-              background: none;
-            `}
-          />
-        </span>
+        {atom(
+          (ctx) =>
+            select(ctx, (ctx) => ctx.spy(filters.list).size > 0) && (
+              <>
+                <hr
+                  css={`
+                    width: 100%;
+                    border-top: 1px solid gray;
+                    border-bottom: none;
+                  `}
+                />
+                <table
+                  css={`
+                    width: fit-content;
+                  `}
+                >
+                  {filters.list.reatomMap((ctx, filter) => (
+                    <FilterView
+                      filter={filter}
+                      remove={(ctx) => filters.list.remove(ctx, filter)}
+                    />
+                  ))}
+                </table>
+              </>
+            ),
+        )}
         <hr
           css={`
             width: 100%;

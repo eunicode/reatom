@@ -88,9 +88,7 @@ export const LogItem = ({
         role="switch"
         aria-pressed={showStack}
         on:click={(ctx, e) => {
-          if (ctx && typeof ctx.spy === 'function') {
-            e.currentTarget.innerText = showStack.toggle(ctx) ? 'X' : '?'
-          }
+          e.currentTarget.innerText = showStack.toggle(ctx) ? 'X' : '?'
         }}
         css={`
           border: none;
@@ -133,33 +131,23 @@ export const LogItem = ({
         />
         {atomName}
       </label>
+      {atom((ctx) => (ctx.spy(showStack) ? <Stack patch={patch} /> : null))}
       {atom((ctx) =>
-        ctx && typeof ctx.spy === 'function' ? (
-          ctx.spy(showStack) ? (
-            <Stack patch={patch} />
-          ) : null
-        ) : null,
-      )}
-      {atom((ctx) =>
-        ctx && typeof ctx.spy === 'function' ? (
-          ctx.spy(filters.preview) || ctx.spy(preview) ? (
-            <ObservableHQ
-              snapshot={
-                // do not show extra info for "identity" actions
-                isAction &&
-                state.params.length === 1 &&
-                Object.is(state.params[0], state.payload)
-                  ? state.payload
-                  : state
-              }
-              update={
-                isAction ? undefined : update.bind(null, clientCtx, patch.proto)
-              }
-              patch={isAction ? undefined : patch}
-            />
-          ) : (
-            <span />
-          )
+        ctx.spy(filters.preview) || ctx.spy(preview) ? (
+          <ObservableHQ
+            snapshot={
+              // do not show extra info for "identity" actions
+              isAction &&
+              state.params.length === 1 &&
+              Object.is(state.params[0], state.payload)
+                ? state.payload
+                : state
+            }
+            update={
+              isAction ? undefined : update.bind(null, clientCtx, patch.proto)
+            }
+            patch={isAction ? undefined : patch}
+          />
         ) : (
           <span />
         ),

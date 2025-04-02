@@ -46,10 +46,10 @@ export const reatomLines = (name: string): Lines => {
             return cause.cause?.cause && calc(target, cause.cause)
           }
 
-          const toX = 61 + toRec.x + -containerRec.x
+          const toX = 51 + toRec.x + -containerRec.x
           const toY = toRec.y + 20 - containerRec.y
 
-          const fromX = 61 + fromRec.x + -containerRec.x
+          const fromX = 51 + fromRec.x + -containerRec.x
           const fromY = fromRec.y + 20 - containerRec.y
 
           const middleX = toX + (toY - fromY) / 6
@@ -127,7 +127,7 @@ export const reatomLines = (name: string): Lines => {
         highlight(ctx, { svg, patch: target })
       }
     })
-  }, `${name}:redraw`)
+  }, `${name}.redraw`)
 
   return Object.assign(lines, { highlight, redraw })
 }

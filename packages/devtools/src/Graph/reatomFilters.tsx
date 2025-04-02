@@ -1,11 +1,9 @@
 import {
   parseAtoms,
   assign,
-  LinkedListAtom,
   Action,
-  atom,
-  action,
   reatomBoolean,
+  BooleanAtom,
 } from '@reatom/framework'
 import { h, hf, JSX, css } from '../jsx'
 import { reatomZod, ZodAtomization } from '@reatom/npm-zod'
@@ -13,12 +11,13 @@ import { z } from 'zod'
 
 import { Lines } from './reatomLines'
 import { FiltersComponent } from './components'
-import { GraphList } from '../Graph'
+import { GraphModel } from './reatomGraph'
 
 export const Filter = z.object({
   search: z.string(),
   stateSearch: z.string(),
-  type: z.enum(['filter', 'hide', 'highlight']),
+  exclude: z.string(),
+  type: z.enum(['filter', 'hide', 'exclude', 'highlight']),
   color: z.string(),
   active: z.boolean(),
 })
@@ -27,7 +26,6 @@ export type FilterJSON = z.infer<typeof Filter>
 
 export const Filters = z.object({
   search: Filter,
-  exclude: z.string(),
   preview: z.boolean(),
   time: z.boolean(),
   folded: z.boolean(),
@@ -37,6 +35,12 @@ export const Filters = z.object({
 export type Filters = ZodAtomization<typeof Filters>
 export type FiltersJSON = z.infer<typeof Filters>
 
+export type FiltersModel = Filters & {
+  recording: BooleanAtom
+  trackSize: Action
+  element: JSX.Element
+}
+
 const DEFAULT_COLOR = '#BABACF'
 
 const HIGHLIGHT_COLOR = '#e82020'
@@ -45,6 +49,7 @@ const initState: FiltersJSON = {
   search: {
     search: '',
     stateSearch: '',
+    exclude: '',
     type: 'filter',
     color: HIGHLIGHT_COLOR,
     active: true,
@@ -52,19 +57,19 @@ const initState: FiltersJSON = {
   preview: true,
   time: true,
   folded: true,
-  exclude: '',
   size: 1000,
   list: [
     {
       search: `(^_)|(\._)`,
       stateSearch: '',
+      exclude: '',
       type: 'hide',
       color: DEFAULT_COLOR,
       active: true,
     },
   ],
 }
-const version = 'v26'
+const version = 'v27'
 
 export const reatomFilters = (
   {
@@ -73,13 +78,13 @@ export const reatomFilters = (
     redrawLines,
     initSize,
   }: {
-    list: GraphList
+    list: GraphModel['list']
     lines: Lines
-    redrawLines: Action<[], void>
+    redrawLines: GraphModel['redrawLines']
     initSize: number
   },
   name: string,
-) => {
+): FiltersModel => {
   const KEY = name + version
 
   try {
@@ -104,37 +109,6 @@ export const reatomFilters = (
   })
 
   const recording = reatomBoolean(true, `${name}.recording`)
-
-  const trackSize = action((ctx) => {
-    const target = ctx.get(filters.size)
-    let { size } = ctx.get(list)
-
-    if (size <= target) return
-
-    const scrollEl = list.el.parentElement!
-    const removedCount = size - target
-    let scrollTop = scrollEl.scrollTop
-    for (let i = 0; i < removedCount; i++) {
-      const child = list.el.children[i] as HTMLElement
-      scrollTop -= child.offsetHeight
-    }
-
-    list.batch(ctx, () => {
-      while (size > target) {
-        const { head } = ctx.get(list)
-        if (!head) return
-        list.remove(ctx, head)
-        size--
-      }
-    })
-
-    ctx.schedule(() => {
-      scrollEl.scrollTop = scrollTop
-    })
-  }, `${name}.trackSize`)
-
-  list.onChange(trackSize)
-  filters.size.onChange(trackSize)
 
   return assign(filters, {
     recording,

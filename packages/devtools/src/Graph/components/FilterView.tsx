@@ -51,19 +51,26 @@ export const FilterView = ({ filter, remove }: FilterViewProps) => {
         <FilterButton
           title="filter"
           aria-label="filter"
-          disabled={atom((ctx) => filter.type ? ctx.spy(filter.type) === 'filter' : false)}
+          disabled={atom((ctx) => ctx.spy(filter.type) === 'filter')}
           on:click={filter.type.setFilter}
           css:background={icons.matchIcon}
         />
         <FilterButton
           title="hide"
           aria-label="hide"
-          disabled={atom((ctx) => filter.type ? ctx.spy(filter.type) === 'hide' : false)}
+          disabled={atom((ctx) => ctx.spy(filter.type) === 'hide')}
           on:click={filter.type.setHide}
           css:background={icons.notMatchIcon}
         />
+        <FilterButton
+          title="exclude"
+          aria-label="exclude"
+          disabled={atom((ctx) => ctx.spy(filter.type) === 'exclude')}
+          on:click={filter.type.setExclude}
+          css:background={icons.excludeIcon}
+        />
         <span
-          data-highlight={atom((ctx) => filter.type ? ctx.spy(filter.type) === 'highlight' : false)}
+          data-highlight={atom((ctx) => ctx.spy(filter.type) === 'highlight')}
           css={`
             position: relative;
             width: 30px;
@@ -140,7 +147,7 @@ export const FilterView = ({ filter, remove }: FilterViewProps) => {
             value={filter.search}
             on:input={concurrent(async (ctx, event) => {
               const { value } = event.currentTarget
-              await ctx.schedule(() => sleep(250))
+              await ctx.schedule(() => sleep(150))
               filter.search(ctx, value)
             })}
             css={`
@@ -156,7 +163,7 @@ export const FilterView = ({ filter, remove }: FilterViewProps) => {
             value={filter.stateSearch}
             on:input={concurrent(async (ctx, event) => {
               const { value } = event.currentTarget
-              await ctx.schedule(() => sleep(250))
+              await ctx.schedule(() => sleep(150))
               filter.stateSearch(ctx, value)
             })}
             css={`

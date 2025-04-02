@@ -1,17 +1,14 @@
+import { GraphModel } from '../Graph/reatomGraph'
 import { h, hf, type JSX } from '../jsx'
 
 type GraphContainerProps = {
-  filters: any
-  listEl: JSX.Element
+  graph: GraphModel
   svg: JSX.Element
-  isBottom: any
 }
 
 export const GraphContainer = ({
-  filters,
-  listEl,
+  graph,
   svg,
-  isBottom,
 }: GraphContainerProps) => {
   return (
     <section
@@ -25,7 +22,7 @@ export const GraphContainer = ({
         padding-left: var(--lines);
       `}
     >
-      {filters.element}
+      {graph.filters.element}
       <div
         css={`
           overflow: auto;
@@ -36,11 +33,11 @@ export const GraphContainer = ({
           const isBottomState =
             e.currentTarget.scrollHeight - e.currentTarget.scrollTop <
             e.currentTarget.clientHeight + 50
-          isBottom(ctx, isBottomState)
+            graph.isBottom(ctx, isBottomState)
         }}
       >
         {svg}
-        {listEl}
+        {graph.list.el}  
       </div>
     </section>
   )

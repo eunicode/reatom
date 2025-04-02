@@ -16,6 +16,7 @@ export const GraphSVG = ({ listHeight, lines }: GraphSVGProps) => (
       left: 60px;
       pointer-events: var(--pe);
       will-change: height;
+      z-index: 1;
     `}
   >
     {lines}
