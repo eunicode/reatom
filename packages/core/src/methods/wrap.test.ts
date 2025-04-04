@@ -1,8 +1,9 @@
-import { expect, getStackTrace, test } from 'test'
+import { expect, test } from 'test'
 
 import { atom, root } from '../core/atom'
 import { wrap } from './wrap'
 import { sleep } from '../utils'
+import { getStackTrace } from '../connectLogger'
 
 test('async frame stack', async () => {
   const name = 'asyncStack'

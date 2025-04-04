@@ -1,22 +1,26 @@
 import { AtomLike } from './atom'
-import { OverloadParameters, Rec } from '../utils'
+import { OverloadParameters, Rec as UtilsRec } from '../utils'
 import { Action } from './action'
 
+type Rec = UtilsRec<unknown>
+
+export type MixTarget = AtomLike | Action
+
 export interface Assigner<
-  Target extends AtomLike,
-  Result extends Rec<unknown> = Rec<unknown>,
+  Target extends MixTarget = MixTarget,
+  Assigned extends Rec = Rec,
 > {
-  (target: Target): Result
+  (target: Target): Assigned
 }
 
-export type AssignerBind<T> = T extends AtomLike
+export type AssignerBind<T> = T extends MixTarget
   ? T
   : T extends (...params: infer Params) => infer Payload
     ? Action<Params, Payload>
     : T
 
 export interface Middleware<
-  Target extends AtomLike,
+  Target extends MixTarget = MixTarget,
   Params extends any[] = OverloadParameters<Target>,
 > {
   (
@@ -27,27 +31,45 @@ export interface Middleware<
   ) => ReturnType<Target>
 }
 
-export type Extension<Target extends AtomLike> =
-  | Assigner<Target>
-  | Middleware<Target, any[]>
+export type Extension<
+  Target extends MixTarget = MixTarget,
+  Assigned extends Rec = Rec,
+  Params extends any[] = any[],
+> = Assigner<Target, Assigned> | Middleware<Target, Params>
+
+export interface AtomInput<Params extends any[], State>
+  extends AtomLike<State> {
+  (...params: Params): State
+}
 
 // Base type for handling a single extension
-export type ExtendedAtom<Target extends AtomLike, T extends Extension<Target>> =
-  T extends Assigner<Target, infer Result>
-    ? Target & { [K in keyof Result]: AssignerBind<Result[K]> }
-    : T extends Middleware<Target, OverloadParameters<Target>>
+export type ExtendedAtom<
+  Target extends MixTarget,
+  E extends Extension<Target>,
+> =
+  E extends Assigner<Target, infer Assigned>
+    ? {} extends Assigned
       ? Target
-      : T extends Middleware<Target, infer Params>
-        ? AtomLike<ReturnType<Target>> & {
-            (...params: Params): ReturnType<Target>
-          } & {
-            [K in Exclude<keyof Target, keyof AtomLike>]: Target[K]
-          }
+      : Target & { [K in keyof Assigned]: AssignerBind<Assigned[K]> }
+    : E extends Middleware<Target, OverloadParameters<Target>>
+      ? Target
+      : E extends Middleware<Target, infer Params>
+        ? Target extends Action
+          ? Exclude<keyof Target, keyof Action> extends never
+            ? Action<Params, ReturnType<Target>>
+            : Action<Params, ReturnType<Target>> & {
+                [K in Exclude<keyof Target, keyof Action>]: Target[K]
+              }
+          : Exclude<keyof Target, keyof AtomLike> extends never
+            ? AtomInput<Exclude<Params, []>, ReturnType<Target>>
+            : AtomInput<Exclude<Params, []>, ReturnType<Target>> & {
+                [K in Exclude<keyof Target, keyof AtomLike>]: Target[K]
+              }
         : never
 
 // Type helper for applying extensions recursively
 export type ApplyExtensions<
-  Target extends AtomLike,
+  Target extends MixTarget,
   Extensions extends any[],
 > = Extensions extends []
   ? Target
@@ -57,17 +79,12 @@ export type ApplyExtensions<
       : never
     : never
 
+
 // Mix interface with a more efficient type definition
-export interface Mix<Target extends AtomLike> {
-  <E extends Extension<Target>[]>(...extensions: E): ApplyExtensions<Target, E>
+export interface Mix<Target extends MixTarget> {
+  <E extends Array<Extension<Target>>>(
+    ...extensions: E | Array<Extension<Target>>
+  ): ApplyExtensions<Target, E>
 
-  // <T extends Extension<Target>>(extension: T): ExtendedAtom<Target, T>
-
-  // <
-  //   T1 extends Extension<Target>,
-  //   T2 extends Extension<ExtendedAtom<Target, T1>>,
-  // >(
-  //   extension1: T1,
-  //   extension2: T2,
-  // ): ExtendedAtom<ExtendedAtom<Target, T1>, T2>
+  // /* prettier-ignore */ <Params extends any[], Assigned extends Rec>(extension: Extension<Target, Assigned, Params>): ExtendedAtom<Target, Assigned, Params>
 }

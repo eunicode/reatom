@@ -43,13 +43,6 @@ export function subscribe<State, T extends (state: State) => any>(
   return Object.assign(mock, { unsubscribe })
 }
 
-export const getStackTrace = (acc = '', frame = top()): string => {
-  if (acc.length > 500) throw new Error('RECURSION')
-  if (!acc) acc = ` <-- ${frame.atom.name}`
-  const cause = frame.pubs.find((pub: Frame | null) => pub && pub.atom !== root)
-  return cause ? getStackTrace(`${acc} <-- ${cause.atom.name}`, cause) : acc
-}
-
 export {
   expect,
   vi,

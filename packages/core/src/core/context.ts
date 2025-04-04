@@ -1,4 +1,4 @@
-import { Frame, root, WeakMap } from './atom'
+import { top, Frame, root, WeakMap } from './atom'
 
 let get = <K extends WeakKey, V>(name: string): WeakMap<K, V> => {
   const { context } = root().state
@@ -12,7 +12,7 @@ let get = <K extends WeakKey, V>(name: string): WeakMap<K, V> => {
 export let initContext = () => get('init')
 
 /** @internal DO NOT USE IN PRODUCT CODE */
-export let getPrevPubs = (frame: Frame) => {
+export let getPrevPubs = (frame = top()) => {
   let rec = get('pubs').create(frame.atom, () => ({
     prev: [null] as Frame['pubs'],
     next: frame.pubs,

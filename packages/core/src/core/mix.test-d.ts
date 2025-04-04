@@ -2,16 +2,21 @@ import { expect, expectTypeOf, test } from 'test'
 
 import { Atom, atom, AtomLike } from './atom'
 import { Action, isAction } from './action'
-import { Assigner, Middleware } from './mix'
+import { Assigner, AtomInput, Middleware } from './mix'
+import { withChangeHook } from '../mixins'
 
 // Simple extension for testing
 const withProp =
   <P extends string, V>(prop: P, value: V): Assigner<AtomLike, Record<P, V>> =>
   () =>
-    ({ [prop]: value } as Record<P, V>)
+    ({ [prop]: value }) as Record<P, V>
 
 test('1 assigner extension', () => {
   const name = '1ext'
+
+  const test0 = atom(0, `${name}.test0`).mix(() => ({}))
+  expectTypeOf(test0).toExtend<Atom<number>>()
+
   const test1 = atom(0, `${name}.test1`).mix(withProp('a', 1))
 
   expectTypeOf(test1).toHaveProperty('a')
@@ -95,9 +100,38 @@ test('input payload change', () => {
   // @ts-expect-error
   ;() => n3('3')
 
-  expectTypeOf(n1).toExtend<Atom<string>>()
+  expectTypeOf(n1).not.toExtend<Atom<string>>()
+  expectTypeOf(n1).toEqualTypeOf<AtomInput<[number], string>>()
   expectTypeOf(n2).toExtend<AtomLike<string> & ((value?: number) => string)>()
   expectTypeOf(n2).not.toExtend<
     AtomLike<string> & ((value?: number) => number)
   >()
+})
+
+test('middleware persists properties', () => {
+  const name = 'middlewareProperties'
+  const n = atom('', `${name}.n`).mix(
+    () => ({ test: 0 }),
+    withInput((value: number) => String(value)),
+  )
+
+  expect(n()).toBe('')
+  expect(n(3)).toBe('3')
+  // @ts-expect-error
+  ;() => n('3')
+
+  expectTypeOf(n).toExtend<
+    AtomInput<[value: number], string> & {
+      test: number
+    }
+  >()
+})
+
+test('withChangeHandler', () => {
+  atom(0).mix(
+    withChangeHook((state, prev) => {
+      expectTypeOf(state).toBeNumber()
+      expectTypeOf(prev).toEqualTypeOf<undefined | number>()
+    }),
+  )
 })

@@ -1,30 +1,30 @@
 import { reatomComponent } from '@reatom/npm-react'
-import { searchAtom, issuesResource, pageAtom } from './model'
+import { search, issuesResource, page } from './model'
+import { wrap } from '@reatom/core'
 
-export const App = reatomComponent(({ ctx }) => {
-  const isLoading = Boolean(ctx.spy(issuesResource.pendingAtom) || ctx.spy(issuesResource.retriesAtom))
-  const page = ctx.spy(pageAtom)
+export const App = reatomComponent(() => {
+  // const isLoading = Boolean(ctx.spy(issuesResource.pendingAtom) || ctx.spy(issuesResource.retriesAtom))
 
   return (
     <main>
       <input
-        value={ctx.spy(searchAtom)}
-        onChange={(e) => searchAtom(ctx, e.currentTarget.value)}
+        value={search()}
+        onChange={wrap((e) => search(e.currentTarget.value))}
         placeholder="Search"
       />
-      <button disabled={!page} onClick={() => pageAtom(ctx, (s) => s - 1)}>
+      <button disabled={!page()} onClick={wrap(page.prev)}>
         {'<'}
       </button>
-      {page}
-      <button onClick={() => pageAtom(ctx, (s) => s + 1)}>{'>'}</button>
-      {isLoading && 'Loading...'}
+      {page()}
+      <button onClick={wrap(page.next)}>{'>'}</button>
+      {!issuesResource.ready() && 'Loading...'}
       <ul>
-        {ctx.spy(issuesResource.dataAtom).map(({ title }, i) => (
+        {issuesResource.data().map(({ title }, i) => (
           <li key={i}>{title}</li>
         ))}
 
-        {ctx.spy(issuesResource.dataAtom).length === 0 && <i>found nothing</i>}
+        {issuesResource.data().length === 0 && <i>found nothing</i>}
       </ul>
     </main>
   )
-})
+}, 'App')

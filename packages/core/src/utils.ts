@@ -82,7 +82,11 @@ export function assert(
 
 export const noop: (...params: any[]) => any = () => {}
 
-export const identity = <T>(value: T, ...a: any[]): T => value
+export const identity = <T>(
+  value: T,
+  // @ts-expect-error
+  ...a: any[]
+): T => value
 
 export const sleep = (ms = 0) => new Promise((r) => setTimeout(r, ms))
 
@@ -169,6 +173,7 @@ export const isDeepEqual = (a: any, b: any) => {
 
 export let defineName = <T extends Fn | Function>(
   target: T,
+  // @ts-expect-errord
   name: string,
 ): T => {
   // TODO Enable by a flag in devtools. This enables beautiful readable stacktraces, but lead to deopts with 1.5x the whole code slowdown

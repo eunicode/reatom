@@ -1,3 +1,4 @@
+export * from './abort'
 export * from './ifChanged'
 export * from './isCausedBy'
 export * from './peek'

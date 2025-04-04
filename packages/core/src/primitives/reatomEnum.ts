@@ -78,6 +78,6 @@ export const reatomEnum = <
         },
         {} as EnumVariantSetters<T, Format>,
       ),
-    (target) => ({ enum: Object.fromEntries(variants.map((v) => [v, v])) }),
+    () => ({ enum: Object.fromEntries(variants.map((v) => [v, v])) }),
   ) as EnumAtom<T, Format>
 }

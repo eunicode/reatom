@@ -1,5 +1,3 @@
-// TODO https://github.com/tc39/proposal-async-context?tab=readme-ov-file#asynccontextvariable
-
 import { Frame, top, WeakMap } from '../core'
 import { variableContext } from '../core/context'
 import { assert, identity } from '../utils'
@@ -7,6 +5,7 @@ import { assert, identity } from '../utils'
 export let find = <T>(
   cb: (frame: Frame) => undefined | T,
   frame = top(),
+  // @ts-expect-error
 ): undefined | T => {
   frame ??= top()
   let result = cb(frame)
@@ -21,12 +20,16 @@ export let find = <T>(
   }
 }
 
-interface Variable<Params extends any[] = any[], Payload = any> {
-  get(): Payload
+export interface Variable<Params extends any[] = any[], Payload = any> {
+  get(frame?: Frame): Payload
   set(...params: Params): Payload
-  has(): boolean
+  has(frame?: Frame): boolean
+  read(frame?: Frame): undefined | Payload
 }
 
+/** Async Context Variable emulation
+ * @link https://github.com/tc39/proposal-async-context?tab=readme-ov-file#asynccontextvariable
+ */
 export let variable: {
   <T>(): Variable<[T], T>
 
@@ -36,8 +39,7 @@ export let variable: {
 } = (set = identity) => {
   let key = {}
 
-  let get = () => {
-    let frame = top()
+  let read = (frame = top()) => {
     let context = variableContext()
     let value = find((frame) => context.get(frame)?.get(key), frame)
 
@@ -45,12 +47,9 @@ export let variable: {
   }
 
   return {
-    get() {
-      let value = get()
-
-      if (value === undefined) {
-        debugger
-      }
+    read,
+    get(frame?: Frame) {
+      let value = read(frame)
 
       assert(value !== undefined, 'Variable not found')
 
@@ -61,16 +60,12 @@ export let variable: {
       let value = set(...params)
       assert(value !== undefined, `Variable can't be undefined`)
       let context = variableContext()
-      context
-        .create(frame, () => {
-          return new WeakMap()
-        })
-        .set(key, value)
+      context.create(frame, () => new WeakMap()).set(key, value)
 
       return value
     },
-    has() {
-      return get() !== undefined
+    has(frame?: Frame) {
+      return read(frame) !== undefined
     },
   }
 }

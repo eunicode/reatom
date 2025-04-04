@@ -1,5 +1,15 @@
-import { _copy, atom, AtomLike, isAtom, named, RootFrame, STACK } from './atom'
-import { Fn } from '../utils'
+import {
+  __reatom,
+  _copy,
+  atom,
+  AtomLike,
+  isAtom,
+  named,
+  ReatomError,
+  RootFrame,
+  STACK,
+} from './atom'
+import { assert, Fn } from '../utils'
 import { schedule } from '../methods/queues'
 
 /** Autoclearable array of processed events */
@@ -10,10 +20,12 @@ export interface ActionState<Params extends any[] = any[], Payload = any>
 
 /** Logic container with atom features */
 export interface Action<Params extends any[] = any[], Payload = any>
-  extends AtomLike<ActionState<Params, Payload>> {
-  // TODO
-  // (): never
-  (...params: Params): Payload
+  extends AtomLike<ActionState<Params, Payload>, Params, Payload> {
+  // /** Extension system */
+  // mix: Mix<this>
+  // subscribe: (cb?: (state: ActionState<Params, Payload>) => any) => Unsubscribe
+  // __reatom: __reatom
+  // (...params: Params): Payload
 }
 
 let actionMiddleware = (next: Fn, ...params: any[]) => {
@@ -24,7 +36,6 @@ let actionMiddleware = (next: Fn, ...params: any[]) => {
 
   try {
     frame.pubs[0] = STACK[STACK.length - 2]!
-    // FIXME what to do with error?
     return [...frame.state, { params, payload: next(...params) }]
   } finally {
     frame.pubs.length = 1
@@ -35,12 +46,20 @@ let actionMiddleware = (next: Fn, ...params: any[]) => {
 export let isAction = (target: any): target is Action =>
   isAtom(target) && !target.__reatom.reactive
 
+export function assertAction(target: any): asserts target is Action {
+  assert(isAction(target), 'expected action', ReatomError)
+}
+
+export function assertNotAction(target: any): asserts target is AtomLike {
+  assert(target?.__reatom?.reactive === true, 'expected atom', ReatomError)
+}
+
 // TODO support generics
 export let action = <Params extends any[] = any[], Payload = any>(
   cb: (...params: Params) => Payload,
   name = named('action'),
 ): Action<Params, Payload> => {
-  let target = atom([], name) as Action
+  let target = atom([], name) as any as Action
 
   target.__reatom.reactive = false
 
@@ -49,5 +68,5 @@ export let action = <Params extends any[] = any[], Payload = any>(
     actionMiddleware,
   ]
 
-  return target as Action<Params, Payload>
+  return target.mix(...globalThis.__REATOM) as Action<Params, Payload>
 }

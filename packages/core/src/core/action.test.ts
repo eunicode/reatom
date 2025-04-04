@@ -1,7 +1,8 @@
-import { expect, getStackTrace, test } from 'test'
+import { expect, test } from 'test'
 import { action } from './action'
-import { _read, atom, Frame, root } from './atom'
+import { _read, atom, Frame } from './atom'
 import { notify } from '../methods'
+import { getStackTrace } from '../connectLogger'
 
 test('action', () => {
   const name = 'action'

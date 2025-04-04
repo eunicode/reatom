@@ -1,5 +1,4 @@
 import type { AtomLike, AtomState } from '../core'
-import { top } from '../core'
 
 export let withComputed =
   <T extends AtomLike>(

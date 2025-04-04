@@ -1,5 +1,5 @@
-import { assert, defineName, Fn } from "../utils"
-import { top, root, STACK, ReatomError } from "../core/atom"
+import { assert, defineName, Fn } from '../utils'
+import { top, root, STACK, ReatomError } from '../core/atom'
 
 export let wrap = <T extends Promise<any> | Fn>(
   target: T,
@@ -19,7 +19,8 @@ export let wrap = <T extends Promise<any> | Fn>(
       try {
         return target(...params)
       } finally {
-        STACK.length -= 2
+        STACK.pop()
+        STACK.pop()
       }
     }, `${frame.atom.name}.wrap`) as T
   }
@@ -42,6 +43,9 @@ export let wrap = <T extends Promise<any> | Fn>(
       STACK.push(rootFrame, frame)
     })
     seal()
-    Promise.resolve().then(() => (STACK.length -= 2))
+    Promise.resolve().then(() => {
+      STACK.pop()
+      STACK.pop()
+    })
   }) as T
 }

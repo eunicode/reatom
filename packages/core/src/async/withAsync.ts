@@ -6,7 +6,6 @@ import {
   Atom,
   AtomLike,
   Computed,
-  Frame,
   ReatomError,
   top,
 } from '../core'
@@ -37,6 +36,7 @@ export let withAsync: {
     <Params extends any[]>(
       target: Action<Params, Promise<T>>,
     ): AsyncMethods<Params, T>
+
     <T extends AtomLike<Promise<T>>>(target: T): AsyncMethods<Array<unknown>, T>
   }
 
@@ -64,8 +64,6 @@ export let withAsync: {
   //   target: T,
   // ) => AsyncMethods<Array<unknown>, Awaited<ReturnType<T>>>
 } = () => (target: AtomLike<Promise<any>> | Action<any[], Promise<any>>) => {
-  let { reactive } = target.__reatom
-
   let onFulfill: AsyncMethods['onFulfill'] = action((payload, params) => {
     return onSettle({ payload, params }) as any // TODO
   }, `${target.name}.onFulfill`)
@@ -76,16 +74,16 @@ export let withAsync: {
     pending((state) => state - 1)
     ready()
     return call
-  }, `${target.name}.onSettle`)
+  }, `${target.name}._onSettle`)
 
-  let pending = atom(0, `${target.name}.pending`)
+  let pending = atom(0, `${target.name}._pending`)
     // computed needed to ensure that `pending` (and `ready`) connection will connect the target
     .mix(
       withComputed((state) => {
-        if (!reactive) {
-          ifCalled(target as Action, () => state++)
-        } else {
+        if (target.__reatom.reactive) {
           ifChanged(target, () => state++)
+        } else {
+          ifCalled(target as Action, () => state++)
         }
         return state
       }),
@@ -102,8 +100,8 @@ export let withAsync: {
     let state = next(...params)
     let promise = state
 
-    if (reactive) {
-      for (const pub of top().pubs) {
+    if (target.__reatom.reactive) {
+      for (let pub of top().pubs) {
         if (pub) params.push(pub.state)
       }
     } else {
@@ -125,7 +123,7 @@ export let withAsync: {
       wrap((error) => onReject(error, params)),
     )
 
-    if (!reactive) {
+    if (!target.__reatom.reactive) {
       state.at(-1)!.payload = promise
     }
 
@@ -150,39 +148,17 @@ type AsyncDataMethods<Params extends any[], Payload, State> = AsyncMethods<
 
 // @ts-ignore TODO
 export let withAsyncData: {
-  <Params extends any[], Payload>(): Assigner<
-    Action<Params, Promise<Payload>>,
-    AsyncDataMethods<Params, Payload, Payload | undefined>
-  >
-  <Payload>(): Assigner<
-    AtomLike<Promise<Payload>>,
-    AsyncDataMethods<Array<unknown>, Payload, Payload | undefined>
-  >
-
-  <Params extends any[], Payload>(
-    initState: Payload,
-  ): Assigner<
-    Action<Params, Promise<Payload>>,
-    AsyncDataMethods<Params, Payload, Payload>
-  >
   <Payload>(
     initState: Payload,
   ): Assigner<
     AtomLike<Promise<Payload>>,
     AsyncDataMethods<Array<unknown>, Payload, Payload>
   >
-
-  <Params extends any[], Payload, State>(
-    initState: State,
+  <Params extends any[], Payload>(
+    initState: Payload,
   ): Assigner<
     Action<Params, Promise<Payload>>,
-    AsyncDataMethods<Params, Payload, Payload | State>
-  >
-  <Payload, State>(
-    initState: State,
-  ): Assigner<
-    AtomLike<Promise<Payload>>,
-    AsyncDataMethods<Array<unknown>, Payload, Payload | State>
+    AsyncDataMethods<Params, Payload, Payload>
   >
 
   <Params extends any[], Payload>(
@@ -214,12 +190,37 @@ export let withAsyncData: {
     AtomLike<Promise<Payload>>,
     AsyncDataMethods<Array<unknown>, Payload, State>
   >
+
+  <Params extends any[], Payload>(): Assigner<
+    Action<Params, Promise<Payload>>,
+    AsyncDataMethods<Params, Payload, Payload | undefined>
+  >
+
+  <Params extends any[], Payload, State>(
+    initState: State,
+  ): Assigner<
+    Action<Params, Promise<Payload>>,
+    AsyncDataMethods<Params, Payload, Payload | State>
+  >
+  <Payload, State>(
+    initState: State,
+  ): Assigner<
+    AtomLike<Promise<Payload>>,
+    AsyncDataMethods<Array<unknown>, Payload, Payload | State>
+  >
 } =
   (
     initState: any,
     map: (payload: any, params: any, state: any) => any = identity,
   ) =>
   (target: AtomLike<Promise<any>> | Action<any[], Promise<any>>) => {
+    // let localAbort = atom<null | AbortError>(null, `${target.name}._abort`)
+
+    // target.__reatom.middlewares.push((next, ...a) => {
+    //   let abort = abortVar.read()
+    //   return next(...a)
+    // })
+
     // @ts-ignore TODO
     let asyncMethods = withAsync()(target)
 

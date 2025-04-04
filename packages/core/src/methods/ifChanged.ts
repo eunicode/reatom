@@ -7,6 +7,9 @@ import {
   Frame,
   AtomLike,
   AtomState,
+  assertAction,
+  assertNotAction,
+  ActionState,
 } from '../core'
 import { getPrevPubs } from '../core/context'
 import { assert } from '../utils'
@@ -15,11 +18,7 @@ export const ifChanged = <T extends AtomLike>(
   target: T,
   cb: (newState: AtomState<T>, oldState?: AtomState<T>) => void,
 ) => {
-  assert(
-    target?.__reatom?.reactive === true,
-    'ifChanged can be used only with atoms (use `ifCalled` for actions)',
-    ReatomError,
-  )
+  assertNotAction(target)
 
   let frame = top()
   let prevPubs = getPrevPubs(frame)
@@ -35,25 +34,21 @@ export const ifChanged = <T extends AtomLike>(
   }
 }
 
-type ActionFrame = Frame<AtomState<Action>>
-
 /** Allow to react to action calls, works only in reactive (atom) context */
 export const ifCalled = <Params extends any[], Payload>(
   target: Action<Params, Payload>,
   cb: (payload: Payload, params: Params) => void,
 ) => {
-  assert(
-    target?.__reatom?.reactive === false,
-    'ifCalled can be used only with actions (use `ifChanged` for atoms)',
-    ReatomError,
-  )
+  assertAction(target)
+
+  type ActionFrame = Frame<ActionState<Params, Payload>, Params, Payload>
 
   let frame = top()
   let prevPubs = getPrevPubs(frame)
   let prevTargetFrame = prevPubs[frame.pubs.length] as undefined | ActionFrame
 
   let rootFrame = root()
-  let targetFrame = rootFrame.state.store.get(target)
+  let targetFrame = rootFrame.state.store.get(target) as undefined | ActionFrame
 
   assert(frame.atom.__reatom.reactive, 'invalid context', ReatomError)
 

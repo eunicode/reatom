@@ -1,14 +1,24 @@
 import type { Fn, Rec, Unsubscribe } from '../utils'
 import { assert, defineName, identity } from '../utils'
 import type { Assigner, Extension, Mix } from './mix'
-import { Action, action, ActionState } from './action'
+import { action } from './action'
 import { schedule } from '../methods/queues'
 
-// import { COLOR } from '../picocolors'
+/** @internal The list of applied mixins (middlewares). */
+export interface __reatom {
+  reactive: boolean
+  middlewares: Array<(next: Fn, ...params: any[]) => any>
+  onConnect?: Fn
+  onDisconnect?: Fn
+}
 
 /** Base atom interface for other userspace implementations */
-export interface AtomLike<State = any> {
-  (): State
+export interface AtomLike<
+  State = any,
+  Params extends any[] = [],
+  Payload = State,
+> {
+  (...params: Params): Payload
 
   /** Extension system */
   mix: Mix<this>
@@ -16,12 +26,7 @@ export interface AtomLike<State = any> {
   subscribe: (cb?: (state: State) => any) => Unsubscribe
 
   /** @internal The list of applied mixins (middlewares). */
-  __reatom: {
-    reactive: boolean
-    middlewares: Array<Fn>
-    onConnect?: Fn
-    onDisconnect?: Fn
-  }
+  __reatom: __reatom
 }
 
 /** Base changeable state container */
@@ -36,10 +41,14 @@ export interface Computed<State = any> extends AtomLike<State> {
 }
 
 /** Call(atom)stack snapshot */
-export interface Frame<State = any> {
+export interface Frame<
+  State = any,
+  Params extends any[] = any[],
+  Payload = any,
+> {
   error: null | NonNullable<unknown>
   state: State
-  atom: AtomLike<State>
+  atom: AtomLike<State, Params, Payload>
   /** Immutable list of dependencies.
    * The first element is actualization flag and an imperative write cause. */
   pubs: [actualization: null | Frame, ...dependencies: Array<Frame>]
@@ -48,18 +57,19 @@ export interface Frame<State = any> {
   run<I extends any[], O>(fn: (...params: I) => O, ...params: I): O
 }
 
-export type AtomState<T extends AtomLike> =
-  T extends AtomLike<infer State> ? State : never
+export type AtomState<T> = T extends AtomLike<infer State> ? State : never
 
 export interface Queue extends Array<Fn> {}
 
 /** Atom's state mappings for context */
 export interface Store extends WeakMap<Atom, Frame> {
-  get<Params extends any[], Payload>(
-    target: Action<Params, Payload>,
-  ): undefined | Frame<ActionState<Params, Payload>>
-  get<T>(target: Atom<T>): undefined | Frame<T>
-  set<T>(target: Atom<T>, frame: Frame<T>): this
+  get<State, Params extends any[], Payload>(
+    target: AtomLike<State, Params, Payload>,
+  ): undefined | Frame<State, Params, Payload>
+  set<State, Params extends any[], Payload>(
+    target: AtomLike<State, Params, Payload>,
+    frame: Frame<State, Params, Payload>,
+  ): this
 }
 
 export interface RootState {
@@ -96,7 +106,7 @@ export class WeakMap<
 
 export class ReatomError extends Error {}
 
-/* A simple “push‐run‐pop” callstack management */
+/* A simple "push‐run‐pop" callstack management */
 export function run<I extends any[], O>(
   this: Frame,
   fn: (...params: I) => O,
@@ -132,7 +142,7 @@ export let _copy = (rootFrame: RootFrame, frame: Frame) => {
   return frame
 }
 
-export const isAtom = (value: any): value is AtomLike => {
+export let isAtom = (value: any): value is AtomLike => {
   return typeof value === 'function' && '__reatom' in value
 }
 
@@ -276,6 +286,8 @@ function subscribe(this: AtomLike, userCb?: Fn) {
 
     if (!frame) return
 
+    STACK.push(rootFrame, frame)
+
     // TODO optimize
     frame.subs.splice(frame.subs.lastIndexOf(this), 1)
 
@@ -287,6 +299,9 @@ function subscribe(this: AtomLike, userCb?: Fn) {
     }
 
     frame = undefined
+
+    STACK.pop()
+    STACK.pop()
   }
 }
 
@@ -319,7 +334,7 @@ function middleware(next: Fn) {
 
   let push = arguments.length > 1
   let update = arguments[1]
-  let { error, state, pubs } = frame
+  let { state, pubs } = frame
   let dirty = pubs[0] === null
   let dependent = pubs.length !== 1
   let subscribed = frame.subs.length !== 0
@@ -551,7 +566,7 @@ export let root = castAtom<RootAtom>(
   false,
 )
 root.start = (cb = top) => {
-  assert(!STACK.length, 'root collision', ReatomError)
+  assert(STACK.length === 0, 'root collision', ReatomError)
   return (
     {
       error: null,
@@ -574,15 +589,16 @@ root.start = (cb = top) => {
   ).run(cb)
 }
 
-export let _read = <T>(target: AtomLike<T>): undefined | Frame<T> =>
-  root().state.store.get(target)
+export let _read = <State = any, Params extends any[] = [], Payload = State>(
+  target: AtomLike<State, Params, Payload>,
+): undefined | Frame<State, Params, Payload> => root().state.store.get(target)
 
 export let STACK: Array<Frame> = []
 
 STACK.push(root.start(() => root()))
 
 export let clearStack = () => {
-  STACK.length = 0
+  STACK = []
 }
 
 export let top = (): Frame => {

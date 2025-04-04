@@ -1,4 +1,4 @@
-import { Frame, root, STACK } from '../core/atom'
+import { Frame, Queue, root } from '../core/atom'
 import { Fn, noop } from '../utils'
 import { wrap } from './wrap'
 
@@ -48,22 +48,24 @@ export let schedule: {
   return frame === null ? cb(noop, noop) : new Promise(cb)
 }
 
+let QueueIterator = (queue: Queue, i: number) => () => i < queue.length ? queue[i++] : undefined
+
 export let notify = async (): Promise<void> => {
   let { state } = root()
 
   let queues = [
-    state.hook[Symbol.iterator](),
-    state.compute[Symbol.iterator](),
-    state.cleanup[Symbol.iterator](),
-    state.effect[Symbol.iterator](),
+    QueueIterator(state.hook, 0),
+    QueueIterator(state.compute, 0),
+    QueueIterator(state.cleanup, 0),
+    QueueIterator(state.effect, 0),
   ]
 
   let priority = 0
   while (priority < queues.length) {
-    let next = queues[priority++]!.next()
-    if (!next.done) {
-      priority = 0 // need to recheck queues after use code
-      next.value()
+    let next = queues[priority++]!()
+    if (next !== undefined) {
+      priority = 0 // need to recheck queues after user code
+      next()
     }
   }
 
