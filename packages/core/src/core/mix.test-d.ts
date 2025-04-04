@@ -101,7 +101,7 @@ test('input payload change', () => {
   ;() => n3('3')
 
   expectTypeOf(n1).not.toExtend<Atom<string>>()
-  expectTypeOf(n1).toEqualTypeOf<AtomLike<string, [number]>>()
+  expectTypeOf(n1).toEqualTypeOf<AtomLike<string, [] | [number]>>()
   expectTypeOf(n2).toExtend<AtomLike<string> & ((value?: number) => string)>()
   expectTypeOf(n2).not.toExtend<
     AtomLike<string> & ((value?: number) => number)
