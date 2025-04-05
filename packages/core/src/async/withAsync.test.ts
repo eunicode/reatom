@@ -1,9 +1,10 @@
-import { expect, test, vi } from 'test'
+import { expect, subscribe, test, vi } from 'test'
 import { _read, action, atom } from '../core'
 import { withCallHook } from '../mixins'
 import { wrap } from '../methods'
 import { withAsync, withAsyncData } from './withAsync'
-import { sleep } from '../utils'
+import { noop, sleep } from '../utils'
+import { connectLogger } from '../connectLogger'
 
 test('withAsync for action', async () => {
   const name = 'actionAsync'
@@ -77,6 +78,7 @@ test('withAsyncData for action with mappings', async () => {
   expect(fetch.data()).toEqual([])
 
   await wrap(fetch(1))
+  expect(fetch.pending()).toBe(0)
   expect(fetch.ready()).toBe(true)
   expect(fetch.data()).toEqual([2])
 })
@@ -101,7 +103,7 @@ test('withAsyncData for atom', async () => {
 })
 
 test('withAsyncData for atom with mappings', async () => {
-  const name = 'actionAtomDataMap'
+  const name = 'atomAtomDataMap'
   const param = atom(1, `${name}.param`)
   const resource = atom(async () => param() + 1, `${name}.resource`).mix(
     withAsyncData(new Array<number>(), (payload, _params, _state) => [payload]),
@@ -112,4 +114,33 @@ test('withAsyncData for atom with mappings', async () => {
   await wrap(resource())
   expect(resource.ready()).toBe(true)
   expect(resource.data()).toEqual([2])
+})
+
+test('withAsyncData atom concurrent', async () => {
+  connectLogger()
+  const name = 'actionAtomDataMap'
+  const param = atom(0, `${name}.param`)
+  const resource = atom(async () => {
+    let paramState = param()
+    await wrap(sleep())
+    return paramState + 1
+  }, `${name}.resource`).mix(withAsyncData(0))
+  const onFulfill = vi.fn()
+  resource.onFulfill.mix(withCallHook((call) => onFulfill(call)))
+
+  const track = subscribe(resource.data)
+
+  param((s) => s + 1)
+  param((s) => s + 1)
+  await wrap(Promise.resolve())
+  param((s) => s + 1)
+
+  await wrap(resource().catch(noop))
+  expect(resource.pending()).toBe(0)
+  expect(resource.ready()).toBe(true)
+  expect(resource.data()).toBe(4)
+  expect(track).toBeCalledTimes(2)
+  expect(track).toBeCalledWith(4)
+  expect(onFulfill).toBeCalledTimes(1)
+  expect(onFulfill).toBeCalledWith({ payload: 4, params: [3] })
 })

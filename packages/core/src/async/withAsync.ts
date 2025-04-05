@@ -7,11 +7,12 @@ import {
   AtomLike,
   Computed,
   ReatomError,
+  root,
   top,
 } from '../core'
-import { ifCalled, ifChanged, schedule, wrap } from '../methods'
-import { withCallHook } from '../mixins'
-import { assert, Fn, identity, noop } from '../utils'
+import { ifCalled, ifChanged, wrap } from '../methods'
+import { withAbort, withCallHook } from '../mixins'
+import { assert, Fn, identity } from '../utils'
 import { withComputed } from '../mixins/withComputed'
 
 type AsyncMethods<Params extends any[] = any[], Payload = any, Error = any> = {
@@ -39,30 +40,6 @@ export let withAsync: {
 
     <T extends AtomLike<Promise<T>>>(target: T): AsyncMethods<Array<unknown>, T>
   }
-
-  // <Params extends any[], Payload>(): Assigner<
-  //   Action<Params, Promise<Payload>>,
-  //   AsyncMethods<Params, Payload>
-  // >
-  // <T extends Action<any, Promise<any>>>(): Assigner<
-  //   T,
-  //   AsyncMethods<Parameters<T>, Awaited<ReturnType<T>>>
-  // >
-  // (): <Params extends any[], Payload>(
-  //   target: Action<Params, Promise<Payload>>,
-  // ) => AsyncMethods<Params, Payload>
-
-  // <Payload>(): Assigner<
-  //   AtomLike<Promise<Payload>>,
-  //   AsyncMethods<Array<unknown>, Payload>
-  // >
-  // <T extends AtomLike<Promise<any>>>(): Assigner<
-  //   T,
-  //   AsyncMethods<Array<unknown>, Awaited<ReturnType<T>>>
-  // >
-  // (): <T extends AtomLike<Promise<any>>>(
-  //   target: T,
-  // ) => AsyncMethods<Array<unknown>, Awaited<ReturnType<T>>>
 } = () => (target: AtomLike<Promise<any>> | Action<any[], Promise<any>>) => {
   let onFulfill: AsyncMethods['onFulfill'] = action((payload, params) => {
     return onSettle({ payload, params }) as any // TODO
@@ -77,21 +54,19 @@ export let withAsync: {
   }, `${target.name}._onSettle`)
 
   let pending = atom(0, `${target.name}._pending`)
-    // computed needed to ensure that `pending` (and `ready`) connection will connect the target
-    .mix(
-      withComputed((state) => {
-        if (target.__reatom.reactive) {
-          ifChanged(target, () => state++)
-        } else {
-          ifCalled(target as Action, () => state++)
-        }
-        return state
-      }),
-    )
+  // computed needed to ensure that `pending` (and `ready`) connection will connect the target
+  .mix(
+    withComputed((state) => {
+      if (target.__reatom.reactive) {
+        ifChanged(target, () => state++)
+      } else {
+        ifCalled(target as Action, () => state++)
+      }
+      return state
+    }),
+  )
 
-  let ready = atom(() => {
-    return pending() === 0
-  }, `${target.name}.ready`)
+  let ready = atom(() => pending() === 0, `${target.name}.ready`)
 
   let touched = new WeakSet<Promise<any>>()
 
@@ -102,7 +77,7 @@ export let withAsync: {
 
     if (target.__reatom.reactive) {
       for (let pub of top().pubs) {
-        if (pub) params.push(pub.state)
+        if (pub !== null && pub.atom !== root) params.push(pub.state)
       }
     } else {
       promise = state.at(-1)?.payload
@@ -113,10 +88,6 @@ export let withAsync: {
     if (touched.has(promise)) return state
     touched.add(promise)
 
-    // schedule before `then` to step into microtasks before possible seal
-    // TODO add `top()`
-    schedule(ready, 'hook').catch(noop)
-
     // outer promise handlers should tick after the async handlers
     promise = promise.then(
       wrap((payload) => onFulfill(payload, params)),
@@ -126,6 +97,8 @@ export let withAsync: {
     if (!target.__reatom.reactive) {
       state.at(-1)!.payload = promise
     }
+
+    pending()
 
     return state
   })
@@ -217,21 +190,13 @@ export let withAsyncData: {
     initState: any,
     map: (payload: any, params: any, state: any) => any = identity,
   ) =>
-  (target: AtomLike<Promise<any>> | Action<any[], Promise<any>>) => {
-    // let localAbort = atom<null | AbortError>(null, `${target.name}._abort`)
-
-    // target.__reatom.middlewares.push((next, ...a) => {
-    //   let abort = abortVar.read()
-    //   return next(...a)
-    // })
-
-    // @ts-ignore TODO
-    let asyncMethods = withAsync()(target)
+  (target: AtomLike<Promise<any>>) => {
+    let asyncTarget = target.mix(withAbort(), withAsync())
 
     let data = atom(initState, `${target.name}.data`).mix(
       withComputed((state) => {
         if (target.__reatom.reactive) target()
-        ifCalled(asyncMethods.onFulfill, ({ payload, params }) => {
+        ifCalled(asyncTarget.onFulfill, ({ payload, params }) => {
           state = map(payload, params, state)
         })
         return state
@@ -241,7 +206,7 @@ export let withAsyncData: {
       }),
     )
 
-    asyncMethods.onFulfill.mix(withCallHook(() => data()))
+    asyncTarget.onFulfill.mix(withCallHook(() => data()))
 
-    return { ...asyncMethods, data }
+    return { data }
   }

@@ -252,3 +252,20 @@ test('error tracking', () => {
   expect(success).toBe(true)
   expect(b()).toBe(10)
 })
+
+test('middleware connection', () => {
+  const name = 'middlewareConnection'
+  const before = atom(null, `${name}.before`)
+  const after = atom(null, `${name}.after`)
+  const target = atom(null, `${name}.target`).mix(() => (next) => {
+    before()
+    const state = next()
+    after()
+    return state
+  })
+
+  target.subscribe()
+  expect(isConnected(target)).toBe(true)
+  expect(isConnected(before)).toBe(false)
+  expect(isConnected(after)).toBe(false)
+})

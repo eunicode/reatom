@@ -339,7 +339,7 @@ export const toAbortError = (reason: any): AbortError => {
       reason = isObject(reason) ? toString.call(reason) : String(reason)
     }
 
-    reason += ` [${++i}]`
+    reason += ` [#${++i}]`
 
     if (typeof DOMException === 'undefined') {
       reason = new Error(reason, options)
@@ -386,3 +386,6 @@ export const setTimeout: SetTimeout = Object.assign(
 
 /** @link https://developer.mozilla.org/en-US/docs/Web/API/setTimeout#maximum_delay_value */
 export const MAX_SAFE_TIMEOUT = 2 ** 31 - 1
+
+export const isBrowser = () =>
+  typeof window === 'object' && typeof document === 'object'
