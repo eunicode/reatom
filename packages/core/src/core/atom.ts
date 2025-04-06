@@ -25,7 +25,10 @@ export interface AtomLike<
   /** Extension system */
   mix: Mix<this>
 
-  subscribe: (cb?: (state: State) => any) => Unsubscribe
+  subscribe: (
+    cb?: (state: State) => any,
+    queue?: 'hook' | 'compute' | 'cleanup' | 'effect',
+  ) => Unsubscribe
 
   /** @internal The list of applied mixins (middlewares). */
   __reatom: __reatom
@@ -273,7 +276,11 @@ let mix = (target: AtomLike, ext: Extension<AtomLike>): AtomLike => {
   return target
 }
 
-function subscribe(this: AtomLike, userCb?: Fn) {
+function subscribe(
+  this: AtomLike,
+  userCb?: Fn,
+  queue: 'hook' | 'compute' | 'effect' = 'effect',
+) {
   // console.log('subscribe', this.name)
 
   if (userCb !== undefined) {
@@ -295,7 +302,7 @@ function subscribe(this: AtomLike, userCb?: Fn) {
 
   if (frame!.subs.push(this) === 1) {
     if (frame!.atom.__reatom.onConnect !== undefined) {
-      schedule(frame!.atom.__reatom.onConnect, 'effect', null)
+      schedule(frame!.atom.__reatom.onConnect, queue, null)
     }
     relink(frame!, [null])
   }
@@ -604,7 +611,7 @@ root.start = (cb = top) => {
         compute: [],
         cleanup: [],
         effect: [],
-        pushQueue(cb: Fn, queue: 'hook' | 'compute' | 'cleanup' | 'effect') {
+        pushQueue(cb: Fn, queue: 'hook' | 'compute' | 'effect') {
           this[queue].push(cb)
         },
       },
