@@ -157,7 +157,7 @@ Actions are central to managing state transitions and side effects in a structur
 Let's build a search feature to see Reatom's power and elegance in action:
 
 ```ts
-import { atom, action, wrap } from '@reatom/core'
+import { atom, action } from '@reatom/core'
 
 // Split each part of your state to separate atoms
 const search = atom('')
@@ -278,21 +278,26 @@ Use `withAsync` when you need to track the status (loading, error) of an asynchr
 import { atom, action, withAsync, wrap } from '@reatom/core'
 
 // Example: An action to update user preferences on the server
-const updateUserPrefs = action(async (prefs: { theme: string; notifications: boolean }) => {
-  // `wrap` preserves Reatom's context across async boundaries
-  const response = await wrap(fetch('/api/user/preferences', {
-    method: 'POST', // or PUT
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(prefs),
-  }))
+const updateUserPrefs = action(
+  async (prefs: { theme: string; notifications: boolean }) => {
+    // `wrap` preserves Reatom's context across async boundaries
+    const response = await wrap(
+      fetch('/api/user/preferences', {
+        method: 'POST', // or PUT
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(prefs),
+      }),
+    )
 
-  if (!response.ok) {
-    // Throwing an error here will populate the `.error` atom provided by `withAsync`
-    throw new Error(`Failed to update preferences: ${response.statusText}`)
-  }
-  // No need to process response body here if we only care about success/failure status
-  // The action implicitly returns Promise<void> in this case
-}, 'updateUserPrefs')
+    if (!response.ok) {
+      // Throwing an error here will populate the `.error` atom provided by `withAsync`
+      throw new Error(`Failed to update preferences: ${response.statusText}`)
+    }
+    // No need to process response body here if we only care about success/failure status
+    // The action implicitly returns Promise<void> in this case
+  },
+  'updateUserPrefs',
+)
   // Apply the extension to get status tracking atoms and hooks
   .mix(withAsync())
 
@@ -320,7 +325,7 @@ if (lastError) {
 Need data that automatically refetches when its dependencies change? Async atoms combined with `withAsyncData` are your secret weapon!
 
 ```ts
-import { atom, withAsyncData } from '@reatom/core'
+import { atom, withAsyncData, wrap } from '@reatom/core'
 
 const userId = atom('user-1', 'userId')
 
@@ -328,11 +333,11 @@ const userProfile = atom(async () => {
   // This function re-runs whenever `userId` changes!
   const id = userId()
 
-  const response = await fetch(
-    `https://jsonplaceholder.typicode.com/users/${id}`,
+  const response = await wrap(
+    fetch(`https://jsonplaceholder.typicode.com/users/${id}`),
   ) // Example API
   if (!response.ok) throw new Error(`User ${id} not found or API error`)
-  return await response.json()
+  return await wrap(response.json())
 }, 'userProfile')
   // Use withAsyncData to automatically store the fetched data
   .mix(withAsyncData(null)) // `null` is the initial data value before the first fetch
@@ -483,17 +488,18 @@ beforeEach(() => {
   clearStack()
 })
 
-test('counter increments', () => root.start(() => {
-  // Arrange
-  const counter = atom(0)
-  const increment = action(() => counter(counter() + 1))
+test('counter increments', () =>
+  root.start(() => {
+    // Arrange
+    const counter = atom(0)
+    const increment = action(() => counter(counter() + 1))
 
-  // Act
-  increment()
+    // Act
+    increment()
 
-  // Assert
-  expect(counter()).toBe(1)
-}))
+    // Assert
+    expect(counter()).toBe(1)
+  }))
 ```
 
 ## 🔄 Migration from Earlier Versions
@@ -505,8 +511,6 @@ If you're migrating from Reatom v2:
 3. Replace `onChange` and `onCall` with the new async hooks pattern
 4. Remove "Atom" suffix from variable names
 5. Replace `reatomAsync` and `reatomResource` with regular atoms and appropriate middlewares
-
-
 
 ## 🧩 Extension System (Mixins)
 
@@ -641,7 +645,11 @@ Properties added by `withAsync` and `withAsyncData` extensions.
 
 ```ts
 // Interface provided by withAsync
-interface AsyncMethods<Params extends any[] = any[], Payload = any, Error = any> {
+interface AsyncMethods<
+  Params extends any[] = any[],
+  Payload = any,
+  Error = any,
+> {
   // Atom indicating if the async operation is NOT pending (true if pending === 0)
   ready: Computed<boolean>
 
@@ -672,10 +680,8 @@ interface AsyncMethods<Params extends any[] = any[], Payload = any, Error = any>
 
 // Interface provided by withAsyncData (extends AsyncMethods)
 // Note: `withAsyncData` also implicitly adds error handling via `withError` typically.
-interface AsyncDataMethods<Params extends any[], Payload, State> extends AsyncMethods<
-  Params,
-  Payload
-> {
+interface AsyncDataMethods<Params extends any[], Payload, State>
+  extends AsyncMethods<Params, Payload> {
   // Atom holding the successfully fetched data (or initial state)
   data: Atom<State>
 }
