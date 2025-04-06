@@ -8,6 +8,7 @@ import {
   Computed,
   ReatomError,
   root,
+  STACK,
   top,
 } from '../core'
 import { ifCalled, ifChanged, wrap } from '../methods'
@@ -98,7 +99,10 @@ export let withAsync: {
       state.at(-1)!.payload = promise
     }
 
-    pending()
+    // FIXME pretty dirty hack, we need a general solution
+    if (STACK[STACK.length - 2]?.atom !== pending) {
+      pending()
+    }
 
     return state
   })

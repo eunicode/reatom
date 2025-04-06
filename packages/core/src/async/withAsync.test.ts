@@ -4,7 +4,6 @@ import { withCallHook } from '../mixins'
 import { wrap } from '../methods'
 import { withAsync, withAsyncData } from './withAsync'
 import { noop, sleep } from '../utils'
-import { connectLogger } from '../connectLogger'
 
 test('withAsync for action', async () => {
   const name = 'actionAsync'
@@ -117,7 +116,6 @@ test('withAsyncData for atom with mappings', async () => {
 })
 
 test('withAsyncData atom concurrent', async () => {
-  connectLogger()
   const name = 'actionAtomDataMap'
   const param = atom(0, `${name}.param`)
   const resource = atom(async () => {
@@ -141,6 +139,40 @@ test('withAsyncData atom concurrent', async () => {
   expect(resource.data()).toBe(4)
   expect(track).toBeCalledTimes(2)
   expect(track).toBeCalledWith(4)
+  expect(onFulfill).toBeCalledTimes(1)
+  expect(onFulfill).toBeCalledWith({ payload: 4, params: [3] })
+})
+
+test('withAsyncData atom concurrent', async () => {
+  const name = 'actionAtomDataMap'
+  const param = atom(0, `${name}.param`)
+  const resource = atom(async () => {
+    let paramState = param()
+    await wrap(sleep(10))
+    return paramState + 1
+  }, `${name}.resource`).mix(withAsyncData(0))
+  const onFulfill = vi.fn()
+  resource.onFulfill.mix(withCallHook((call) => onFulfill(call)))
+
+  const track = subscribe(resource.pending)
+
+  expect(track).toBeCalledWith(1)
+
+  param((s) => s + 1)
+  await wrap(sleep())
+  expect(track.mock.calls.flat()).toEqual([1, 2, 1])
+  param((s) => s + 1)
+  await wrap(sleep())
+  expect(track.mock.calls.flat()).toEqual([1, 2, 1, 2, 1])
+  param((s) => s + 1)
+  await wrap(sleep())
+  expect(track.mock.calls.flat()).toEqual([1, 2, 1, 2, 1, 2, 1])
+
+  await wrap(resource())
+
+  expect(track.mock.calls.flat()).toEqual([1, 2, 1, 2, 1, 2, 1, 0])
+  expect(resource.ready()).toBe(true)
+  expect(resource.data()).toBe(4)
   expect(onFulfill).toBeCalledTimes(1)
   expect(onFulfill).toBeCalledWith({ payload: 4, params: [3] })
 })
