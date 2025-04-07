@@ -190,3 +190,18 @@ test('should accept array as initState', () => {
   expect(list.array().every(isAtom)).toBeTruthy()
   expect(list.array().length).toBe(3)
 })
+
+test('should accept only initState and key optionally', () => {
+  const list = reatomLinkedList({
+    initState: [{ id: atom('1') }, { id: atom('2') }],
+    key: 'id',
+  })
+
+  const track = subscribe(atom(() => [...list.map().keys()]))
+
+  expect(track.mock.lastCall?.[0]).toStrictEqual(['1', '2'])
+
+  list.map().get('1')?.id('0')
+  notify()
+  expect(track.mock.lastCall?.[0]).toStrictEqual(['0', '2'])
+})

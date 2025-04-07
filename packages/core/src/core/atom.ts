@@ -460,7 +460,7 @@ declare global {
 assert(!globalThis.__REATOM, 'root duplication', ReatomError)
 globalThis.__REATOM = []
 
-export let reatom = <T>(
+export let createAtom = <T>(
   setup: {
     initState?: () => T
     computed?: (prev: T | undefined) => T
@@ -479,7 +479,7 @@ export let reatom = <T>(
         if (frame === undefined) {
           frame = {
             error: null,
-            state: setup.initState ? setup.initState() : (undefined as T),
+            state: undefined as T,
             atom,
             pubs: [null],
             subs: [],
@@ -487,6 +487,19 @@ export let reatom = <T>(
             run,
           }
           rootFrame.state.store.set(atom, frame)
+
+          if (setup.initState !== undefined) {
+            try {
+              STACK.push(frame)
+              frame.state = setup.initState() as T
+            } catch (error) {
+              frame.error = error ?? new ReatomError('Unknown error')
+              frame.pubs[0] = rootFrame
+              throw error
+            } finally {
+              STACK.pop()
+            }
+          }
         }
 
         let { error, state } = frame
@@ -577,30 +590,26 @@ export let reatom = <T>(
   return atom.mix(...globalThis.__REATOM)
 }
 
-
-export let atom = <T>(initOrVal?: (() => T) | T, name?: string) =>
-  reatom(
+export let atom: {
+  <T>(createState: () => T, name?: string): Atom<T>
+  <T>(initState: T, name?: string): Atom<T>
+} = (initOrVal: any, name?: string) =>
+  createAtom(
     {
       initState:
         initOrVal === undefined
           ? undefined
           : typeof initOrVal === 'function'
-            ? (initOrVal as () => T)
+            ? initOrVal
             : () => initOrVal,
     },
     name,
   )
 
-export let computed: <T>(
-  computer: (prev: T | undefined) => T,
+export let computed = <T>(
+  computed: (state: T | undefined) => T,
   name?: string,
-) => Computed<T> = (computer, name) =>
-  reatom(
-    {
-      computed: computer,
-    },
-    name,
-  )
+): Computed<T> => createAtom({ computed }, name)
 
 export let root = castAtom<RootAtom>(
   () => {
