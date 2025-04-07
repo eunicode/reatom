@@ -13,10 +13,14 @@ import {
 } from '../core'
 import { ifCalled, ifChanged, wrap } from '../methods'
 import { withAbort, withCallHook } from '../mixins'
-import { assert, Fn, identity, isAbort, noop } from '../utils'
+import { assert, Fn, identity, isAbort } from '../utils'
 import { withComputed } from '../mixins/withComputed'
 
-type AsyncMethods<Params extends any[] = any[], Payload = any, Error = any> = {
+type AsyncMethods<
+  Params extends unknown[] = any[],
+  Payload = any,
+  Error = any,
+> = {
   ready: Computed<boolean>
   onFulfill: Action<
     [payload: Payload, params: Params],
@@ -36,7 +40,7 @@ type AsyncMethods<Params extends any[] = any[], Payload = any, Error = any> = {
 
 export let withAsync: {
   <T>(): {
-    <Params extends any[]>(
+    <Params extends unknown[]>(
       target: Action<Params, Promise<T>>,
     ): AsyncMethods<Params, T>
 
@@ -130,7 +134,7 @@ export let withAsync: {
   } as AsyncMethods
 }
 
-type AsyncDataMethods<Params extends any[], Payload, State> = AsyncMethods<
+type AsyncDataMethods<Params extends unknown[], Payload, State> = AsyncMethods<
   Params,
   Payload
 > & {
@@ -139,70 +143,60 @@ type AsyncDataMethods<Params extends any[], Payload, State> = AsyncMethods<
 
 // @ts-ignore TODO
 export let withAsyncData: {
-  <Payload>(
-    initState: Payload,
-  ): Assigner<
-    AtomLike<Promise<Payload>>,
-    AsyncDataMethods<Array<unknown>, Payload, Payload>
-  >
-  <Params extends any[], Payload>(
-    initState: Payload,
-  ): Assigner<
-    Action<Params, Promise<Payload>>,
-    AsyncDataMethods<Params, Payload, Payload>
-  >
+  <Params extends unknown[], Payload>(): {
+    (
+      target: Action<Params, Promise<Payload>>,
+    ): AsyncDataMethods<Params, Payload, Payload | undefined>
+    (
+      target: AtomLike<Promise<Payload>>,
+    ): AsyncDataMethods<Params, Payload, Payload | undefined>
+  }
 
-  <Params extends any[], Payload, State>(
+  <Params extends unknown[], Payload, State>(
+    initState: State,
+  ): {
+    (
+      target: Action<Params, Promise<Payload>>,
+    ): AsyncDataMethods<Params, Payload, Payload | State>
+    (
+      target: AtomLike<Promise<Payload>>,
+    ): AsyncDataMethods<Params, Payload, Payload | State>
+  }
+
+  <Params extends unknown[], Payload>(
+    initState: Payload,
+  ): {
+    (
+      target: Action<Params, Promise<Payload>>,
+    ): AsyncDataMethods<Params, Payload, Payload>
+    (
+      target: AtomLike<Promise<Payload>>,
+    ): AsyncDataMethods<Params, Payload, Payload>
+  }
+
+  <Params extends unknown[], Payload, State>(
     initState: State,
     map: (payload: Payload, params: Params, state: State) => State,
-  ): Assigner<
-    Action<Params, Promise<Payload>>,
-    AsyncDataMethods<Params, Payload, State>
-  >
-  <Payload, State>(
-    initState: State,
-    map: (payload: Payload, params: Array<unknown>, state: State) => State,
-  ): Assigner<
-    AtomLike<Promise<Payload>>,
-    AsyncDataMethods<Array<unknown>, Payload, State>
-  >
+  ): {
+    (
+      target: Action<Params, Promise<Payload>>,
+    ): AsyncDataMethods<Params, Payload, State>
+    (
+      target: AtomLike<Promise<Payload>>,
+    ): AsyncDataMethods<Params, Payload, State>
+  }
 
-  <Params extends any[], Payload>(
+  <Params extends unknown[], Payload>(
     initState: Payload,
     map: (payload: Payload, params: Params, state: Payload) => Payload,
-  ): Assigner<
-    Action<Params, Promise<Payload>>,
-    AsyncDataMethods<Params, Payload, Payload>
-  >
-  <Payload>(
-    initState: Payload,
-    map: (payload: Payload, params: Array<unknown>, state: Payload) => Payload,
-  ): Assigner<
-    AtomLike<Promise<Payload>>,
-    AsyncDataMethods<Array<unknown>, Payload, Payload>
-  >
-
-  <Params extends any[], Payload>(): Assigner<
-    Action<Params, Promise<Payload>>,
-    AsyncDataMethods<Params, Payload, Payload | undefined>
-  >
-  <Payload>(): Assigner<
-    AtomLike<Promise<Payload>>,
-    AsyncDataMethods<Array<unknown>, Payload, Payload | undefined>
-  >
-
-  <Params extends any[], Payload, State>(
-    initState: State,
-  ): Assigner<
-    Action<Params, Promise<Payload>>,
-    AsyncDataMethods<Params, Payload, Payload | State>
-  >
-  <Payload, State>(
-    initState: State,
-  ): Assigner<
-    AtomLike<Promise<Payload>>,
-    AsyncDataMethods<Array<unknown>, Payload, Payload | State>
-  >
+  ): {
+    (
+      target: Action<Params, Promise<Payload>>,
+    ): AsyncDataMethods<Params, Payload, Payload>
+    (
+      target: AtomLike<Promise<Payload>>,
+    ): AsyncDataMethods<Params, Payload, Payload>
+  }
 } =
   (
     initState: any,
