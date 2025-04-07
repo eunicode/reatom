@@ -176,3 +176,98 @@ test('withAsyncData atom concurrent', async () => {
   expect(onFulfill).toBeCalledTimes(1)
   expect(onFulfill).toBeCalledWith({ payload: 4, params: [3] })
 })
+test('withAsync for action error handling', async () => {
+  const name = 'actionAsyncError'
+  const errorMsg = 'Fetch failed'
+  const fetch = action(async (shouldFail: boolean) => {
+    await sleep(1)
+    if (shouldFail) throw new Error(errorMsg)
+    return 'Success'
+  }, `${name}.fetch`).mix(withAsync())
+
+  const onReject = vi.fn()
+  fetch.onReject.mix(withCallHook((call) => onReject(call)))
+  const onFulfill = vi.fn()
+  fetch.onFulfill.mix(withCallHook((call) => onFulfill(call)))
+
+  // Initial state
+  expect(fetch.error()).toBeUndefined()
+  expect(fetch.pending()).toBe(0)
+  expect(fetch.ready()).toBe(true)
+
+  // Trigger rejection
+  const promise1 = fetch(true)
+  expect(fetch.pending()).toBe(1)
+  expect(fetch.ready()).toBe(false)
+  expect(fetch.error()).toBeUndefined() // Error not set until promise settles
+
+  await wrap(promise1).catch(noop) // Wait for settlement
+
+  expect(fetch.pending()).toBe(0)
+  expect(fetch.ready()).toBe(true)
+  expect(fetch.error()).toBeInstanceOf(Error)
+  expect((fetch.error() as Error).message).toBe(errorMsg)
+  expect(onReject).toHaveBeenCalledTimes(1)
+  expect(onReject).toHaveBeenCalledWith({
+    error: fetch.error(),
+    params: [true],
+  })
+  expect(onFulfill).not.toHaveBeenCalled()
+
+  // Trigger success after failure
+  const promise2 = fetch(false)
+  expect(fetch.pending()).toBe(1)
+  expect(fetch.ready()).toBe(false)
+  // Error should reset immediately on new call for actions
+  expect(fetch.error()).toBeUndefined()
+
+  await wrap(promise2) // Wait for settlement
+
+  expect(fetch.pending()).toBe(0)
+  expect(fetch.ready()).toBe(true)
+  expect(fetch.error()).toBeUndefined()
+  expect(onReject).toHaveBeenCalledTimes(1) // No new rejection
+  expect(onFulfill).toHaveBeenCalledTimes(1)
+  expect(onFulfill).toHaveBeenCalledWith({
+    payload: 'Success',
+    params: [false],
+  })
+})
+
+test('withAsync for atom error handling', async () => {
+  const name = 'atomAsyncError'
+  const error = new Error('TEST')
+  const shouldFailAtom = atom(true, `${name}.shouldFail`)
+  const data = atom(async () => {
+    const shouldFail = shouldFailAtom()
+    await wrap(sleep())
+    if (shouldFail) throw error
+    return 'Success'
+  }, `${name}.data`).mix(withAsync())
+
+  const onReject = vi.fn()
+  data.onReject.mix(withCallHook((call) => onReject(call)))
+  const onFulfill = vi.fn()
+  data.onFulfill.mix(withCallHook((call) => onFulfill(call)))
+
+  expect(data.error()).toBeUndefined()
+
+  await wrap(data().catch(noop))
+
+  expect(data.ready()).toBe(true)
+  expect(data.error()).toBe(error)
+  expect(onReject).toHaveBeenCalledWith({ error, params: [true] })
+  expect(onFulfill).not.toHaveBeenCalled()
+
+  shouldFailAtom(false)
+  expect(data.ready()).toBe(false)
+  await wrap(data())
+
+  expect(data.ready()).toBe(true)
+  expect(data.error()).toBeUndefined()
+  expect(onReject).toHaveBeenCalledTimes(1)
+  expect(onFulfill).toHaveBeenCalledWith({
+    payload: 'Success',
+    params: [false],
+  })
+})

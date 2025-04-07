@@ -13,7 +13,7 @@ import {
 } from '../core'
 import { ifCalled, ifChanged, wrap } from '../methods'
 import { withAbort, withCallHook } from '../mixins'
-import { assert, Fn, identity } from '../utils'
+import { assert, Fn, identity, isAbort, noop } from '../utils'
 import { withComputed } from '../mixins/withComputed'
 
 type AsyncMethods<Params extends any[] = any[], Payload = any, Error = any> = {
@@ -31,6 +31,7 @@ type AsyncMethods<Params extends any[] = any[], Payload = any, Error = any> = {
     { payload: Payload; params: Params } | { error: Error; params: Params }
   >
   pending: Computed<number>
+  error: Atom<undefined | Error>
 }
 
 export let withAsync: {
@@ -43,29 +44,41 @@ export let withAsync: {
   }
 } = () => (target: AtomLike<Promise<any>> | Action<any[], Promise<any>>) => {
   let onFulfill: AsyncMethods['onFulfill'] = action((payload, params) => {
+    error(undefined)
     return onSettle({ payload, params }) as any // TODO
   }, `${target.name}.onFulfill`)
-  let onReject: AsyncMethods['onReject'] = action((error, params) => {
-    return onSettle({ error, params }) as any // TODO
+  let onReject: AsyncMethods['onReject'] = action((err, params) => {
+    if (!isAbort(err)) error(err)
+    return onSettle({ error: err, params }) as any // TODO
   }, `${target.name}.onReject`)
   let onSettle: AsyncMethods['onSettle'] = action((call) => {
     pending((state) => state - 1)
-    ready()
     return call
   }, `${target.name}._onSettle`)
 
   let pending = atom(0, `${target.name}._pending`)
-  // computed needed to ensure that `pending` (and `ready`) connection will connect the target
-  .mix(
-    withComputed((state) => {
-      if (target.__reatom.reactive) {
-        ifChanged(target, () => state++)
-      } else {
-        ifCalled(target as Action, () => state++)
-      }
-      return state
-    }),
-  )
+    // computed needed to ensure that `pending` (and `ready`) connection will connect the target
+    // which is especially important for an atom target
+    .mix(
+      withComputed((state) => {
+        if (target.__reatom.reactive) {
+          ifChanged(target, () => state++)
+        } else {
+          ifCalled(target as Action, () => state++)
+        }
+        return state
+      }),
+    )
+
+  let error = atom<unknown | undefined>(undefined, `${target.name}._error`)
+  if (target.__reatom.reactive) {
+    error.mix(
+      withComputed((state) => {
+        target()
+        return state
+      }),
+    )
+  }
 
   let ready = atom(() => pending() === 0, `${target.name}.ready`)
 
@@ -113,6 +126,7 @@ export let withAsync: {
     onReject,
     onSettle,
     pending,
+    error,
   } as AsyncMethods
 }
 
