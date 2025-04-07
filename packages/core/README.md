@@ -60,7 +60,7 @@ Thats all you need to get started with Reatom!
 
 ## 🧠 Core Concepts
 
-### Atoms: The Heart of Your State - Embrace Atomization! ⚛️
+### ⚛️ Atoms: The Heart of Your State - Embrace Atomization!
 
 Atoms are the fundamental building blocks in Reatom, holding your application's state. But they are more than just simple containers! Reatom encourages a powerful pattern called **Atomization**.
 
@@ -101,7 +101,7 @@ userName('Alice B.')
 
 Atomization combines the best of mutable and immutable approaches, giving you fine-grained control and stellar performance. It's a key concept for building scalable and maintainable applications with Reatom.
 
-### Actions: Encapsulating Logic 🎬
+### 🎬 Actions: Encapsulating Logic
 
 Actions are functions that orchestrate state changes and side effects. They bundle your logic, making updates predictable and traceable.
 
@@ -185,8 +185,6 @@ const handleChange = action((event) => {
 const performSearch = action(async (query) => {
   // Clear previous results
   results([])
-
-  const query = search()
 
   if (!query) return
 

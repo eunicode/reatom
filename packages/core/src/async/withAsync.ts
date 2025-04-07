@@ -1,7 +1,6 @@
 import {
   action,
   Action,
-  Assigner,
   atom,
   Atom,
   AtomLike,
