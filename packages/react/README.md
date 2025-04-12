@@ -1,86 +1,87 @@
-Adapter for [react](https://github.com/facebook/react).
+Reatom adapter for [react](https://github.com/facebook/react).
+
+Note, that you don't require this adapter for simple usages, native `useSyncExternalStorage` will be enough!
+
+```tsx
+import { useSyncExternalStorage } from 'react'
+import { atom } from '@reatom/core'
+
+export const page = atom(0, 'page').actions((target) => ({
+  next: () => target((state) => state + 1),
+  prev: () => target((state) => Math.max(0, state - 1)),
+}))
+
+export const Paging = () => {
+  const state = useSyncExternalStorage(page.subscribe, page)
+
+  return (
+    <span>
+      <button onClick={page.prev}>prev</button>
+      {state}
+      <button onClick={page.next}>next</button>
+    </span>
+  )
+}
+```
 
 ## Installation
 
 ```sh
-npm i @reatom/npm-react
+npm i @reatom/react
 ```
-
-Also, you need to be installed `@reatom/core` or `@reatom/framework` and `react`.
 
 > Read [the handbook](https://www.reatom.dev/handbook) first for production usage.
-
-## Setup context
-
-You need to set up the main context once and wrap your application in a provider at the top level.
-
-```jsx
-import { createCtx, connectLogger } from '@reatom/framework'
-import { reatomContext } from '@reatom/npm-react'
-import { Main } from './path/to/an/Main'
-
-const ctx = createCtx()
-if (import.meta.env.DEV) {
-  connectLogger(ctx)
-}
-
-export const App = () => (
-  <reatomContext.Provider value={ctx}>
-    <Main />
-  </reatomContext.Provider>
-)
-```
 
 ## Use atom
 
 ### reatomComponent
 
-The main API to bind atoms and actions to a component lifetime is `reatomComponent`. It wraps your regular react component and put `ctx` into the props. There is no additional rules or behavior, you can use any other hooks, accept props, return any valid `ReactNode`. But if you using `ctx.spy`, just like in any computed atom, it will subscribe to the passed atom and rerender from by changes.
+The main API to bind atoms and actions to a component lifetime is `reatomComponent`. It wraps your regular react component function to reatom reactive context. There is no additional rules or behavior, you can use any other hooks, accept props, return any valid `ReactNode`. But if you using any atoms, it will subscribe to it, just like in any computed atom, and rerender from by changes.
 
 ```tsx
 import { atom } from '@reatom/core'
-import { reatomComponent } from '@reatom/npm-react'
+import { reatomComponent } from '@reatom/react'
 
-export const countAtom = atom(0)
-export const Counter = reatomComponent(
-  ({ ctx }) => (
-    <input
-      type="number"
-      value={ctx.spy(count)}
-      onChange={(e) => countAtom(ctx, e.target.valueAsNumber)}
-    />
-  ),
-  'Counter',
-)
+export const page = atom(0, 'page').actions((target) => ({
+  next: () => target((state) => state + 1),
+  prev: () => target((state) => Math.max(0, state - 1)),
+}))
+
+export const Paging = reatomComponent(() => (
+  <span>
+    <button onClick={page.prev}>prev</button>
+    {page()}
+    <button onClick={page.next}>next</button>
+  </span>
+))
 ```
 
-You can describe props types in the generic, it can be any kind of values, regular string, JSON, and atoms too. For example, here is a controlled component with atom state. Also, you can use additional `bind` method instead of [`useAction`](#use-action) to bind an action to the component.
+You can describe props types in the generic, it can be any kind of values, regular string, JSON, and atoms too. For example, here is a controlled component with atom state. Also, you can use additional `wrap` method inside reatom component to bind an action to the component context and lifetime.
 
 ```tsx
-import { atom, Atom } from '@reatom/core'
-import { reatomComponent } from '@reatom/npm-react'
+import { wrap, type Atom } from '@reatom/core'
+import { reatomComponent } from '@reatom/react'
 
-export const Counter = reatomComponent<{
+type Props = {
   atom: Atom<number>
   onChange: Action
-}>(
-  ({ ctx, atom, onChange }) => (
-    <input type="number" value={ctx.spy(atom)} onChange={ctx.bind(onChange)} />
-  ),
-  'Counter',
-)
+}
+
+export const Counter = reatomComponent<Props>(({ ctx, atom, onChange }) => (
+  <input type="number" value={atom()} onChange={wrap(onChange)} />
+))
 ```
 
-One of the most powerful features of `reatomComponent` is that you are not bound by react hooks rules, you could use `ctx.spy` in any order, right in your template.
+One of the most powerful features of `reatomComponent` is that you are not bound by react hooks rules, you could use call and subscribe atoms in any order, right in your template.
 
 ```tsx
 export const SomeList = reatomComponent(
-  ({ ctx }) =>
-    ctx.spy(isLoadingAtom) ? (
+  () =>
+    isLoadingAtom() ? (
       <span>Loading...</span>
     ) : (
       <ul>
-        {ctx.spy(listAtom).map((el) => (
+        {listAtom().map((el) => (
           <li>{el.text}</li>
         ))}
       </ul>
@@ -93,11 +94,11 @@ Do not forget to put the component name to the second argument, it will increase
 
 #### Unmount
 
-An important feature of `reatomComponent` is automatic resource management with default for Reatom AbortController in the cause context. You may be familiar with this concept from [@reatom/effects](https://www.reatom.dev/package/effects/). The `ctx` in reatomComponent props includes the AbortController which is followed by all derived actions. For example, it means if you will update an atom from the component and it will cause [reatomResource](https://www.reatom.dev/package/async/#reatomresource) refetch and the component will unmaunt before the fetch end - the fetch will throw an abort error.
+An important feature of `reatomComponent` is automatic resource management with default for Reatom abort in the cause context. You may be familiar with this concept from [withAbort](https://www.reatom.dev/guides/concurrent/). For example, it means if you will update an atom from the component and it will cause some async refetch and the component will unmount before the fetch end - the fetch will throw an abort error.
 
-This increases the stability of your application as it reduces the amount of possible race conditions. But be aware that sometimes you may want to create a request that you don't want to abort even if the unmount occurs. For example, it might be an analytic event, in which case you should use [spawn](https://www.reatom.dev/package/effects/#spawn).
+This increases the stability of your application as it reduces the amount of possible race conditions. But be aware that sometimes you may want to create a request that you don't want to abort even if the unmount occurs. For example, it might be an analytic event, in which case you should use [spawn](https://www.reatom.dev/guides/spawn).
 
-### useAtom
+<!-- ### useAtom
 
 `useAtom` is your main hook, when you need to describe reusable logic in hight order hook. It accepts an atom to read it value and subscribes to the changes, or a primitive value to create a new mutable atom and subscribe to it. It alike `useState`, but with many additional features. It returns a tuple of `[state, setState, theAtom, ctx]`. `theAtom` is a reference to the passed or created atom.
 
@@ -105,7 +106,7 @@ In a component:
 
 ```tsx
 import { action, atom } from '@reatom/core'
-import { useAction, useAtom } from '@reatom/npm-react'
+import { useAction, useAtom } from '@reatom/react'
 
 // base mutable atom
 const inputAtom = atom('', 'inputAtom')
@@ -142,7 +143,7 @@ We recommend to setup [logger](https://www.reatom.dev/package/logger) here.
 Another use case for the hook is describing additional computations inside a component (create temporal computed atom). It is possible to put a reducer function to `useState`, which will create a new computed atom (`setState` will be `undefined` in this case).
 
 ```ts
-import { useAtom } from '@reatom/npm-react'
+import { useAtom } from '@reatom/react'
 import { goodsAtom } from '~/goods/model'
 
 export const GoodsItem = ({ idx }: { idx: number }) => {
@@ -155,7 +156,7 @@ export const GoodsItem = ({ idx }: { idx: number }) => {
 The reducer function is just the same as in `atom` function. You could `spy` a few other atoms. It will be called only when the dependencies change, so you could use conditions and Reatom will optimize your dependencies and subscribes only to the necessary atoms.
 
 ```ts
-import { useAtom } from '@reatom/npm-react'
+import { useAtom } from '@reatom/react'
 import { activeAtom, goodsAtom } from '~/goods/model'
 
 export const GoodsItem = ({ idx }: { idx: number }) => {
@@ -374,7 +375,7 @@ The most common use case for this hook is to synchronize some state from a props
 
 ```tsx
 import { action, atom } from '@reatom/core'
-import { useAction, useUpdate } from '@reatom/npm-react'
+import { useAction, useUpdate } from '@reatom/react'
 import Form from 'form-library'
 
 const formValuesAtom = atom({})
@@ -442,7 +443,7 @@ If you have an atom with a promise and want to use its value directly, you could
 
 ```tsx
 import { atom, reatomResource } from '@reatom/framework'
-import { useAtom, useAction, useAtomPromise } from '@reatom/npm-react'
+import { useAtom, useAction, useAtomPromise } from '@reatom/react'
 
 const pageAtom = atom(1, 'pageAtom')
 const listReaction = reatomResource(async (ctx) => {
@@ -510,7 +511,7 @@ For `react-dom`:
 ```js
 import { unstable_batchedUpdates } from 'react-dom'
 import { createCtx } from '@reatom/core'
-import { setupBatch, withBatching } from '@reatom/npm-react'
+import { setupBatch, withBatching } from '@reatom/react'
 
 setupBatch(unstable_batchedUpdates)
 const ctx = withBatching(createCtx())
@@ -521,8 +522,30 @@ For `react-native`:
 ```js
 import { unstable_batchedUpdates } from 'react-native'
 import { createCtx } from '@reatom/core'
-import { setupBatch } from '@reatom/npm-react'
+import { setupBatch } from '@reatom/react'
 
 setupBatch(unstable_batchedUpdates)
 const ctx = withBatching(createCtx())
+```
+-->
+
+## Setup context
+
+Optionally, you need to set up the main context once and wrap your application in a provider at the top level.
+
+```jsx
+import { context, connectLogger } from '@reatom/framework'
+import { reatomContext } from '@reatom/react'
+import { Main } from './path/to/an/Main'
+
+const ctx = context.start()
+if (import.meta.env.DEV) {
+  connectLogger(ctx)
+}
+
+export const App = () => (
+  <reatomContext.Provider value={ctx}>
+    <Main />
+  </reatomContext.Provider>
+)
 ```
