@@ -1,12 +1,12 @@
-import { top, Frame, root } from './'
+import { top, Frame, context } from './'
 
 /** @internal */
 export let getPrevPubs = (frame = top()) => {
-  let context = root().state.context.pubs
-  let rec = context.get(frame.atom)
+  let meta = context().state.meta.pubs
+  let rec = meta.get(frame.atom)
 
   if (!rec) {
-    context.set(
+    meta.set(
       frame.atom,
       (rec = {
         prev: [null],
@@ -30,7 +30,7 @@ export let findInPubs = <T>(
     let pubs = stack[i]!
     for (let j = 0; j < pubs.length; j++) {
       let pub = pubs[j] as null | Frame
-      if (pub !== null && pub.atom !== root) {
+      if (pub !== null && pub.atom !== context) {
         let result = cb(pub)
         if (result != undefined) return
         stack.push(pub.pubs)

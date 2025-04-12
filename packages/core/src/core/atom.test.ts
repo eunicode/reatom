@@ -6,7 +6,7 @@ import {
   computed,
   createAtom,
   isConnected,
-  root,
+  context,
 } from './'
 import { expect, vi, test, subscribe } from 'test'
 
@@ -18,7 +18,7 @@ test('linking', () => {
 
   const testEffect = computed(() => fn(a2()), `${name}.testEffect`)
 
-  const { store } = root().state
+  const { store } = context().state
 
   expect(store.has(testEffect)).toBeFalsy()
 
@@ -29,11 +29,11 @@ test('linking', () => {
   const a1Frame = store.get(a1)!
   const a2Frame = store.get(a2)!
   const testEffectFrame = store.get(testEffect)!
-  expect(a1Frame.pubs).toEqual([root()])
+  expect(a1Frame.pubs).toEqual([context()])
   expect(a1Frame.subs).toEqual([a2])
-  expect(a2Frame.pubs).toEqual([root(), a1Frame])
+  expect(a2Frame.pubs).toEqual([context(), a1Frame])
   expect(a2Frame.subs).toEqual([testEffect])
-  expect(testEffectFrame.pubs).toEqual([root(), a2Frame])
+  expect(testEffectFrame.pubs).toEqual([context(), a2Frame])
 
   un()
 

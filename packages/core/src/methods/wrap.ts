@@ -1,21 +1,21 @@
 import { assert, Fn } from '../utils'
-import { top, root, STACK, ReatomError } from '../core'
+import { top, context, STACK, ReatomError } from '../core'
 
 export let wrap = <T extends Promise<any> | Fn>(
   target: T,
   frame = top(),
 ): T => {
-  let rootFrame = root()
+  let contextFrame = context()
 
   if (typeof target === 'function') {
     return function wrap(...params: any) {
       assert(
-        STACK.length === 0 || STACK[0] === rootFrame,
-        'root collision',
+        STACK.length === 0 || STACK[0] === contextFrame,
+        'context collision',
         ReatomError,
       )
 
-      STACK.push(rootFrame, frame)
+      STACK.push(contextFrame, frame)
       try {
         return target(...params)
       } finally {
@@ -36,11 +36,11 @@ export let wrap = <T extends Promise<any> | Fn>(
     }
     Promise.resolve().then(() => {
       assert(
-        STACK.length === 0 || STACK[0] === rootFrame,
-        'root collision',
+        STACK.length === 0 || STACK[0] === contextFrame,
+        'context collision',
         ReatomError,
       )
-      STACK.push(rootFrame, frame)
+      STACK.push(contextFrame, frame)
     })
     seal()
     Promise.resolve().then(() => {

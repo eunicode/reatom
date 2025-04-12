@@ -7,7 +7,7 @@ import {
   Computed,
   createAtom,
   ReatomError,
-  root,
+  context,
   STACK,
   top,
   withMiddleware,
@@ -118,7 +118,7 @@ export let withAsync: {
 
       if (target.__reatom.reactive) {
         for (let pub of top().pubs) {
-          if (pub !== null && pub.atom !== root) params.push(pub.state)
+          if (pub !== null && pub.atom !== context) params.push(pub.state)
         }
       } else {
         promise = state.at(-1)?.payload

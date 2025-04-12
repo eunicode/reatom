@@ -4,7 +4,7 @@ import {
   isAtom,
   named,
   ReatomError,
-  RootFrame,
+  ContextFrame,
   STACK,
   schedule,
   createAtom,
@@ -24,10 +24,10 @@ export type GenericAction<T extends Fn> = T &
   Action<Parameters<T>, ReturnType<T>>
 
 let actionMiddleware = (next: Fn, ...params: any[]) => {
-  let rootFrame = STACK[0] as RootFrame
+  let contextFrame = STACK[0] as ContextFrame
   let frame = STACK[STACK.length - 1]!
 
-  frame = _copy(rootFrame, frame, true)
+  frame = _copy(contextFrame, frame, true)
   frame.pubs[0] = STACK[STACK.length - 2]!
 
   schedule(() => (frame.state = []), 'cleanup', null)

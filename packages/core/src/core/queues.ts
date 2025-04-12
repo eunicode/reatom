@@ -1,4 +1,4 @@
-import { Frame, Queue, root } from './'
+import { Frame, Queue, context } from './'
 import { Fn, noop } from '../utils'
 import { wrap } from '../methods'
 
@@ -23,21 +23,21 @@ export let schedule: {
   let rej = noop
   let promise: undefined | Promise<any>
 
-  let rootFrame = root()
+  let contextFrame = context()
   // TODO
   // if (frame === undefined) frame = STACK[STACK.length - 1]!
 
   if (
-    rootFrame.state.hook.length === 0 &&
-    rootFrame.state.compute.length === 0 &&
-    rootFrame.state.cleanup.length === 0 &&
-    rootFrame.state.effect.length === 0
+    contextFrame.state.hook.length === 0 &&
+    contextFrame.state.compute.length === 0 &&
+    contextFrame.state.cleanup.length === 0 &&
+    contextFrame.state.effect.length === 0
   ) {
-    Promise.resolve().then(wrap(notify, rootFrame))
+    Promise.resolve().then(wrap(notify, contextFrame))
     //.catch(noop) // TODO ?
   }
 
-  rootFrame.state.pushQueue(() => {
+  contextFrame.state.pushQueue(() => {
     try {
       let result = frame ? frame.run(fn) : fn()
 
@@ -66,7 +66,7 @@ let QueueIterator = (queue: Queue, i: number) => () =>
 
 // FIXME reschedule notify if the amount of tasks is changed??
 export let notify = async (): Promise<void> => {
-  let { state } = root()
+  let { state } = context()
 
   let queues = [
     QueueIterator(state.hook, 0),

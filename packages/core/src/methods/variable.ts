@@ -1,4 +1,4 @@
-import { Frame, root, top } from '../core'
+import { Frame, context, top } from '../core'
 import { assert, identity } from '../utils'
 
 export let findVar = <T>(
@@ -38,8 +38,8 @@ export let variable: {
   let key = {}
 
   let read = (frame = top()) => {
-    let context = root().state.context.variable
-    let value = findVar((frame) => context.get(frame)?.get(key), frame)
+    let meta = context().state.meta.variable
+    let value = findVar((frame) => meta.get(frame)?.get(key), frame)
 
     return value
   }
@@ -57,9 +57,9 @@ export let variable: {
       let frame = top()
       let value = set(...params)
       assert(value !== undefined, `Variable can't be undefined`)
-      let context = root().state.context.variable
-      let recs = context.get(frame)
-      if (!recs) context.set(frame, (recs = new WeakMap()))
+      let meta = context().state.meta.variable
+      let recs = meta.get(frame)
+      if (!recs) meta.set(frame, (recs = new WeakMap()))
       recs.set(key, value)
 
       return value

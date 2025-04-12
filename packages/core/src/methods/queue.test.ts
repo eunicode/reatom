@@ -1,4 +1,4 @@
-import { clearStack, root } from '../core'
+import { clearStack, context } from '../core'
 import { expect, test } from 'test'
 import { notify, schedule } from '../core'
 
@@ -6,7 +6,7 @@ test('no extra tick by schedule', async () => {
   clearStack()
 
   let isDoneSync = false
-  root.start(() => {
+  context.start(() => {
     schedule(() => {
       console.log('schedule')
       return 'TEST schedule'
@@ -17,7 +17,7 @@ test('no extra tick by schedule', async () => {
   expect(isDoneSync).toBe(true)
 
   let isDoneAsync = false
-  root.start(() => {
+  context.start(() => {
     schedule(async () => {}).then(() => (isDoneAsync = true))
     notify()
   })
@@ -26,7 +26,7 @@ test('no extra tick by schedule', async () => {
   expect(isDoneAsync).toBe(true)
 
   let isDoneAsyncInTr = false
-  root.start(() => {
+  context.start(() => {
     schedule(async () => {}).then(() => (isDoneAsyncInTr = true))
     notify()
   })

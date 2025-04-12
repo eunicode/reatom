@@ -3,7 +3,7 @@ import {
   createAtom,
   Frame,
   named,
-  root,
+  context,
   top,
   withAssign,
   withParams,
@@ -23,7 +23,7 @@ let abortMethods = {
     if (error != null) throw error
   },
   set(this: AbortAtom, frame = top()) {
-    root().state.context.abort.set(frame, this)
+    context().state.meta.abort.set(frame, this)
   },
 }
 
@@ -35,9 +35,9 @@ export let reatomAbort = (name = named('abort'), frame = top()): AbortAtom =>
       initState: null,
       computed: (state) => {
         if (state !== null) return state
-        let context = root().state.context.abort
+        let meta = context().state.meta.abort
         return (
-          findInPubs([frame.pubs], (frame) => context.get(frame)?.()) ?? null
+          findInPubs([frame.pubs], (frame) => meta.get(frame)?.()) ?? null
         )
       },
     },

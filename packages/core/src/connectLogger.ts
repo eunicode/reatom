@@ -1,4 +1,4 @@
-import { AtomLike, Frame, isConnected, root, top } from './core'
+import { AtomLike, Frame, isConnected, context, top } from './core'
 import { withCallHook, withChangeHook } from './mixins'
 import { isBrowser } from './utils'
 
@@ -22,7 +22,7 @@ let getSerial = (frame = top()) => {
 export let getStackTrace = (acc = '', indent = '\n', frame = top()): string => {
   if (acc.length > 500) throw new Error('RECURSION')
 
-  let cause = frame.pubs.find((pub: Frame | null) => pub && pub.atom !== root)
+  let cause = frame.pubs.find((pub: Frame | null) => pub && pub.atom !== context)
 
   if (!cause) return acc ? acc : `${indent}<-- root`
 

@@ -1,6 +1,6 @@
 import { expect, test } from 'test'
 
-import { atom, computed, root } from '../core'
+import { atom, computed, context } from '../core'
 import { wrap } from './wrap'
 import { sleep } from '../utils'
 import { getStackTrace } from '../connectLogger'
@@ -51,6 +51,6 @@ test('async frame stack', async () => {
     '4 <-- a0 <-- loop <-- a2 <-- a1 <-- a0 <-- loop <-- a2 <-- a1 <-- a0',
   ])
 
-  expect(root().pubs).toEqual([null])
-  expect(root().subs.length).toBe(0)
+  expect(context().pubs).toEqual([null])
+  expect(context().subs.length).toBe(0)
 })

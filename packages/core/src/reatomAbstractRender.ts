@@ -1,4 +1,4 @@
-import { _read, atom, computed, root, STACK, type Frame } from './core'
+import { _read, atom, computed, context, STACK, type Frame } from './core'
 import { getPrevPubs } from './core/context'
 import { AbortAtom, reatomAbort, findVar, variable, wrap } from './methods'
 import { toAbortError, Unsubscribe } from './utils'
@@ -27,12 +27,12 @@ export let reatomAbstractRender = <Props, Result>({
   mount?: () => void
   name: string
 }): AbstractRender<Props, Result> => {
-  let rootFrame =
+  let contextFrame =
     STACK.length !== 0
       ? STACK[0]!
-      : findVar((frame) => (frame.atom === root ? frame : undefined), frame)!
+      : findVar((frame) => (frame.atom === context ? frame : undefined), frame)!
 
-  STACK.push(rootFrame, frame)
+  STACK.push(contextFrame, frame)
 
   let rendering = false
 
@@ -72,7 +72,7 @@ export let reatomAbstractRender = <Props, Result>({
 
   let _render = (props: Props) => {
     try {
-      STACK.push(rootFrame, frame)
+      STACK.push(contextFrame, frame)
       rendering = true
       propsAtom({ ...props })
       return renderAtom()
