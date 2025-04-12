@@ -1,7 +1,7 @@
 import { expect, test, vi } from 'test'
 import { variable } from './variable'
 import { action, atom, computed, context } from '../core'
-import { withAsyncData } from '../async/withAsync'
+import { withAsyncData } from '../async'
 import { wrap } from '../methods'
 import { sleep } from '../utils'
 
