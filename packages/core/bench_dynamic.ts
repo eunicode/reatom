@@ -747,8 +747,8 @@ async function testAggregateMiddle(count: number, batchSize: number = 1) {
 }
 
 ;(async () => {
+  // const subscribers = [2048, 1024, 512, 256] // The alien is very slow here
   const subscribers = [
-    // 2048, 1024, 512, 256,
     128, 64, 64, 32, 32, 32, 16, 16, 16, 16, 8, 8, 8, 8, 8, 8, 4, 4, 4, 4, 4, 4,
     4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
   ]
