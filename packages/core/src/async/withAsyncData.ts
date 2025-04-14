@@ -105,3 +105,4 @@ export let withAsyncData: {
 
     return Object.assign(asyncTarget, { data })
   }
+

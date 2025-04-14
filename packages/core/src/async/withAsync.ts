@@ -8,7 +8,6 @@ import {
   createAtom,
   ReatomError,
   context,
-  STACK,
   top,
   withMiddleware,
 } from '../core'
@@ -111,7 +110,7 @@ export let withAsync: {
 
     let touched = new WeakSet<Promise<any>>()
 
-    let asyncExtension = (next: Fn, ...params: any[]) => {
+    let asyncMiddleware = (next: Fn, ...params: any[]) => {
       let state = next(...params)
       let promise = state
 
@@ -145,7 +144,7 @@ export let withAsync: {
       return state
     }
 
-    return Object.assign(target.extend(withMiddleware(() => asyncExtension)), {
+    return Object.assign(target.extend(withMiddleware(() => asyncMiddleware)), {
       ready,
       onFulfill,
       onReject,

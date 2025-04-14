@@ -28,7 +28,6 @@ export let withChangeHook = <Target extends AtomLike>(
         let state = next(...params)
 
         if (!Object.is(prevState, state)) {
-          frame = top() // maybe changed after `next()`
           schedule(() => cb(state, prevState), 'hook', frame).catch(noop)
         }
         return state

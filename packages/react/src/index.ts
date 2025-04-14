@@ -77,7 +77,7 @@ export let reatomComponent = <Props extends Rec>(
 
       let [, rerender] = React.useState({ result: null as React.ReactNode })
 
-      let { render, mount, abort } = React.useMemo(
+      let { render, mount } = React.useMemo(
         () =>
           reatomAbstractRender({
             frame,
@@ -92,8 +92,9 @@ export let reatomComponent = <Props extends Rec>(
               }
             },
             mount() {
+              // TODO TESTS
               // Drop abort if remount appears (strict mode or so on)
-              if (abort()) abort(null)
+              // abortVar.read()?.(null)
             },
             rerender,
             name,

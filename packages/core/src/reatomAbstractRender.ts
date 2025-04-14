@@ -1,12 +1,11 @@
 import { _read, atom, computed, context, STACK, type Frame } from './core'
 import { getPrevPubs } from './core/context'
-import { AbortAtom, reatomAbort, findVar, variable, wrap } from './methods'
+import { AbortAtom, abortVar, findVar, variable, wrap } from './methods'
 import { toAbortError, Unsubscribe } from './utils'
 
 export interface AbstractRender<Props, Result> {
   render: (props: Props) => { result: Result }
   mount: () => Unsubscribe
-  abort: AbortAtom
 }
 
 /** This is a low-level reatom renderer which helped to connect two different reactive systems.
@@ -36,11 +35,11 @@ export let reatomAbstractRender = <Props, Result>({
 
   let rendering = false
 
-  let abort = reatomAbort(`${name}.abort`, frame)
-
   let changedVar = variable<boolean>()
 
   let propsAtom = atom({} as Props, `${name}._propsAtom`)
+
+  let abortAtom: AbortAtom
 
   let renderAtom = computed(
     (state?: { result: Result }): { result: Result } => {
@@ -49,7 +48,7 @@ export let reatomAbstractRender = <Props, Result>({
       let props = propsAtom()
 
       if (rendering) {
-        abort.set()
+        abortAtom = abortVar.set(abortAtom ?? `${name}.abort`)
         return { result: render(props) }
       }
 
@@ -94,12 +93,12 @@ export let reatomAbstractRender = <Props, Result>({
 
     return wrap(() => {
       unsubscribe()
-      abort(toAbortError('unmount ' + name))
+      abortVar.get()?.(toAbortError('unmount ' + name))
     })
   })
 
   STACK.pop()
   STACK.pop()
 
-  return { render: _render, mount: _mount, abort }
+  return { render: _render, mount: _mount }
 }

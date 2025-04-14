@@ -8,7 +8,6 @@ import {
 } from './'
 import type { Fn, Unsubscribe } from '../utils'
 import { assert, identity } from '../utils'
-import { type AbortAtom } from '../methods'
 
 /** @internal */
 export interface AtomMeta {
@@ -99,7 +98,7 @@ export interface Store extends WeakMap<Atom, Frame> {
 export interface ContextMeta {
   init: WeakMap<WeakKey, any>
   variable: WeakMap<Frame, WeakMap<WeakKey, any>>
-  abort: WeakMap<Frame, AbortAtom>
+  // abort: WeakMap<Frame, AbortAtom>
   pubs: WeakMap<
     Atom,
     {
@@ -145,7 +144,7 @@ export function run<I extends any[], O>(
   }
 }
 
-export let _copy = (contextFrame: ContextFrame, frame: Frame, toTop: boolean) => {
+export let _copy = (contextFrame: ContextFrame, frame: Frame) => {
   // console.log(COLOR.dimGreen('copy'), frame.atom.name)
 
   let pubs = (
@@ -165,8 +164,6 @@ export let _copy = (contextFrame: ContextFrame, frame: Frame, toTop: boolean) =>
 
   contextFrame.state.store.set(frame.atom, frame)
 
-  if (toTop) STACK[STACK.length - 1] = frame
-
   return frame
 }
 
@@ -185,7 +182,7 @@ let enqueue = (contextFrame: ContextFrame, frame: Frame) => {
     } else {
       let subFrame = contextFrame.state.store.get(sub as Atom)!
       if (subFrame.pubs[0] !== null) {
-        enqueue(contextFrame, _copy(contextFrame, subFrame, false))
+        enqueue(contextFrame, _copy(contextFrame, subFrame))
       }
     }
   }
@@ -265,7 +262,7 @@ let relink = (frame: Frame, oldPubs: Frame['pubs']) => {
 export let isConnected = (anAtom: AtomLike): boolean =>
   !!context().state.store.get(anAtom)?.subs.length
 
-export function assertFn(fn: Fn): asserts fn is Fn {
+export function assertFn(fn: unknown): asserts fn is Fn {
   if (typeof fn !== 'function') {
     throw new ReatomError('function expected')
   }
@@ -284,8 +281,8 @@ function subscribe(
     }, `${this.name}._subscribe`).subscribe()
   }
 
-  STACK.push(context())
   try {
+    STACK.push(context())
     this()
   } finally {
     STACK.pop()
@@ -353,10 +350,6 @@ function atomMiddleware(next: Fn) {
   // console.log((push ? COLOR.cyan : COLOR.yellow)('enter'), frame.atom.name)
 
   if (push) {
-    if (!dirty) {
-      frame = _copy(contextFrame, frame, true)
-    }
-
     let update = arguments[1]
 
     newState = frame.state =
@@ -413,10 +406,6 @@ function atomMiddleware(next: Fn) {
   }
 
   if (invalid) {
-    if (!push && !dirty) {
-      frame = _copy(contextFrame, frame, true)
-    }
-
     frame.pubs = [null]
     try {
       frame.atom.__reatom.linking = true
@@ -538,7 +527,7 @@ export let createAtom: {
           !target.__reatom.processing &&
           (push || dirty || (dependent && !subscribed))
         ) {
-          STACK.push(frame)
+          STACK.push((frame = _copy(contextFrame, frame)))
 
           if (reactive) target.__reatom.processing = true
 
@@ -572,18 +561,12 @@ export let createAtom: {
             )
             newError = null
           } catch (error) {
-            // console.log(COLOR.red('error'), atom.name)
-            let copied = frame !== STACK[STACK.length - 1]
-            if (!copied && !push && !dirty) {
-              frame = _copy(contextFrame, frame, true)
-            }
             newError = error ?? new ReatomError('Unknown error')
           }
 
-          frame = STACK[STACK.length - 1]!
           frame.error = newError
           frame.state = newState
-          frame.pubs[0] ??= push ? topFrame : contextFrame
+          frame.pubs[0] ??= contextFrame
 
           if (!push && topFrame.atom.__reatom.linking) {
             // if (topFrame.atom === frame.atom) console.log(COLOR.bgRed('topFrame.atom === frame.atom')) // prettier-ignore
@@ -699,7 +682,8 @@ context.start = (cb = top) => {
 
 export let _read = <State = any, Params extends any[] = [], Payload = State>(
   target: AtomLike<State, Params, Payload>,
-): undefined | Frame<State, Params, Payload> => context().state.store.get(target)
+): undefined | Frame<State, Params, Payload> =>
+  context().state.store.get(target)
 
 export let STACK: Array<Frame> = []
 

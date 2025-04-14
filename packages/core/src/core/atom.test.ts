@@ -291,13 +291,13 @@ test('computed should not accept params', () => {
   const bComputed = vi.fn(() => dep())
   const lowLevelComputed = createAtom({ computed: bComputed }, `${name}.b`)
   const normalComputed = computed(() => dep(), `${name}.c`)
-  
+
   expect(lowLevelComputed()).toBe(0)
   expect(lowLevelComputed()).toBe(0)
   expect(normalComputed()).toBe(0)
   expect(bComputed).toBeCalledTimes(1)
 
-  dep(s => s + 1)
+  dep((s) => s + 1)
   expect(lowLevelComputed()).toBe(1)
   expect(normalComputed()).toBe(1)
   expect(bComputed).toBeCalledTimes(2)

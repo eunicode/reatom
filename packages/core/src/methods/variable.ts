@@ -11,7 +11,7 @@ export let findVar = <T>(
 
   for (let i = 0; i < frame.pubs.length; i++) {
     let pub = frame.pubs[i]
-    if (pub) {
+    if (pub !== null) {
       let result = findVar(cb, pub)
       if (result !== undefined) return result
     }
@@ -22,7 +22,11 @@ export interface Variable<Params extends any[] = any[], Payload = any> {
   get(frame?: Frame): Payload
   set(...params: Params): Payload
   has(frame?: Frame): boolean
-  read(frame?: Frame): undefined | Payload
+  read<T = Payload>(
+    cb?: (value: undefined | Payload) => undefined | T,
+    frame?: Frame,
+    meta?: WeakMap<Frame, WeakMap<WeakKey, any>>,
+  ): undefined | T
 }
 
 /** Async Context Variable emulation
@@ -37,9 +41,12 @@ export let variable: {
 } = (set = identity) => {
   let key = {}
 
-  let read = (frame = top()) => {
-    let meta = context().state.meta.variable
-    let value = findVar((frame) => meta.get(frame)?.get(key), frame)
+  let read: Variable['read'] = (
+    cb = identity,
+    frame = top(),
+    meta = context().state.meta.variable,
+  ) => {
+    let value = findVar((frame) => cb(meta.get(frame)?.get(key)), frame)
 
     return value
   }
@@ -47,7 +54,7 @@ export let variable: {
   return {
     read,
     get(frame?: Frame) {
-      let value = read(frame)
+      let value = read(identity, frame)
 
       assert(value !== undefined, 'Variable not found')
 
@@ -65,7 +72,7 @@ export let variable: {
       return value
     },
     has(frame?: Frame) {
-      return read(frame) !== undefined
+      return read(identity, frame) !== undefined
     },
   }
 }

@@ -7,7 +7,10 @@ clearStack()
 // TODO decorate chainable methods too
 export const test = Object.assign(
   (name: string, fn: () => void | Promise<void>) =>
-    viTest(name, () => context.start(fn)),
+    viTest(name, () => {
+      Reflect.defineProperty(fn, 'name', { value: name })
+      return context.start(fn)
+    }),
   viTest,
 ) as typeof viTest
 

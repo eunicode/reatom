@@ -21,7 +21,7 @@ async function testAggregateGrowing(
     effect,
   } = await import('alien-signals')
 
-  const Jotai = await import('jotai/vanilla');
+  const Jotai = await import('jotai/vanilla')
   const { atom, createStore } = Jotai
 
   const molAtoms = [new $mol_wire_atom(`0`, (next: number = 0) => next)]

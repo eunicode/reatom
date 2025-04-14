@@ -198,3 +198,28 @@ test('withAsyncData for atom error handling', async () => {
 
   expect(resource.error('test')).toBe('test')
 })
+
+// TODO just predefine actions WITH PERSIST CACHE and you get a nicer version of FSM.
+/*
+const askProfileSurvey = reatomFSM(
+  ['name', 'age', 'permission', 'sex'],
+  async (state) => {
+    const name = await wrap(state.name(() => prompt('What is your name?')))
+
+    const age = await wrap(state.age(() => prompt('What is your age?')))
+
+    let permission = true
+    if (age < 18) {
+      permission = await wrap(
+        state.permission(() => confirm('Did you have your parents consent?')),
+      )
+    }
+
+    const sex = await wrap(
+      state.sex(() => prompt('What is your sex? (male/female)')),
+    )
+
+    return { name, age, permission, sex }
+  },
+)
+*/
