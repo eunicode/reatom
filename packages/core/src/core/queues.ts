@@ -1,31 +1,12 @@
-import { Frame, Queue, context } from './'
-import { Fn, noop } from '../utils'
-import { wrap } from '../methods'
+import { Queue, context } from './'
+import type { Fn } from '../utils'
 
-// @ts-expect-error TODO
-export let schedule: {
-  <T>(
-    fn: (...params: any[]) => T,
-    queue?: 'hook' | 'compute' | 'cleanup' | 'effect',
-    frame?: Frame,
-  ): Promise<T>
-  (
-    fn: (...params: any[]) => any,
-    queue: 'hook' | 'compute' | 'cleanup' | 'effect',
-    frame: null,
-  ): undefined
-} = (
+/** @internal */
+export let enqueue = (
   fn: Fn,
-  queue: 'hook' | 'compute' | 'cleanup' | 'effect' = 'effect',
-  frame?: null | Frame,
-): undefined | Promise<any> => {
-  let res = noop
-  let rej = noop
-  let promise: undefined | Promise<any>
-
+  queue: 'hook' | 'compute' | 'cleanup' | 'effect',
+): void => {
   let contextFrame = context()
-  // TODO
-  // if (frame === undefined) frame = STACK[STACK.length - 1]!
 
   if (
     contextFrame.state.hook.length === 0 &&
@@ -33,38 +14,24 @@ export let schedule: {
     contextFrame.state.cleanup.length === 0 &&
     contextFrame.state.effect.length === 0
   ) {
-    Promise.resolve().then(wrap(notify, contextFrame))
+    Promise.resolve().then(contextFrame.run.bind(contextFrame, notify))
     //.catch(noop) // TODO ?
   }
 
   contextFrame.state.pushQueue(() => {
     try {
-      let result = frame ? frame.run(fn) : fn()
-
-      result instanceof Promise
-        ? result.then(res, rej) // reduce the amount of microtasks
-        : res(result)
-    } catch (e) {
-      if (promise) {
-        rej(e)
-      } else {
-        console.error('Unhandled error in Reatom queue!')
-        console.log(e)
-      }
+      fn()
+    } catch (error) {
+      console.error('Unhandled error in Reatom queue!')
+      console.log(error)
     }
   }, queue)
-
-  if (frame !== null) {
-    promise = new Promise((...a) => ([res, rej] = a))
-  }
-
-  return promise
 }
 
 let QueueIterator = (queue: Queue, i: number) => () =>
   i < queue.length ? queue[i++] : undefined
 
-// FIXME reschedule notify if the amount of tasks is changed??
+// TODO reschedule notify if the amount of tasks is changed??
 export let notify = () => {
   let { state } = context()
 

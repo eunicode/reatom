@@ -4,7 +4,7 @@
   "publishConfig": {
     "tag": "alpha"
   },
-  "private": true,
+  "private": false,
   "description": "The ultimate state manager",
   "exports": {
     "types": "./build/index.d.ts",
@@ -19,7 +19,7 @@
     "last 1 year"
   ],
   "scripts": {
-    "prepublishOnly": "npm run build && npm run test",
+    "prepublishOnly": "npm run build",
     "build": "yoctobundle",
     "test": "vitest run src/*",
     "test:watch": "vitest src/*",

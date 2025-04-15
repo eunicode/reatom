@@ -9,7 +9,7 @@ import {
   AtomState,
   ActionState,
 } from '../core'
-import { getPrevPubs } from '../core/context'
+import { getPrevPubs } from './context'
 import { assert } from '../utils'
 
 export const ifChanged = <T extends AtomLike>(

@@ -1,5 +1,5 @@
 import { wrap } from '@reatom/core'
-import { reatomComponent } from '@reatom/npm-react'
+import { reatomComponent } from '@reatom/react'
 import { search, issuesResource, page } from './model'
 
 export const App = reatomComponent(

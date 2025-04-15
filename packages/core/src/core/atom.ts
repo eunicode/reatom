@@ -1,13 +1,7 @@
-import {
-  actions,
-  type ActionsExt,
-  Ext,
-  extend,
-  type Extend,
-  schedule,
-} from './'
+import { actions, type ActionsExt, Ext, extend, type Extend, enqueue } from './'
 import type { Fn, Unsubscribe } from '../utils'
-import { assert, identity } from '../utils'
+
+let identity = <T>(value: T): T => value
 
 /** @internal */
 export interface AtomMeta {
@@ -38,10 +32,7 @@ export interface AtomLike<
   extend: Extend<this>
 
   /** Subscribe to changes (first call immediately) */
-  subscribe: (
-    cb?: (state: State) => any,
-    queue?: 'hook' | 'compute' | 'cleanup' | 'effect',
-  ) => Unsubscribe
+  subscribe: (cb?: (state: State) => any) => Unsubscribe
 
   /** @internal */
   __reatom: AtomMeta
@@ -135,11 +126,21 @@ export function run<I extends any[], O>(
   fn: (...params: I) => O,
   ...params: I
 ): O {
-  // TODO context check? We already have check in `wrap` and `context.start`
-  STACK.push(this)
+  let contextFrame = this
+
+  while (contextFrame.atom !== context) {
+    contextFrame = contextFrame.pubs.find((pub) => pub !== null)!
+  }
+
+  if (STACK.length !== 0 && STACK[0] !== contextFrame) {
+    throw new ReatomError('context collision')
+  }
+
   try {
+    STACK.push(contextFrame, this)
     return fn(...params)
   } finally {
+    STACK.pop()
     STACK.pop()
   }
 }
@@ -171,18 +172,18 @@ export let isAtom = (value: any): value is AtomLike => {
   return typeof value === 'function' && '__reatom' in value
 }
 
-let enqueue = (contextFrame: ContextFrame, frame: Frame) => {
-  // console.log(COLOR.dimGreen('enqueue'), frame.atom.name)
+let mark = (contextFrame: ContextFrame, frame: Frame) => {
+  // console.log(COLOR.dimGreen('mark'), frame.atom.name)
 
   for (let i = 0; i < frame.subs.length; i++) {
     let sub = frame.subs[i]!
 
     if (sub === frame.atom) {
-      schedule(sub, 'compute', null)
+      enqueue(sub, 'compute')
     } else {
       let subFrame = contextFrame.state.store.get(sub as Atom)!
       if (subFrame.pubs[0] !== null) {
-        enqueue(contextFrame, _copy(contextFrame, subFrame))
+        mark(contextFrame, _copy(contextFrame, subFrame))
       }
     }
   }
@@ -197,7 +198,7 @@ let link = (frame: Frame) => {
     let pub = pubs[i]!
     if (pub.subs.push(atom) === 1) {
       if (pub.atom.__reatom.onConnect !== undefined) {
-        schedule(pub.atom.__reatom.onConnect, 'effect', null)
+        enqueue(pub.atom.__reatom.onConnect, 'effect')
       }
       link(pub)
     }
@@ -224,7 +225,7 @@ let unlink = (sub: Atom, oldPubs: Frame['pubs']) => {
     if (pub.subs.length === 1) {
       pub.subs.pop()
       if (pub.atom.__reatom.onDisconnect !== undefined) {
-        schedule(pub.atom.__reatom.onDisconnect, 'effect', null)
+        enqueue(pub.atom.__reatom.onDisconnect, 'effect')
       }
       unlink(pub.atom, pub.pubs)
     }
@@ -268,11 +269,7 @@ export function assertFn(fn: unknown): asserts fn is Fn {
   }
 }
 
-function subscribe(
-  this: AtomLike,
-  userCb?: Fn,
-  queue: 'hook' | 'compute' | 'effect' = 'effect',
-) {
+function subscribe(this: AtomLike, userCb?: Fn) {
   // console.log('subscribe', this.name)
 
   if (userCb !== undefined) {
@@ -281,46 +278,36 @@ function subscribe(
     }, `${this.name}._subscribe`).subscribe()
   }
 
-  try {
-    STACK.push(context())
-    this()
-  } finally {
-    STACK.pop()
-  }
-
   let contextFrame = context()
+
+  contextFrame.run(this)
 
   let frame = contextFrame.state.store.get(this)
 
   if (frame!.subs.push(this) === 1) {
     if (frame!.atom.__reatom.onConnect !== undefined) {
-      schedule(frame!.atom.__reatom.onConnect, queue, null)
+      enqueue(frame!.atom.__reatom.onConnect, 'effect')
     }
     relink(frame!, [null])
   }
 
-  return () => {
+  return contextFrame.run.bind(contextFrame, () => {
     // console.log('unsubscribe', this.name)
 
     if (!frame) return
-
-    STACK.push(contextFrame, frame)
 
     // TODO optimize
     frame.subs.splice(frame.subs.lastIndexOf(this), 1)
 
     if (frame.subs.length === 0) {
       if (frame.atom.__reatom.onDisconnect !== undefined) {
-        schedule(frame.atom.__reatom.onDisconnect, 'effect', null)
+        enqueue(frame.atom.__reatom.onDisconnect, 'effect')
       }
       unlink(this, contextFrame.state.store.get(this)!.pubs)
     }
 
     frame = undefined
-
-    STACK.pop()
-    STACK.pop()
-  }
+  })
 }
 
 let i = 0
@@ -330,8 +317,7 @@ declare global {
   // @ts-ignore TODO
   var __REATOM: Array<Ext>
 }
-
-assert(!globalThis.__REATOM, 'context duplication', ReatomError)
+if (globalThis.__REATOM) throw new ReatomError('package duplication')
 globalThis.__REATOM = []
 
 /** The hurt of atom internal logic*/
@@ -578,7 +564,7 @@ export let createAtom: {
             subscribed &&
             (!Object.is(state, frame.state) || !Object.is(error, frame.error))
           ) {
-            enqueue(contextFrame, frame)
+            mark(contextFrame, frame)
           }
 
           target.__reatom.processing = false
@@ -652,7 +638,9 @@ export let context = castAtom<ContextAtom>(
   },
 )
 context.start = (cb = top) => {
-  assert(STACK.length === 0, 'context collision', ReatomError)
+  if (STACK.length !== 0) {
+    throw new ReatomError('context collision')
+  }
   return (
     {
       error: null,

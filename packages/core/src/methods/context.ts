@@ -1,4 +1,4 @@
-import { top, context } from './'
+import { top, context } from '../core'
 
 /** @internal */
 export let getPrevPubs = (frame = top()) => {

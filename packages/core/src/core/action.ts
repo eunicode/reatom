@@ -4,11 +4,11 @@ import {
   named,
   ReatomError,
   STACK,
-  schedule,
+  enqueue,
   createAtom,
   AtomMeta,
 } from './'
-import { Fn } from '../utils'
+import type { Fn } from '../utils'
 
 /** Autoclearable array of processed events */
 export interface ActionState<Params extends any[] = any[], Payload = any>
@@ -26,7 +26,7 @@ let actionMiddleware = (next: Fn, ...params: any[]) => {
 
   frame.pubs = [STACK[STACK.length - 2]!]
 
-  schedule(() => (frame.state = []), 'cleanup', null)
+  enqueue(() => (frame.state = []), 'cleanup')
 
   return (frame.state = [...frame.state, { params, payload: next(...params) }])
 }
