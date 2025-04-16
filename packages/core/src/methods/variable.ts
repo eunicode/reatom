@@ -4,18 +4,19 @@ import { assert, identity } from '../utils'
 export let findVar = <T>(
   cb: (frame: Frame) => undefined | T,
   frame = top(),
-  // @ts-expect-error
 ): undefined | T => {
   let result = cb(frame)
   if (result !== undefined) return result
 
   for (let i = 0; i < frame.pubs.length; i++) {
     let pub = frame.pubs[i]
-    if (pub !== null) {
+    if (pub !== null && pub!.atom !== context) {
       let result = findVar(cb, pub)
       if (result !== undefined) return result
     }
   }
+
+  return undefined
 }
 
 export interface Variable<Params extends any[] = any[], Payload = any> {

@@ -16,20 +16,42 @@ let getSerial = (frame = top()) => {
     serialNumbers.set(frame, (serial = ++serialCount))
   }
 
-  return ` [#${serial}]`
+  return `[#${serial}]`
 }
 
-export let getStackTrace = (acc = '', indent = '\n', frame = top()): string => {
-  if (acc.length > 500) throw new Error('RECURSION')
+export let getStackTrace = (
+  acc = '',
+  steps = acc && ' '.repeat(acc.length),
+  frame = top(),
+): string => {
+  if (acc.length > 1000) throw new Error('RECURSION')
 
-  let cause = frame.pubs.find((pub: Frame | null) => pub && pub.atom !== context)
+  let name = ` < ${frame.atom.name}${getSerial(frame)}`
+  acc += name
+  steps += ' '.repeat(name.length)
 
-  if (!cause) return acc ? acc : `${indent}<-- root`
+  let nextPub = false
+  for (const pub of frame.pubs) {
+    if (pub === null || pub.atom === context) continue
+    if (nextPub) acc += `\n\n${steps}`
+    nextPub = true
+    acc += getStackTrace('', steps, pub)
+  }
 
-  return getStackTrace(
-    `${acc}${indent}<-- ${cause.atom.name}${getSerial(cause)}`,
-    indent,
-    cause,
+  return acc
+}
+
+let logStackTrace = () => {
+  console.log('stack:')
+  console.log(
+    top().pubs.reduce(
+      (acc, frame) =>
+        acc +
+        (frame === null || frame.atom === context
+          ? ''
+          : getStackTrace('', '', frame) + '\n\n'),
+      '',
+    ),
   )
 }
 
@@ -58,7 +80,7 @@ export let connectLogger = () => {
           console.groupCollapsed(`${title}${getSerial()}`, style)
           if (isNodeEnv) console.log(state)
           console.log('prev:', prevState)
-          console.log('stack:', getStackTrace('', isNodeEnv ? ' ' : '\n'))
+          logStackTrace()
           console.log('connected:', isConnected(target))
           if (!isNodeEnv) console.log('frame:', top())
           console.groupEnd()
@@ -68,7 +90,7 @@ export let connectLogger = () => {
           console.groupCollapsed(`${title}${getSerial()}`, style)
           if (isNodeEnv) console.log(payload)
           params.forEach((param, i) => console.log(`param ${i + 1}:`, param))
-          console.log('stack:', getStackTrace('', isNodeEnv ? ' ' : '\n'))
+          logStackTrace()
           if (!isNodeEnv) console.log('frame:', top())
           console.groupEnd()
           if (!isNodeEnv) console.log(payload)
