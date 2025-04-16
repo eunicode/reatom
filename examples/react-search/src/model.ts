@@ -22,7 +22,7 @@ export const page = atom(1, 'page')
     prev: () => target((page) => Math.max(1, page - 1)),
   }))
 
-export const issuesResource = computed(async () => {
+export const issues = computed(async () => {
   const queryState = search()
   const pageState = page()
 

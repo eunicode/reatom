@@ -29,7 +29,7 @@ export let getComponentDebugName = (fallback?: string): string => {
     newInternals?.A?.getOwner?.()?.type
 
   let name = (Component?.displayName ?? Component?.name) || fallback
-  return name ? `Component.${name}` : named('Component')
+  return name || named('Component')
 }
 
 let batch = (cb: Fn) => cb()
@@ -58,18 +58,11 @@ export let isSuspense = (thing: unknown) =>
   thing instanceof Promise ||
   (thing instanceof Error && thing.message.startsWith('Suspense Exception'))
 
-let getName = (Component: Fn, name?: string): string =>
-  name
-    ? `Component.${name}`
-    : Component.name && Component.name !== anonFnName
-      ? `Component.${Component.name}`
-      : named('Component')
-
 export let reatomComponent = <Props extends Rec>(
   Component: (props: Props) => React.ReactNode,
   name?: string,
 ): ((props: Props) => React.ReactNode) => {
-  name = getName(Component, name)
+  name ||= Component.name || named('Component')
 
   return {
     [name](props: Props): React.ReactNode {

@@ -1,9 +1,10 @@
 import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
-import { search, issuesResource, page } from './model'
+import { search, issues, page } from './model'
 
-export const App = reatomComponent(
-  () => (
+export const App = reatomComponent(() => {
+  const data = issues.data()
+  return (
     <main>
       <input
         value={search()}
@@ -15,15 +16,14 @@ export const App = reatomComponent(
       </button>
       {page()}
       <button onClick={wrap(page.next)}>{'>'}</button>
-      {!issuesResource.ready() && 'Loading...'}
+      {!issues.ready() && 'Loading...'}
       <ul>
-        {issuesResource.data().map(({ title }, i) => (
+        {data.map(({ title }, i) => (
           <li key={i}>{title}</li>
         ))}
 
-        {issuesResource.data().length === 0 && <i>found nothing</i>}
+        {data.length === 0 && <i>found nothing</i>}
       </ul>
     </main>
-  ),
-  'App',
-)
+  )
+}, 'App')
