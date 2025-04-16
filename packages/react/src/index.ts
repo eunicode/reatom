@@ -38,8 +38,6 @@ export let setupBatch = (newBatch: typeof batch) => {
   batch = newBatch
 }
 
-let anonFnName = (() => () => {})().name
-
 export let reatomContext = React.createContext<null | Frame>(null)
 
 export let useFrame = (): Frame => {
