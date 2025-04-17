@@ -6,14 +6,15 @@ let isSkip = (target: AtomLike) =>
   target.name.startsWith('_') || /\._/.test(target.name)
 
 let serialCount = 0
-let serialNumbers = new WeakMap<Frame, number>()
+let serialNumbers = new WeakMap<Frame, string>()
 
 let getSerial = (frame = top()) => {
   if (isSkip(frame.atom)) return ''
 
   let serial = serialNumbers.get(frame)
   if (serial === undefined) {
-    serialNumbers.set(frame, (serial = ++serialCount))
+    let next = ++serialCount
+    serialNumbers.set(frame, (serial = next.toString(next < 1e4 ? 10 : 32)))
   }
 
   return `[#${serial}]`
