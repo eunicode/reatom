@@ -8,7 +8,7 @@ import { getStackTrace } from '../connectLogger'
 test('async frame stack', async () => {
   const name = 'asyncStack'
   const getTrace = () =>
-    getStackTrace('', ' ')
+    getStackTrace()
       .replaceAll(`${name}.`, '')
       .replace(/\[\#\d*\]/g, '')
 

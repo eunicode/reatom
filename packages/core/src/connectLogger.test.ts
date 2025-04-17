@@ -33,11 +33,11 @@ test('calc deps graph', async () => {
   // prettier-ignore
   expect(stack).toBe(
 `
-─ effect._subscribe ─ effect[#5] ┬─ counter[#6] ─ counter.inc[#7]
+─ effect._subscribe ─ effect[#5] ┬─ counter[#6] ─ counter.inc[#9]
                                  │
-                                 ├─ doubled[#8] ─ counter[#6]
+                                 ├─ doubled[#7] ─ counter[#6]
                                  │
-                                 └─ isEven[#9] ─ counter[#6]`.slice(1),
+                                 └─ isEven[#8] ─ counter[#6]`.slice(1),
   )
 })
 

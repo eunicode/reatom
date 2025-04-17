@@ -12,7 +12,7 @@ test('action', () => {
 test('action cause stack', () => {
   const name = 'actionCauseStack'
   const getTrace = (frame?: Frame) =>
-    getStackTrace('', ' ', frame)
+    getStackTrace(undefined, undefined, frame)
       .replaceAll(`${name}.`, '')
       .replace(/\[\#\d*\]/g, '')
   const a1 = atom(0, `${name}.a1`)

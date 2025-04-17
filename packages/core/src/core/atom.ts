@@ -472,8 +472,9 @@ export let createAtom: {
         let topFrame = top()
         let frame = contextFrame.state.store.get(target)!
         let push = !reactive || arguments.length !== 0
+        let isInit = frame === undefined
 
-        if (frame === undefined) {
+        if (isInit) {
           frame = {
             error: null,
             state: undefined as State,
@@ -513,7 +514,7 @@ export let createAtom: {
           !target.__reatom.processing &&
           (push || dirty || (dependent && !subscribed))
         ) {
-          STACK.push((frame = _copy(contextFrame, frame)))
+          STACK.push(isInit ? frame : (frame = _copy(contextFrame, frame)))
 
           if (reactive) target.__reatom.processing = true
 

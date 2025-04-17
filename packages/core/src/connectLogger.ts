@@ -19,54 +19,63 @@ let getSerial = (frame = top()) => {
   return `[#${serial}]`
 }
 
-export let getStackTrace = (
-  acc = '',
-  steps = acc && ' '.repeat(acc.length),
-  frame = top(),
-): string => {
-  if (acc.length > 200) return acc + ' [...]'
+type Node = { name: string; children: Node[]; pubs: Frame['pubs'] }
+// use BFS to touch duplicates as earlier as possible to reduce the log width
+let prepareFrameStack = (frame: Frame): Node => {
+  let node: Node = {
+    name: frame.atom.name + getSerial(frame),
+    children: [],
+    pubs: frame.pubs,
+  }
+  let queue = [node]
+  let touched = new Set<Frame>()
 
-  let name = `─ ${frame.atom.name}${getSerial(frame)}`
-  acc += name
-  steps += ' '.repeat(name.length)
-
-  let lines = frame.pubs.flatMap((pub) => {
-    if (pub === null || pub.atom === context) return []
-    return [getStackTrace('', steps, pub)]
-  })
-  if (lines.length === 1) {
-    acc += ' ' + lines[0]
-  } else if (lines.length > 1) {
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i]!
-      if (i === 0) {
-        acc += ' ┬'
-      } else {
-        acc += steps + '  │' + '\n'
-        acc += steps + (i === lines.length - 1 ? '  └' : '  ├')
+  for (let i = 0; i < queue.length; i++) {
+    let node = queue[i]!
+    for (let i = 0; i < node.pubs.length; i++) {
+      let pub = node.pubs[i]!
+      if (pub !== null && pub.atom !== context) {
+        let child: Node = {
+          name: pub.atom.name + getSerial(pub),
+          children: [],
+          pubs: pub.pubs,
+        }
+        node.children.push(child)
+        if (!touched.has(pub)) {
+          touched.add(pub)
+          queue.push(child)
+        }
       }
-      acc += line + '\n'
+    }
+  }
+
+  return node
+}
+
+export let concatTree = (acc: string, steps: string, node: Node): string => {
+  if (steps.length > 200) return acc + ' [...]'
+
+  let { name, children } = node
+  acc += name
+  steps += ' '.repeat(acc.length)
+
+  for (let i = 0; i < children.length; i++) {
+    let child = children[i]!
+    if (i === 0) {
+      let hasMore = children.length > 1
+      acc += concatTree(hasMore ? ' ┬─ ' : ' ─ ', steps, child)
+    } else {
+      let isLast = i === children.length - 1
+      acc += '\n' + steps + ' │\n' + steps
+      acc += concatTree(isLast ? ' └─ ' : ' ├─ ', steps, child)
     }
   }
 
   return acc
 }
 
-let logStackTrace = () => {
-  console.log('stack:')
-  console.log(
-    '└' +
-      top()
-        .pubs.reduce(
-          (acc, frame) =>
-            acc +
-            (frame === null || frame.atom === context
-              ? ''
-              : getStackTrace('', '', frame) + '\n\n'),
-          '',
-        )
-        .slice(1),
-  )
+export let getStackTrace = (acc = '─ ', steps = '', frame = top()): string => {
+  return concatTree(acc, steps, prepareFrameStack(frame))
 }
 
 export let connectLogger = () => {
@@ -94,7 +103,7 @@ export let connectLogger = () => {
           console.groupCollapsed(`${title}${getSerial()}`, style)
           if (isNodeEnv) console.log(state)
           console.log('prev:', prevState)
-          logStackTrace()
+          console.log('stack:\n', getStackTrace())
           console.log('connected:', isConnected(target))
           if (!isNodeEnv) console.log('frame:', top())
           console.groupEnd()
@@ -104,7 +113,7 @@ export let connectLogger = () => {
           console.groupCollapsed(`${title}${getSerial()}`, style)
           if (isNodeEnv) console.log(payload)
           params.forEach((param, i) => console.log(`param ${i + 1}:`, param))
-          logStackTrace()
+          console.log('stack:\n', getStackTrace())
           if (!isNodeEnv) console.log('frame:', top())
           console.groupEnd()
           if (!isNodeEnv) console.log(payload)
