@@ -38,7 +38,7 @@ export let reatomAbstractRender = <Props, Result>({
     let _render = computed((state?: { result: Result }): { result: Result } => {
       let pubs = getPrevPubs()
 
-      enqueue(() => pubs.length = 1, 'cleanup')
+      enqueue(() => (pubs.length = 1), 'cleanup')
 
       let props = _props()
 
@@ -83,7 +83,7 @@ export let reatomAbstractRender = <Props, Result>({
 
       return wrap(() => {
         unsubscribe()
-        abortVar.get()?.(toAbortError('unmount ' + name))
+        abortAtom(toAbortError('unmount ' + name))
       })
     })
 

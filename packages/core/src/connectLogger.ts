@@ -14,7 +14,10 @@ let getSerial = (frame = top()) => {
   let serial = serialNumbers.get(frame)
   if (serial === undefined) {
     let next = ++serialCount
-    serialNumbers.set(frame, (serial = next.toString(next < 1e4 ? 10 : 32)))
+    serialNumbers.set(
+      frame,
+      (serial = next + (next < 1e4 ? '' : (next - 1e4).toString(32))),
+    )
   }
 
   return `[#${serial}]`
