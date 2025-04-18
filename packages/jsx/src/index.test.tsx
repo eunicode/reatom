@@ -646,7 +646,7 @@ test('style object update', () =>
     const styleRightAtom = atom<JSX.StyleProperties['right']>(undefined)
     const styleBottomAtom = atom<JSX.StyleProperties['bottom']>(null)
     const styleLeftAtom = atom<JSX.StyleProperties['left']>('0')
-    const styleAtom = atom<JSX.StyleProperties>(() => ({
+    const styleAtom = computed<JSX.StyleProperties>(() => ({
       top: styleTopAtom(),
       right: styleRightAtom(),
       bottom: styleBottomAtom(),
