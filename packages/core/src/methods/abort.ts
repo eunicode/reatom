@@ -3,7 +3,6 @@ import {
   createAtom,
   context,
   top,
-  withAssign,
   withParams,
   computed,
 } from '../core'
@@ -57,6 +56,6 @@ export let abortVar = variable((option: string | AbortAtom): AbortAtom => {
         option,
       ).extend(
         withParams((value) => toAbortError(value || `${name} abort`)),
-        withAssign(abortMethods),
+        () => abortMethods,
       )
 })

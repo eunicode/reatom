@@ -5,7 +5,6 @@ import {
   Action,
   isAction,
   AssignerExt,
-  withAssign,
   withParams,
   action,
 } from './'
@@ -14,10 +13,10 @@ import { withChangeHook } from '../mixins'
 import { expect, expectTypeOf, test } from 'test'
 
 // Simple extension for testing
-const withProp = <P extends string, V>(
+const withProp = <const P extends string, V>(
   prop: P,
   value: V,
-): AssignerExt<{ [k in P]: V }> => withAssign({ [prop]: value })
+): AssignerExt<Record<P, V>> => () => ({ [prop]: value } as Record<P, V>)
 
 test('1 assigner extension', () => {
   const name = '1ext'

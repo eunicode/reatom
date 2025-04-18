@@ -1,5 +1,5 @@
 import type { Atom, AtomLike, AtomState, Computed, Ext } from '../core'
-import { createAtom, ReatomError, top, withAssign } from '../core'
+import { createAtom, ReatomError, top } from '../core'
 import { assert } from '../utils'
 import { wrap } from '../methods'
 
@@ -45,13 +45,11 @@ export type SuspenseExt<State> = {
   suspended: Computed<Awaited<State>>
 }
 
-export let withSuspense = <
-  T extends AtomLike & Partial<SuspenseExt<AtomState<T>>>,
->({ preserve = false }: { preserve?: boolean } = {}): Ext<
-  T,
-  T & SuspenseExt<AtomState<T>>
-> =>
-  withAssign<T, SuspenseExt<AtomState<T>>>((target) => ({
+export let withSuspense =
+  <T extends AtomLike & Partial<SuspenseExt<AtomState<T>>>>({
+    preserve = false,
+  }: { preserve?: boolean } = {}): Ext<T, SuspenseExt<AtomState<T>>> =>
+  (target) => ({
     suspended:
       target.suspended ??
       createAtom<any>(
@@ -88,7 +86,7 @@ export let withSuspense = <
         },
         `${target.name}.suspended`,
       ),
-  }))
+  })
 
 export let suspense = <T>(target: AtomLike<T>): Awaited<T> =>
   ('suspended' in target

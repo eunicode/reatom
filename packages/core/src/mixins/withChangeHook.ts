@@ -15,7 +15,7 @@ export let withChangeHook = <Target extends AtomLike>(
     state: AtomState<Target>,
     prevState: undefined | AtomState<Target>,
   ) => void,
-): Ext<Target> => {
+): Ext<Target, Target> => {
   if (typeof cb !== 'function') {
     throw new ReatomError('function expected')
   }
@@ -56,7 +56,7 @@ export let addChangeHook = <T extends AtomLike>(
 
 export let withCallHook = <Target extends Action>(
   cb: (payload: ReturnType<Target>, params: OverloadParameters<Target>) => void,
-): Ext<Target> => {
+): Ext<Target, Target> => {
   if (typeof cb !== 'function') {
     throw new ReatomError('function expected')
   }

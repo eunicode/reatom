@@ -1,23 +1,33 @@
-import { Action, AtomLike, AtomState, ReatomError, top } from '.'
+import { Action, AtomLike, AtomState, isAtom, ReatomError, top } from '.'
 import type { Fn, OverloadParameters, Rec } from '../utils'
 
 export interface Ext<
   Target extends AtomLike = AtomLike,
-  MixedTarget extends AtomLike = Target,
+  MixedTarget = Target | Rec,
 > {
   (target: Target): MixedTarget
 }
 
+type Merge<
+  Target extends AtomLike,
+  Extensions extends Array<any>,
+> = Extensions extends []
+  ? Target
+  : Extensions extends [infer E, ...infer Rest extends Array<any>]
+    ? Merge<E extends AtomLike ? E : Target & E, Rest>
+    : never
+
 export interface Extend<This extends AtomLike> {
-  /* prettier-ignore */ <T extends AtomLike>(extension: Ext<This, T>): T
-  /* prettier-ignore */ <T1 extends AtomLike, T2 extends AtomLike>(extension1: Ext<This, T1>, extension2: Ext<T1, T2>): T2
-  /* prettier-ignore */ <T1 extends AtomLike, T2 extends AtomLike, T3 extends AtomLike, T4 extends AtomLike>(extension1: Ext<This, T1>, extension2: Ext<T1, T2>, extension3: Ext<T2, T3>, extension4: Ext<T3, T4>): T4
-  /* prettier-ignore */ <T1 extends AtomLike, T2 extends AtomLike, T3 extends AtomLike, T4 extends AtomLike, T5 extends AtomLike>(extension1: Ext<This, T1>, extension2: Ext<T1, T2>, extension3: Ext<T2, T3>, extension4: Ext<T3, T4>, extension5: Ext<T4, T5>): T5
-  /* prettier-ignore */ <T1 extends AtomLike, T2 extends AtomLike, T3 extends AtomLike, T4 extends AtomLike, T5 extends AtomLike, T6 extends AtomLike>(extension1: Ext<This, T1>, extension2: Ext<T1, T2>, extension3: Ext<T2, T3>, extension4: Ext<T3, T4>, extension5: Ext<T4, T5>, extension6: Ext<T5, T6>): T6
-  /* prettier-ignore */ <T1 extends AtomLike, T2 extends AtomLike, T3 extends AtomLike, T4 extends AtomLike, T5 extends AtomLike, T6 extends AtomLike, T7 extends AtomLike>(extension1: Ext<This, T1>, extension2: Ext<T1, T2>, extension3: Ext<T2, T3>, extension4: Ext<T3, T4>, extension5: Ext<T4, T5>, extension6: Ext<T5, T6>, extension7: Ext<T6, T7>): T7
-  /* prettier-ignore */ <T1 extends AtomLike, T2 extends AtomLike, T3 extends AtomLike, T4 extends AtomLike, T5 extends AtomLike, T6 extends AtomLike, T7 extends AtomLike, T8 extends AtomLike>(extension1: Ext<This, T1>, extension2: Ext<T1, T2>, extension3: Ext<T2, T3>, extension4: Ext<T3, T4>, extension5: Ext<T4, T5>, extension6: Ext<T5, T6>, extension7: Ext<T6, T7>, extension8: Ext<T7, T8>): T8
-  /* prettier-ignore */ <T1 extends AtomLike, T2 extends AtomLike, T3 extends AtomLike, T4 extends AtomLike, T5 extends AtomLike, T6 extends AtomLike, T7 extends AtomLike, T8 extends AtomLike, T9 extends AtomLike>(extension1: Ext<This, T1>, extension2: Ext<T1, T2>, extension3: Ext<T2, T3>, extension4: Ext<T3, T4>, extension5: Ext<T4, T5>, extension6: Ext<T5, T6>, extension7: Ext<T6, T7>, extension8: Ext<T7, T8>, extension9: Ext<T8, T9>): T9
-  /* prettier-ignore */ <T1 extends AtomLike, T2 extends AtomLike, T3 extends AtomLike, T4 extends AtomLike, T5 extends AtomLike, T6 extends AtomLike, T7 extends AtomLike, T8 extends AtomLike, T9 extends AtomLike, T10 extends AtomLike>(extension1: Ext<This, T1>, extension2: Ext<T1, T2>, extension3: Ext<T2, T3>, extension4: Ext<T3, T4>, extension5: Ext<T4, T5>, extension6: Ext<T5, T6>, extension7: Ext<T6, T7>, extension8: Ext<T7, T8>, extension9: Ext<T8, T9>, extension10: Ext<T9, T10>): T10
+  /* prettier-ignore */ <T1>(extension1: Ext<This, T1>): Merge<This, [T1]>
+  /* prettier-ignore */ <T1, T2>(extension1: Ext<This, T1>, extension2: Ext<Merge<This, [T1]>, T2>): Merge<This, [T1, T2]>
+  /* prettier-ignore */ <T1, T2, T3>(extension1: Ext<This, T1>, extension2: Ext<Merge<This, [T1]>, T2>, extension3: Ext<Merge<This, [T1, T2]>, T3>): Merge<This, [T1, T2, T3]>
+  /* prettier-ignore */ <T1, T2, T3, T4>(extension1: Ext<This, T1>, extension2: Ext<Merge<This, [T1]>, T2>, extension3: Ext<Merge<This, [T1, T2]>, T3>, extension4: Ext<Merge<This, [T1, T2, T3]>, T4>): Merge<This, [T1, T2, T3, T4]>
+  /* prettier-ignore */ <T1, T2, T3, T4, T5>(extension1: Ext<This, T1>, extension2: Ext<Merge<This, [T1]>, T2>, extension3: Ext<Merge<This, [T1, T2]>, T3>, extension4: Ext<Merge<This, [T1, T2, T3]>, T4>, extension5: Ext<Merge<This, [T1, T2, T3, T4]>, T5>): Merge<This, [T1, T2, T3, T4, T5]>
+  /* prettier-ignore */ <T1, T2, T3, T4, T5, T6>(extension1: Ext<This, T1>, extension2: Ext<Merge<This, [T1]>, T2>, extension3: Ext<Merge<This, [T1, T2]>, T3>, extension4: Ext<Merge<This, [T1, T2, T3]>, T4>, extension5: Ext<Merge<This, [T1, T2, T3, T4]>, T5>, extension6: Ext<Merge<This, [T1, T2, T3, T4, T5]>, T6>): Merge<This, [T1, T2, T3, T4, T5, T6]>
+  /* prettier-ignore */ <T1, T2, T3, T4, T5, T6, T7>(extension1: Ext<This, T1>, extension2: Ext<Merge<This, [T1]>, T2>, extension3: Ext<Merge<This, [T1, T2]>, T3>, extension4: Ext<Merge<This, [T1, T2, T3]>, T4>, extension5: Ext<Merge<This, [T1, T2, T3, T4]>, T5>, extension6: Ext<Merge<This, [T1, T2, T3, T4, T5]>, T6>, extension7: Ext<Merge<This, [T1, T2, T3, T4, T5, T6]>, T7>): Merge<This, [T1, T2, T3, T4, T5, T6, T7]>
+  /* prettier-ignore */ <T1, T2, T3, T4, T5, T6, T7, T8>(extension1: Ext<This, T1>, extension2: Ext<Merge<This, [T1]>, T2>, extension3: Ext<Merge<This, [T1, T2]>, T3>, extension4: Ext<Merge<This, [T1, T2, T3]>, T4>, extension5: Ext<Merge<This, [T1, T2, T3, T4]>, T5>, extension6: Ext<Merge<This, [T1, T2, T3, T4, T5]>, T6>, extension7: Ext<Merge<This, [T1, T2, T3, T4, T5, T6]>, T7>, extension8: Ext<Merge<This, [T1, T2, T3, T4, T5, T6, T7]>, T8>): Merge<This, [T1, T2, T3, T4, T5, T6, T7, T8]>
+  /* prettier-ignore */ <T1, T2, T3, T4, T5, T6, T7, T8, T9>(extension1: Ext<This, T1>, extension2: Ext<Merge<This, [T1]>, T2>, extension3: Ext<Merge<This, [T1, T2]>, T3>, extension4: Ext<Merge<This, [T1, T2, T3]>, T4>, extension5: Ext<Merge<This, [T1, T2, T3, T4]>, T5>, extension6: Ext<Merge<This, [T1, T2, T3, T4, T5]>, T6>, extension7: Ext<Merge<This, [T1, T2, T3, T4, T5, T6]>, T7>, extension8: Ext<Merge<This, [T1, T2, T3, T4, T5, T6, T7]>, T8>, extension9: Ext<Merge<This, [T1, T2, T3, T4, T5, T6, T7, T8]>, T9>): Merge<This, [T1, T2, T3, T4, T5, T6, T7, T8, T9]>
+  /* prettier-ignore */ <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(extension1: Ext<This, T1>, extension2: Ext<Merge<This, [T1]>, T2>, extension3: Ext<Merge<This, [T1, T2]>, T3>, extension4: Ext<Merge<This, [T1, T2, T3]>, T4>, extension5: Ext<Merge<This, [T1, T2, T3, T4]>, T5>, extension6: Ext<Merge<This, [T1, T2, T3, T4, T5]>, T6>, extension7: Ext<Merge<This, [T1, T2, T3, T4, T5, T6]>, T7>, extension8: Ext<Merge<This, [T1, T2, T3, T4, T5, T6, T7]>, T8>, extension9: Ext<Merge<This, [T1, T2, T3, T4, T5, T6, T7, T8]>, T9>, extension10: Ext<Merge<This, [T1, T2, T3, T4, T5, T6, T7, T8, T9]>, T10>): Merge<This, [T1, T2, T3, T4, T5, T6, T7, T8, T9, T10]>
   <T extends Array<Ext>>(
     ...extensions: T
   ): {
@@ -29,7 +39,13 @@ export function extend<This extends AtomLike>(
   this: This,
   ...extensions: Array<Ext>
 ) {
-  for (let ext of extensions) ext(this)
+  for (let ext of extensions) {
+    let result = ext(this)
+    if (this !== result && isAtom(result)) {
+      throw new ReatomError('extend can not change the atom')
+    }
+    Object.assign(this, result)
+  }
   return this
 }
 
@@ -37,26 +53,8 @@ export interface AssignerExt<
   Methods extends Rec = {},
   Target extends AtomLike = AtomLike,
 > {
-  <T extends Target>(target: T): T & Methods
+  <T extends Target>(target: T): Methods
 }
-
-export let withAssign: {
-  <Methods extends Rec>(cb: (target: AtomLike) => Methods): AssignerExt<Methods>
-
-  <Target extends AtomLike, Methods extends Rec>(
-    cb: (target: Target) => Methods,
-  ): (target: Target) => Target & Methods
-
-  <Methods extends Rec>(methods: Methods): AssignerExt<Methods, AtomLike>
-
-  <Target extends AtomLike, Methods extends Rec>(
-    methods: Methods,
-  ): (target: Target) => Target & Methods
-} = (methodsOrCb: {}) => (target: AtomLike) =>
-  Object.assign(
-    target,
-    typeof methodsOrCb === 'function' ? methodsOrCb(target) : methodsOrCb,
-  )
 
 // @ts-expect-error
 export let withMiddleware: {

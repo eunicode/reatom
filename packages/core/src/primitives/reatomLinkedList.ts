@@ -680,10 +680,10 @@ export function reatomLinkedList<
   //           )
   //         },
   //         named(`${name}._controllers`),
-  //       ).pipe(
-  //         withAssign((target) => ({
+  //       ).extend(
+  //         (target) => ({
   //           unsubscribe: ctx.subscribe(target, noop),
-  //         })),
+  //         }),
   //       ),
   //     {
   //       name: `${name}._controllers`,

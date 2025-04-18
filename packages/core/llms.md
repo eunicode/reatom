@@ -2,7 +2,7 @@
 
 This guide outlines the core principles and patterns for working with Reatom, a state management library for JavaScript/TypeScript applications. It's designed to help LLM code assistants understand and generate high-quality Reatom code.
 
-> **Important**: Reatom runs all atoms and actions in a separate context, but to start using it this knowledge isn't required as we have a default context (default root). For advanced usage involving server-side rendering or testing, see the [Context System](#context-system) section at the end of this document.
+Version: `@reatom/core@alpha` (`@reatom/core@1000`).
 
 ## Core Concepts
 
@@ -90,7 +90,25 @@ Actions are best used when you need to:
 1. Orchestrate multiple state changes
 2. Perform side effects (API calls, localStorage, etc.)
 3. Implement complex business logic
-4. Handle errors or implement retry logic
+
+## Atomization Pattern
+
+Reatom encourages the "atomization" pattern - representing mutable properties as individual atoms:
+
+```ts
+// ❌ BAD: state holds multiple editable properties
+const user = atom({ id: '1', name: 'Alice', email: 'alice@example.com' })
+
+// ✅ GOOD: separate editable properties to individual atoms
+const name = atom('Alice', 'name')
+const email = atom('alice@example.com', 'email')
+
+// Structure can be composed:
+const user = { id: '1', name, email }
+
+// Direct updates are efficient:
+name('Bob') // Only updates the name atom
+```
 
 ## Extension System
 
@@ -113,52 +131,22 @@ counter.decrement()
 counter.reset()
 ```
 
-### Applying Extensions
-
-Use the `.extend()` method to apply extensions that enhance functionality:
-
-```ts
-// Apply an extension to add async handling
-const fetchUser = action(async (id) => {
-  // Fetch user data
-  return await api.getUser(id)
-}, 'fetchUser').extend(withAsync())
-
-// Now you can check loading state
-const isLoading = !fetchUser.ready()
-const error = fetchUser.error()
-```
-
-## Atomization Pattern
-
-Reatom encourages the "atomization" pattern - representing mutable properties as individual atoms:
-
-```ts
-// Instead of one large atom:
-// const user = atom({ id: '1', name: 'Alice', email: 'alice@example.com' })
-
-// Use atomization:
-const userName = atom('Alice', 'userName')
-const userEmail = atom('alice@example.com', 'userEmail')
-
-// Structure can be composed:
-const user = { id: '1', name: userName, email: userEmail }
-
-// Direct updates are efficient:
-userName('Bob') // Only updates the name atom
-```
-
 ## Async Operations
 
-Reatom provides tools for handling asynchronous operations:
+Reatom provides extensions for handling asynchronous operations:
 
 ```ts
 // Using withAsync extension
-const fetchData = action(async (id) => {
-  const response = await wrap(fetch(`/api/data/${id}`))
-  return await wrap(response.json())
+const sendForm = action(async (formData) => {
+  await wrap(api.submitForm(formData))
 }, 'fetchData').extend(withAsync())
+sendForm.ready() // `false` when pending, `true` by default
+sendForm.error() // `undefined` by default
+```
 
+Using `withAsync` for data fetching probably antipattern, it is match suitable for "put" / "post" / "delete" requests. For data fetching use async computed and `withAsyncData`.
+
+```ts
 // Using withAsyncData to store the result
 const userData = computed(async () => {
   const id = userId()
@@ -167,26 +155,47 @@ const userData = computed(async () => {
 }, 'userData').extend(withAsyncData(null))
 
 // Access data and loading state
-const data = userData.data()
-const isLoading = !userData.ready()
+const data = userData.data() // `null` by default, as the second argument of `withAsyncData` "initState" is not provided
+const isLoading = !userData.ready() // `false` when pending, `false` by default (before the first fetch)
 const error = userData.error()
 ```
 
 ## Context Preservation
 
-Use `wrap()` to preserve reactive context across async boundaries:
+Use `wrap()` to preserve reactive context across async boundaries, like promises and functions:
 
 ```ts
+const results = atom([])
 const fetchAndProcess = action(async () => {
-  // Without wrap, context would be lost after await
-  const data = await wrap(fetch('/api/data').then((r) => r.json()))
+  // ❌ BAD: The context is lost after the await
+  const data = await fetch('/api/data').then((r) => r.json())
+  results(data) // will throw missed context
 
-  // We can still access and update atoms here
-  results(data)
+  // ❌ BAD: Wrapped promise shouldn't be chained
+  const data = await wrap(fetch('/api/data')).then((r) => r.json())
+  results(data) // will throw missed context
+
+  // ✅ GOOD: await used on a wrapped promise
+  const data = await wrap(fetch('/api/data').then((r) => r.json()))
+  results(data) // will work
+
+  // ❌ BAD: The context is lost in async function call
+  fetch('/api/data')
+    .then((r) => r.json())
+    .then((data) => {
+      results(data) // will throw missed context
+    })
+
+  // ✅ GOOD: the result atom processed in wrapped function
+  fetch('/api/data')
+    .then((r) => r.json())
+    .then(
+      wrap((data) => {
+        results(data) // will work
+      }),
+    )
 })
 ```
-
-> **Note**: The reactive context preservation with `wrap()` isn't required by default for basic usage, but it's absolutely essential when writing code that will run in different contexts (like server-side rendering or testing). A positive side effect of using `wrap()` is that the logger can track the causes of async and reactive operations, making debugging much easier.
 
 ## Framework Integration
 
@@ -194,13 +203,19 @@ Reatom integrates with popular UI frameworks:
 
 ### React
 
+`reatomComponent` - is a computed atom with React component, it allows you to use atoms directly in JSX, but the render function works just like regular React component, it is ok to use hooks and accept some props.
+
 ```tsx
-// Using reatomComponent for direct atom access
-const UserProfile = reatomComponent(() => {
+const UserProfile = reatomComponent<{ className?: string }>(({ className }) => {
+  const [t] = useTranslation()
   return (
-    <div>
-      <h1>{userName()}</h1>
-      <p>{userEmail()}</p>
+    <div className={className}>
+      <p>
+        {t('name')}: {user.name()}
+      </p>
+      <p>
+        {t('email')}: {user.email()}
+      </p>
     </div>
   )
 })
@@ -208,12 +223,14 @@ const UserProfile = reatomComponent(() => {
 
 ## Best Practices
 
-1. **Name your atoms and actions** for better debugging (second parameter)
-2. **Use atomization** for complex state structures
-3. **Prefer computed atoms** over deriving data in components
-4. **Use extensions** for cross-cutting concerns
-5. **Preserve context** with `wrap()` in async operations
-6. **Group related state and actions** in domain-specific modules
+IMPORTANT:
+
+1. **Name your atoms and actions** for better debugging (second parameter), do not prefix "Atom" or "Action", call atoms and actions as regular variables and functions. Own atoms and actions factories name should starts with `reatom*`, like `reatomDialog` or `reatomTimer`, it should accept its variable name and use it in internal atoms name, like `const count = atom(0, name + '.count')`.
+2. **Use atomization** for complex state structures, each individual editable pease of state should be an atom, it can be even nested.
+3. **Prefer computed atoms** over deriving data in components.
+4. **Use extensions** for cross-cutting concerns.
+5. **Preserve context** with `wrap()` in async operations and functions.
+6. **Group related state and actions** around main atom or action with `extend`.
 
 ## Common Patterns
 
@@ -260,6 +277,8 @@ const submitForm = action(async () => {
   username('')
   email('')
   password('')
+
+  navigate('/')
 }, 'submitForm')
 ```
 
@@ -274,168 +293,215 @@ This approach allows for:
 Here's a more realistic example of a todo application using Reatom:
 
 ```ts
-import { atom, computed, action, parseAtoms, wrap } from '@reatom/core'
+// FILE: app.tsx
+import {
+  atom,
+  computed,
+  action,
+  reatomEnum,
+  wrap,
+  withChangeHook,
+  withInit,
+} from '@reatom/core'
+import type { Atom, Action, Computed } from '@reatom/core'
+import { reatomComponent } from '@reatom/react'
 
 // Define the Todo type
 interface Todo {
   id: string
-  text: string
-  completed: boolean
+
+  // atomize editable properties
+  text: Atom<string>
+  completed: Atom<boolean>
+  visible: Computed<boolean>
+
+  // atomization supposed to include relative actions too
+  toggle: Action
+  remove: Action
 }
 
-// State atoms
-const todos = atom<Todo[]>([], 'todos')
 const newTodoText = atom('', 'newTodoText')
-const filter = atom<'all' | 'active' | 'completed'>('all', 'filter')
-const isLoading = atom(false, 'isLoading')
+  // additional features
+  .extend(
+    withInit((state) => localStorage.getItem('newTodoText') || state),
+    withChangeHook((state) => localStorage.setItem('newTodoText', state)),
+  )
 
-// Computed values
-const filteredTodos = computed(() => {
-  const currentFilter = filter()
-  const allTodos = todos()
+const filter = reatomEnum(['all', 'active', 'completed'], 'filter')
 
-  switch (currentFilter) {
-    case 'active':
-      return allTodos.filter(todo => !todo.completed)
-    case 'completed':
-      return allTodos.filter(todo => todo.completed)
-    default:
-      return allTodos
-  }
-}, 'filteredTodos')
+const todos = atom<Todo[]>([], 'todos')
+  .actions((target) => ({
+    create() {
+      const description = newTodoText().trim()
+      if (!description) return
 
-const activeTodoCount = computed(() =>
-  todos().filter(todo => !todo.completed).length,
-  'activeTodoCount'
-)
+      const id = Date.now().toString()
 
-const hasCompletedTodos = computed(() =>
-  todos().some(todo => todo.completed),
-  'hasCompletedTodos'
-)
+      const name = `${target.name}#${id}`
 
-// Actions
-const addTodo = action(() => {
-  const text = newTodoText().trim()
-  if (!text) return
+      const text = atom(description, `${name}.text`)
 
-  todos(current => [
-    ...current,
-    { id: Date.now().toString(), text, completed: false }
-  ])
+      const completed = atom(false, `${name}.completed`)
 
-  // Clear input field
-  newTodoText('')
-}, 'addTodo')
+      const visible = computed(
+        () =>
+          filter() === 'all' ||
+          (filter() === 'active' && !completed()) ||
+          (filter() === 'completed' && completed()),
+        `${name}.visible`,
+      )
 
-const toggleTodo = action((id: string) => {
-  todos(current => current.map(todo =>
-    todo.id === id ? { ...todo, completed: !todo.completed } : todo
-  ))
-}, 'toggleTodo')
+      const toggle = action(
+        () => completed((current) => !current),
+        `${name}.toggle`,
+      )
 
-const removeTodo = action((id: string) => {
-  todos(current => current.filter(todo => todo.id !== id))
-}, 'removeTodo')
+      const remove = action(
+        () => target((current) => current.filter((todo) => todo.id !== id)),
+        `${name}.remove`,
+      )
 
-const clearCompleted = action(() => {
-  todos(current => current.filter(todo => !todo.completed))
-}, 'clearCompleted')
+      const todo = {
+        id,
+        text,
+        completed,
+        visible,
+        toggle,
+        remove,
+      }
 
-const setFilter = action((newFilter: 'all' | 'active' | 'completed') => {
-  filter(newFilter)
-}, 'setFilter')
+      target((current) => [...current, todo])
+      newTodoText('')
+    },
 
-// Async actions
-const fetchTodos = action(async () => {
-  isLoading(true)
+    clearCompleted() {
+      target((current) => current.filter((todo) => !todo.completed()))
+    },
+  }))
+  // assign relative properties
+  .extend((target) => ({
+    activeCount: computed(
+      () => target().filter((todo) => !todo.completed()).length,
+      `${target.name}.activeCount`,
+    ),
+    completedCount: computed(
+      () => target().filter((todo) => todo.completed()).length,
+      `${target.name}.completedCount`,
+    ),
+  }))
 
-  try {
-    const response = await wrap(fetch('/api/todos'))
-    const data = await wrap(response.json())
-    todos(data)
-  } catch (error) {
-    console.error('Failed to fetch todos:', error)
-  } finally {
-    isLoading(false)
-  }
-}, 'fetchTodos').extend(withAsync())
+const Task = reatomComponent<{ task: Todo }>(({ task }) => {
+  if (!task.visible()) return null
 
-// React component example
+  return (
+    <li key={task.id}>
+      <input
+        type="checkbox"
+        checked={task.completed()}
+        onChange={wrap(task.toggle)}
+      />
+      <span
+        style={{
+          textDecoration: task.completed() ? 'line-through' : 'none',
+        }}
+      >
+        {task.text()}
+      </span>
+      <button onClick={wrap(task.remove)}>×</button>
+    </li>
+  )
+})
+
 const TodoApp = reatomComponent(() => {
   return (
     <div>
-      <header>
+      <form
+        onSubmit={wrap((e) => {
+          e.preventDefault()
+          todos.create()
+        })}
+      >
         <h1>Todos</h1>
         <input
           value={newTodoText()}
-          onChange={e => newTodoText(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && addTodo()}
+          onChange={wrap((e) => newTodoText(e.target.value))}
           placeholder="What needs to be done?"
         />
-      </header>
+      </form>
 
-      {isLoading() ? (
-        <p>Loading...</p>
-      ) : (
-        <ul>
-          {filteredTodos().map(todo => (
-            <li key={todo.id}>
-              <input
-                type="checkbox"
-                checked={todo.completed}
-                onChange={() => toggleTodo(todo.id)}
-              />
-              <span style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>
-                {todo.text}
-              </span>
-              <button onClick={() => removeTodo(todo.id)}>×</button>
-            </li>
-          ))}
-        </ul>
-      )}
+      <ul>
+        {todos().map((task) => (
+          <Task key={task.id} task={task} />
+        ))}
+      </ul>
 
       <footer>
-        <span>{activeTodoCount()} items left</span>
-
+        <div>{todos.activeCount()} items left</div>
         <div>
-          <button onClick={() => setFilter('all')}>All</button>
-          <button onClick={() => setFilter('active')}>Active</button>
-          <button onClick={() => setFilter('completed')}>Completed</button>
+          <button onClick={wrap(filter.setAll)}>All</button>
+          <button onClick={wrap(filter.setActive)}>Active</button>
+          <button onClick={wrap(filter.setCompleted)}>Completed</button>
         </div>
-
-        {hasCompletedTodos() && (
-          <button onClick={clearCompleted}>Clear completed</button>
-        )}
+        <div>{todos.completedCount()} items completed</div>
+        <button onClick={wrap(todos.clearCompleted)}>Clear completed</button>
       </footer>
     </div>
   )
 })
+
+// FILE: debug.ts
+import { connectLogger } from '@reatom/core'
+connectLogger()
+
+// FILE: main.tsx
+import ReactDOM from 'react-dom/client'
+import { reatomContext } from '@reatom/react'
+import { context, clearStack } from '@reatom/core'
+import './debug' // import before the whole other code!
+
+clearStack() // reset default context in the app root to force `wrap` usage
+
+const root = ReactDOM.createRoot(document.getElementById('root')!)
+root.render(
+  <reatomContext.Provider value={context.start()}>
+    <TodoApp />
+  </reatomContext.Provider>,
+)
+
 ```
 
 ### Data Fetching with Auto-Cancellation
 
+The auto-cancellation feature is a powerful aspect of Reatom's async handling which is added by `withAbort` which is included in `withAsyncData`:
+
 ```ts
-import { atom, computed, withAsyncData, wrap } from '@reatom/core'
+import { atom, computed, withAsyncData, wrap, sleep } from '@reatom/core'
 
-const userId = atom('user-1', 'userId')
+const query = atom('', 'query')
 
-const userProfile = computed(async () => {
-  const id = userId()
-  const response = await wrap(fetch(`/api/users/${id}`))
-  if (!response.ok) throw new Error(`Failed to fetch user ${id}`)
+const suggestions = computed(async () => {
+  const searchQuery = query()
+  if (searchQuery.length < 2) return []
+
+  // Debounce (wrap will throw abort if the query will changed before the debounce is over)
+  await wrap(sleep(350))
+
+  // Simulate an API call
+  const response = await wrap(fetch(`/api/suggestions?q=${searchQuery}`))
+  if (!response.ok)
+    throw new Error(`Failed to fetch suggestions for "${searchQuery}"`)
   return await wrap(response.json())
-}, 'userProfile').extend(withAsyncData(null))
+}, 'suggestions').extend(withAsyncData(null, [])) // Initial data is an empty array
 
-// When userId changes, previous fetch is automatically cancelled
-userId('user-2')
+// When query changes, previous fetch is automatically cancelled
+query('Reatom')
+
+suggestions.data() // The array of suggestions from the API.
 ```
 
-The auto-cancellation feature is a powerful aspect of Reatom's async handling which is added by `withAsync` which is included in `withAsyncData`:
+1. **How it works**: When a dependency (like `query`) changes, Reatom automatically aborts any pending async operations from previous computations before they complete.
 
-1. **How it works**: When a dependency (like `userId`) changes, Reatom automatically aborts any pending async operations from previous computations before they complete.
-
-2. **Why it's important**: This prevents race conditions and stale data. Without auto-cancellation, if you quickly change `userId` multiple times, you might get responses in an unpredictable order, potentially showing outdated data.
+2. **Why it's important**: This prevents race conditions and stale data. Without auto-cancellation, if you quickly change `query` multiple times, you might get responses in an unpredictable order, potentially showing outdated data.
 
 3. **Benefits**:
    - Prevents memory leaks
@@ -443,177 +509,72 @@ The auto-cancellation feature is a powerful aspect of Reatom's async handling wh
    - Reduces unnecessary network traffic
    - Eliminates the need for manual cleanup code
 
-### Authentication Flow Example
+### `take`: Awaiting State Changes
 
-Here's a realistic authentication flow using Reatom:
+The `take` function allows you to `await` the next update of an atom or the next call of an action within an async function. It's a shortcut for subscribing and immediately unsubscribing after the first event.
+
+> `take` respects Reatom's abort context and will throw an `AbortError` if the context is aborted (e.g., by `withAbort` or `withAsyncData`). This enables writing redux-saga-like procedural logic using `async/await`.
+
+**Example: Async Validation Loop**
 
 ```ts
-import { atom, computed, action, withAsyncData, wrap } from '@reatom/core'
+import { atom, action, take, wrap } from '@reatom/core'
 
-// State atoms
-const user = atom(null, 'user')
-const authToken = atom(localStorage.getItem('authToken') || null, 'authToken')
-const loginForm = {
-  email: atom('', 'loginForm.email'),
-  password: atom('', 'loginForm.password'),
-  rememberMe: atom(false, 'loginForm.rememberMe')
+// Assume formData atom and validate function exist
+const formData = atom({ value: '', error: null }, 'formData')
+const validate = (data: { value: string }) =>
+  data.value.length > 3 ? null : 'Too short'
+
+export const submitWhenValid = action(async () => {
+  let error = validate(formData())
+
+  while (error) {
+    // Wait for the *next* change in formData
+    await wrap(take(formData)) // Use wrap!
+    // Re-validate after the change
+    error = validate(formData())
+  }
+  // Proceed with submission logic...
+}, 'submitWhenValid')
+```
+
+**Example: Confirming Navigation (Awaiting Action)**
+
+```ts
+import { atom, action, take, wrap, withConnectHook } from '@reatom/core'
+// Assume historyAtom and confirmModal (with open/close actions) exist
+declare const historyAtom: any
+declare const confirmModal: {
+  isOpen: Atom<boolean>
+  open: Action<[title: string, message: string], void>
+  close: Action<[confirmed: boolean], boolean>
 }
 
-// Computed states
-const isAuthenticated = computed(() => !!authToken(), 'isAuthenticated')
-const isEmailValid = computed(() => {
-  const email = loginForm.email()
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-}, 'isEmailValid')
+const form = atom({ isDirty: false, isSubmitted: false }, 'form').extend(
+  withConnectHook(() => {
+    const unblock = historyAtom.block(
+      async ({ retry }: { retry: () => void }) => {
+        if (form().isDirty && !form().isSubmitted && !confirmModal.isOpen()) {
+          confirmModal.open('Leave page?', 'Unsaved changes.')
 
-const isFormValid = computed(() => {
-  return isEmailValid() && loginForm.password().length >= 6
-}, 'isFormValid')
+          // Wait for the modal's close action payload
+          const confirmed = await wrap(take(confirmModal.close))
 
-// Actions
-const login = action(async () => {
-  if (!isFormValid()) return { success: false, error: 'Invalid form data' }
-
-  const credentials = {
-    email: loginForm.email(),
-    password: loginForm.password()
-  }
-
-  const response = await wrap(fetch('/api/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(credentials)
-  }))
-
-  if (!response.ok) {
-    const error = await wrap(response.text())
-    return { success: false, error }
-  }
-
-  const data = await wrap(response.json())
-
-  // Store token
-  authToken(data.token)
-
-  // Save to localStorage if remember me is checked
-  if (loginForm.rememberMe()) {
-    localStorage.setItem('authToken', data.token)
-  }
-
-  // Reset form
-  loginForm.email('')
-  loginForm.password('')
-
-  return { success: true }
-}, 'login').extend(withAsync())
-
-const logout = action(() => {
-  // Clear auth data
-  authToken(null)
-  user(null)
-  localStorage.removeItem('authToken')
-}, 'logout')
-
-// Fetch user profile when authenticated
-const userProfile = computed(async () => {
-  const token = authToken()
-  if (!token) return null
-
-  const response = await wrap(fetch('/api/me', {
-    headers: { 'Authorization': `Bearer ${token}` }
-  }))
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      // Token expired or invalid
-      logout()
-      return null
-    }
-    throw new Error('Failed to fetch user profile')
-  }
-
-  return await wrap(response.json())
-}, 'userProfile').extend(withAsyncData(null))
-
-// Subscribe to user profile changes
-userProfile.data.subscribe(userData => {
-  if (userData) {
-    user(userData)
-  }
-})
-
-// React component example
-const LoginForm = reatomComponent(() => {
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    login()
-  }
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <label>Email</label>
-        <input
-          type="email"
-          value={loginForm.email()}
-          onChange={e => loginForm.email(e.target.value)}
-        />
-        {!isEmailValid() && loginForm.email() && (
-          <p>Please enter a valid email</p>
-        )}
-      </div>
-
-      <div>
-        <label>Password</label>
-        <input
-          type="password"
-          value={loginForm.password()}
-          onChange={e => loginForm.password(e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label>
-          <input
-            type="checkbox"
-            checked={loginForm.rememberMe()}
-            onChange={e => loginForm.rememberMe(e.target.checked)}
-          />
-          Remember me
-        </label>
-      </div>
-
-      <button type="submit" disabled={!isFormValid() || !login.ready()}>
-        {!login.ready() ? 'Logging in...' : 'Login'}
-      </button>
-
-      {login.error() && (
-        <p>Error: {login.error().message}</p>
-      )}
-    </form>
-  )
-})
-
-const UserDashboard = reatomComponent(() => {
-  const userData = userProfile.data()
-
-  if (!userData) {
-    return <p>Loading user data...</p>
-  }
-
-  return (
-    <div>
-      <h1>Welcome, {userData.name}</h1>
-      <button onClick={logout}>Logout</button>
-      {/* Dashboard content */}
-    </div>
-  )
-})
-
-const App = reatomComponent(() => {
-  return isAuthenticated() ? <UserDashboard /> : <LoginForm />
-})
+          if (confirmed) {
+            unblock()
+            retry()
+          }
+        } else {
+          retry()
+        }
+      },
+    )
+    return unblock
+  }),
+)
 ```
+
+Use `take` to coordinate async workflows based on state changes or action calls, simplifying complex sequences. Remember `wrap()`.
 
 ### Debugging
 
@@ -627,22 +588,32 @@ connectLogger()
 
 ## Creating Custom Extensions
 
-You can create your own extensions to add reusable functionality to atoms and actions. **Important**: Always use the built-in `withAssign` and `withMiddleware` helpers rather than writing extensions manually.
+You can create your own extensions to add reusable functionality to atoms and actions. **Important**: Always use the built-in `withMiddleware` helper for middleware extensions. For assigner extensions, simply return the object to assign directly from the extension function.
 
 ### Creating an Assigner Extension
 
-Assigner extensions add properties or methods to atoms:
+Assigner extensions add properties or methods to atoms by returning an object from the extension function.
 
 ```ts
-import { Atom, action, withAssign } from '@reatom/core'
+import {
+  AtomLike,
+  AtomState,
+  Action,
+  // AtomState, // Duplicate import removed
+  action,
+  Ext,
+  Atom, // Added Atom for better type hint in example
+} from '@reatom/core'
 
 // Extension that adds a reset method to atoms
-const withReset = <T>(initialValue: T) => {
-  // Always use withAssign for property extensions
-  return withAssign((target: Atom<T>) => ({
+const withReset = <TAtom extends Atom>( // Use Atom for better type inference
+  initState: AtomState<TAtom>,
+): Ext<TAtom, { reset: Action<[], AtomState<TAtom>> }> => { // Specify Action payload type
+  // Return the extension function
+  return (target) => ({
     // Return an object with properties to be assigned to the target
-    reset: action(() => target(initialValue), `${target.name}.reset`),
-  }))
+    reset: action(() => target(initState), `${target.name}.reset`), // Use initState from closure
+  })
 }
 
 // Usage
@@ -656,18 +627,20 @@ counter.reset() // Resets to 0
 Middleware extensions can intercept and modify atom/action behavior:
 
 ```ts
-import { AtomLike, withMiddleware } from '@reatom/core'
+import { AtomLike, Ext, withMiddleware } from '@reatom/core'
 
 // Extension that logs all updates to an atom
 interface LoggerOptions {
   prefix?: string
 }
 
-const withLogger = (options: LoggerOptions = {}) => {
+const withLogger = <T extends AtomLike>(
+  options: LoggerOptions = {},
+): Ext<T, T> => {
   const { prefix = 'LOG' } = options
 
   // Always use withMiddleware for behavior extensions
-  return withMiddleware((target: AtomLike) => {
+  return withMiddleware((target) => {
     // Return a middleware function
     return (next, ...params) => {
       console.log(`${prefix} [${target.name}] Before:`, params)
@@ -709,34 +682,16 @@ Remember that Reatom's API is designed to be intuitive and composable. The core 
 
 ## Context System
 
-Reatom has a powerful context system that allows atoms and actions to run in isolated environments. This is a critical feature for:
+Reatom has a powerful context system that allows atoms and actions to run in isolated environments. It is inspired by "zone.js" and the concept of async context (`AsyncLocalStorage` in node.js). This is a critical feature for:
 
-1. **Server-Side Rendering (SSR)**: Each request needs its own isolated state
-2. **Testing**: Tests need to run with clean, isolated state
-3. **Multiple instances**: Running multiple independent instances of your app
+1. **Server-Side Rendering (SSR)**: Each request needs its own isolated state.
+2. **Testing**: Tests need to run with clean, isolated state.
+3. **Abort propagation**: `withAbort` and `withAsyncData` allows actions and atoms to run in a concurrent way.
+4. **Debug stack traces**: Reatom logger and debugger can track the whole dependencies tree of running atoms and actions.
 
-### How the Context System Works
+To archive this, Reatom uses a global variable under the hood to follow the current execution context. To track this context properly for all async boundaries, like functions and promises, a user code should use the `wrap` method.
 
-At the core of Reatom's context system is the `STACK` - a global array that tracks the current execution context:
-
-```ts
-// The current execution context stack
-export let STACK: Array<Frame> = []
-
-// Get the current frame at the top of the stack
-export let top = (): Frame => {
-  if (STACK.length === 0) {
-    throw new ReatomError('missing async stack')
-  }
-  return STACK[STACK.length - 1]!
-}
-```
-
-Each "frame" in the stack represents a point in the execution where an atom was accessed or modified. This allows Reatom to:
-
-1. Track dependencies between atoms
-2. Ensure reactive updates work correctly
-3. Isolate different execution contexts
+Reatom provides default context out of the box which allow user to not use `wrap` at all, but it is recommended to avoid this behavior. To turn off the default context `clearStack` should be called in the beginning of the app.
 
 ### Using Different Contexts
 
@@ -773,20 +728,80 @@ app.get('/', (req, res) => {
 })
 ```
 
-### Preserving Context Across Async Boundaries
+## References
 
-The `wrap()` function is essential for preserving context across async boundaries:
-
-```ts
-const fetchData = action(async () => {
-  // Without wrap, the context would be lost after the await
-  const response = await wrap(fetch('/api/data'))
-  const data = await wrap(response.json())
-
-  // Because we used wrap(), we can still access atoms here
-  // and they'll be in the same context
-  dataAtom(data)
-})
-```
-
-Without `wrap()`, the async operation would lose the Reatom context, and any atom operations after the await would happen in a different context or fail entirely.
+- `getStackTrace`: Gets a formatted stack trace for debugging.
+- `connectLogger`: Connects a logger to Reatom for debugging.
+- `interface AsyncExt`: Extension interface for async operations, adding `ready`, `onFulfill`, `onReject`, `onSettle`, `pending`, and `error` properties.
+- `type AsyncOptions`: Options for configuring async extensions.
+- `withAsync`: Extension to add async handling capabilities to atoms and actions.
+- `interface AsyncDataExt`: Extension interface for async data fetching, extending `AsyncExt` and adding a `data` atom.
+- `withAsyncData`: Extension to handle async data fetching and store the result in a `data` atom.
+- `interface ActionState`: Autoclearable array of processed events for actions.
+- `interface Action`: Logic container with atom features, representing an action.
+- `isAction`: Checks if a value is an action.
+- `action`: Creates a new action.sion.
+- `type ActionsExt`: Extension interface for adding multiple actions to an atom.
+- `interface AtomLike`: Base interface for all atom-like entities (atoms, computed, actions).
+- `interface Atom`: Base changeable state container.
+- `interface Computed`: Derived state container.
+- `isAtom`: Checks if a value is an atom.
+- `isConnected`: Checks if an atom is connected (has subscribers).
+- `named`: Generates a unique name for an atom or action.
+- `computed`: Creates a new computed atom.
+- `context`: The current execution context atom.
+- `interface Ext`: Interface for an atom extension.
+- `interface AssignerExt`: Extension interface for adding properties to atoms.
+- `withMiddleware`: Extension to add middleware to an atom or action.
+- `type TapExt`: Extension type for adding a tap hook to an atom.
+- `withTap`: Extension to add a tap hook that is called after an atom's state changes.
+- `interface ParamsExt`: Extension interface for adding parameters to an atom or action.
+- `withParams`: Extension to add parameters to an atom or action.
+- `interface AbortMethods`: Interface for methods related to aborting operations.
+- `interface AbortAtom`: Atom that represents an abort signal.
+- `abortVar`: Variable to manage the current abort atom in the context.
+- `ifChanged`: Reacts to changes in a reactive atom within a computed context.
+- `ifCalled`: Reacts to calls of an action within a reactive context.
+- `isCausedBy`: Checks if an atom's update was caused by another atom.
+- `peek`: Peeks at an atom's state without creating a dependency.
+- `schedule`: Schedules a function to be executed in the effect queue.
+- `take`: Returns a promise that resolves with the next state or payload of an atom or action.
+- `findVar`: Finds a variable in the current frame or its publishers.
+- `interface Variable`: Interface for an async context variable emulation.
+- `variable`: Creates a new async context variable.
+- `wrap`: Preserves reactive context across async boundaries.
+- `interface AbortExt`: Extension interface for adding an `abort` method.
+- `withAbort`: Extension to add abort functionality to atoms and actions.
+- `withComputed`: Extension to add a computed derivation to an atom's state.
+- `withInit`: Extension to initialize an atom's state.
+- `withMemo`: Extension to memoize an atom's state based on a comparison function.
+- `withChangeHook`: Extension to add a hook that is called when an atom's state changes.
+- `addChangeHook`: Adds a change hook to an atom and returns an unsubscribe function.
+- `withCallHook`: Extension to add a hook that is called when an action is called.
+- `addCallHook`: Adds a call hook to an action and returns an unsubscribe function.
+- `type SuspenseExt`: Extension type for adding a `suspended` computed atom.
+- `withSuspense`: Extension to add suspense capabilities to an atom.
+- `suspense`: Gets the settled value of an atom with suspense.
+- `type ParseAtoms`: Recursively unwraps atoms and linked list nodes from a type.
+- `parseAtoms`: Recursively unwraps atoms and linked list nodes from a value.
+- `interface ArrayAtom`: Atom with methods for manipulating an array state.
+- `reatomArray`: Creates an atom with an array state and array manipulation methods.
+- `interface BooleanAtom`: Atom with methods for manipulating a boolean state.
+- `reatomBoolean`: Creates an atom with a boolean state and boolean manipulation methods.
+- `type EnumAtom`: Atom with methods for managing an enum state.
+- `reatomEnum`: Creates an atom with an enum state and enum manipulation methods.
+- `type LLNode`: Type for a node in a linked list.
+- `interface LinkedList`: Interface for a linked list state.
+- `interface LinkedListLikeAtom`: Atom-like interface for a linked list atom.
+- `interface LinkedListAtom`: Atom with methods for manipulating a linked list state.
+- `reatomLinkedList`: Creates an atom with a linked list state and linked list manipulation methods.
+- `interface MapAtom`: Atom with methods for manipulating a Map state.
+- `reatomMap`: Creates an atom with a Map state and Map manipulation methods.
+- `interface NumberAtom`: Atom with methods for manipulating a number state.
+- `reatomNumber`: Creates an atom with a number state and number manipulation methods.
+- `interface RecordAtom`: Atom with methods for manipulating a Record state.
+- `reatomRecord`: Creates an atom with a Record state and Record manipulation methods.
+- `interface SetAtom`: Atom with methods for manipulating a Set state.
+- `reatomSet`: Creates an atom with a Set state and Set manipulation methods.
+- `type StringAtom`: Atom with a method for resetting a string state.
+- `reatomString`: Creates an atom with a string state and a reset method.

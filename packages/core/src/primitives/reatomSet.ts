@@ -5,7 +5,6 @@ import {
   computed,
   Computed,
   named,
-  withAssign,
 } from '../core'
 
 export interface SetAtom<T> extends Atom<Set<T>> {
@@ -51,9 +50,7 @@ export const reatomSet = <T>(
         }),
       reset: () => target(atomInitState),
     }))
-    .extend(
-      withAssign((target) => ({
-        size: computed(() => target().size, `${target.name}.size`),
-      })),
-    )
+    .extend((target) => ({
+      size: computed(() => target().size, `${target.name}.size`),
+    }))
 }

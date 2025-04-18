@@ -1,11 +1,4 @@
-import {
-  type Action,
-  type Atom,
-  atom,
-  computed,
-  named,
-  withAssign,
-} from '../core'
+import { type Action, type Atom, atom, computed, named } from '../core'
 import { Computed } from '../core'
 
 export interface MapAtom<Key, Value> extends Atom<Map<Key, Value>> {
@@ -63,9 +56,7 @@ export const reatomMap = <Key, Value>(
 
       return actions
     })
-    .extend(
-      withAssign((target) => ({
-        size: computed(() => target().size, `${target.name}.size`),
-      })),
-    )
+    .extend((target) => ({
+      size: computed(() => target().size, `${target.name}.size`),
+    }))
 }

@@ -1,12 +1,4 @@
-import {
-  Action,
-  Atom,
-  atom,
-  named,
-  ReatomError,
-  withAssign,
-  withMiddleware,
-} from '../core'
+import { Action, Atom, atom, named, ReatomError, withMiddleware } from '../core'
 import { Fn } from '../utils'
 
 export type EnumFormat = 'camelCase' | 'snake_case'
@@ -88,7 +80,7 @@ export const reatomEnum = <
         {} as EnumVariantSetters<T, Format>,
       ),
     )
-    .extend(
-      withAssign({ enum: Object.fromEntries(variants.map((v) => [v, v])) }),
-    ) as EnumAtom<T, Format>
+    .extend(() => ({
+      enum: Object.fromEntries(variants.map((v) => [v, v])),
+    })) as EnumAtom<T, Format>
 }
