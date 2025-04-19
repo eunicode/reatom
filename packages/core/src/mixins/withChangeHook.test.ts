@@ -8,7 +8,7 @@ test('atomChange', () => {
   const a1 = atom(0, `${name}.a1`).extend(
     withChangeHook((state, prevState) => {
       expectTypeOf(state).toBeNumber()
-      expectTypeOf(prevState).toBeNumber()
+      expectTypeOf(prevState).toExtend<undefined | number>()
       cb(state, prevState)
     }),
   )
