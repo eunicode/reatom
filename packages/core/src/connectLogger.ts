@@ -113,8 +113,16 @@ export let connectLogger = () => {
       if (!isNodeEnv) console.log(payload)
     }
 
+    let initKey = {}
+
     return target.__reatom.reactive
       ? withChangeHook<T>((state, prevState) => {
+          let { init } = context().state.meta
+          if (!init.has(initKey)) {
+            init.set(initKey, null)
+            if (top().pubs[0]!.atom === context) return
+          }
+
           logStack(state, () => {
             console.log('prev:', prevState)
             console.log('connected:', isConnected(target))

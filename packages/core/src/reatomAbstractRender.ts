@@ -43,7 +43,7 @@ export let reatomAbstractRender = <Props, Result>({
       let props = _props()
 
       if (rendering) {
-        abortAtom = abortVar.set(abortAtom ?? `${name}.abort`)
+        abortAtom = abortVar.set(abortAtom ?? `${name}._abort`)
         return { result: adapterRender(props) }
       }
 
