@@ -221,6 +221,8 @@ const UserProfile = reatomComponent<{ className?: string }>(({ className }) => {
 })
 ```
 
+> Note: do NOT create atoms inside render function, atom reference should be stable.
+
 ## Best Practices
 
 IMPORTANT:
@@ -608,7 +610,8 @@ import {
 // Extension that adds a reset method to atoms
 const withReset = <TAtom extends Atom>( // Use Atom for better type inference
   initState: AtomState<TAtom>,
-): Ext<TAtom, { reset: Action<[], AtomState<TAtom>> }> => { // Specify Action payload type
+): Ext<TAtom, { reset: Action<[], AtomState<TAtom>> }> => {
+  // Specify Action payload type
   // Return the extension function
   return (target) => ({
     // Return an object with properties to be assigned to the target
