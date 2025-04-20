@@ -1,9 +1,16 @@
 import { assert, Fn, isAbort, noop, Overloads } from '../utils'
-import { top, context, STACK, ReatomError } from '../core'
+import { top, context, STACK, ReatomError, Frame } from '../core'
 import { abortVar } from './abort'
 
 /** Bind reatom context to function or promise (for await) */
-export let wrap = <T extends Promise<any> | Fn>(
+export let wrap: {
+  <Params extends any[], Payload>(
+    target: (...params: Params) => Payload,
+    frame?: Frame,
+  ): (...params: Params) => Payload
+
+  <T extends Promise<any>>(target: T, frame?: Frame): T
+} = <T extends Promise<any> | Fn>(
   target: T,
   frame = top(),
 ): T extends Fn ? (Fn extends T ? T : Overloads<T>) : T => {

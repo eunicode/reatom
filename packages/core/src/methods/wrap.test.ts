@@ -1,4 +1,4 @@
-import { expect, test } from 'test'
+import { expect, expectTypeOf, test } from 'test'
 
 import { atom, computed, context } from '../core'
 import { wrap } from './wrap'
@@ -46,11 +46,28 @@ test('async frame stack', async () => {
   )
 
   expect(logs).toEqual([
-    "0 ─ log ─ a0",
-    "2 ─ log ─ a0 ─ loop ─ a2 ─ a1 ─ a0",
-    "4 ─ log ─ a0 ─ loop ─ a2 ─ a1 ─ a0 ─ loop ─ a2 ─ a1 ─ a0",
+    '0 ─ log ─ a0',
+    '2 ─ log ─ a0 ─ loop ─ a2 ─ a1 ─ a0',
+    '4 ─ log ─ a0 ─ loop ─ a2 ─ a1 ─ a0 ─ loop ─ a2 ─ a1 ─ a0',
   ])
 
   expect(context().pubs).toEqual([null])
   expect(context().subs.length).toBe(0)
+})
+
+test('types', () => {
+  let onEvent = (cb?: (name: string) => void) => cb
+
+  onEvent(
+    wrap((value) => {
+      expectTypeOf(value).toBeString()
+    }),
+  )
+
+  let cbWithGeneric = <T extends string | number>(value: T): T => value
+  let wrapWithGeneric = wrap(cbWithGeneric)
+
+  let genericParams: Parameters<typeof wrapWithGeneric>
+
+  expectTypeOf(genericParams!).toEqualTypeOf<[string | number]>()
 })
