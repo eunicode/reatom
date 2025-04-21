@@ -10,6 +10,7 @@ import {
   Rec,
   STACK,
   wrap,
+  abortVar,
 } from '@reatom/core'
 
 // useLayoutEffect will show warning if used during ssr, e.g. with Next.js
@@ -83,9 +84,8 @@ export let reatomComponent = <Props extends Rec>(
               }
             },
             mount() {
-              // TODO TESTS
-              // Drop abort if remount appears (strict mode or so on)
-              // abortVar.read()?.(null)
+              // reset abort in case if remount (StrictMode and o on) appears
+              abortVar.read()?.(null)
             },
             rerender,
             name,
