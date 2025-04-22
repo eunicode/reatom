@@ -19,7 +19,6 @@ import {
   addChangeHook,
   isObject,
   atom,
-  withInit,
   context,
 } from '@reatom/core'
 import type { AttributesAtomMaybe, JSX } from './jsx'
@@ -51,13 +50,13 @@ export let DEBUG = atom(true, 'jsx.DEBUG')
 
 let stylesCount = 0
 let styles: Rec<string> = {}
-export let stylesheet = atom<HTMLElement>(null as any, 'jsx.stylesheet').extend(
-  withInit(
-    (state) =>
-      state ?? // could be initialized with different element
-      DOM().document.head.appendChild(DOM().document.createElement('style')),
-  ),
-)
+/**
+ * @note Create style tag for support oldest browser.
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleSheet/CSSStyleSheet
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/Document/adoptedStyleSheets
+ * @see https://measurethat.net/Benchmarks/Show/5920
+ */
+export let stylesheet = atom(() => DOM().document.head.appendChild(DOM().document.createElement('style')).sheet!, 'jsx.stylesheet')
 let name = ''
 
 /**
@@ -350,7 +349,7 @@ let set = (dom: DomApis, element: JSX.Element, key: string, val: any) => {
     let styleId = styles[val]
     if (!styleId) {
       styleId = styles[val] = '' + ++stylesCount
-      stylesheet().innerText += `[data-reatom-style="${styleId}"]{${val}}\n`
+      stylesheet().insertRule(`[data-reatom-style="${styleId}"]{${val}}`)
     }
 
     /** @see https://measurethat.net/Benchmarks/Show/11819 */

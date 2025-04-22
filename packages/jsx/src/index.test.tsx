@@ -13,7 +13,7 @@ import {
   wrap,
 } from '@reatom/core'
 
-import { h, hf, mount, Bind, DEBUG, type JSX } from '.'
+import { h, hf, mount, Bind, DEBUG, type JSX, stylesheet } from '.'
 
 clearStack()
 
@@ -1023,4 +1023,20 @@ test('aria attributes', () =>
     expectAttribute('aria-checked', 'true')
     expectAttribute('aria-colcount', 1)
     expectAttribute('aria-colcount', '1')
+  }))
+
+test('custom stylesheet for css property', () =>
+  context.start(async () => {
+    const sheet = new CSSStyleSheet()
+    document.adoptedStyleSheets.push(sheet)
+    stylesheet(sheet)
+
+    const element = <div css="display:flex"></div>
+
+    mount(parent(), element)
+    await wrap(sleep())
+
+    expect(stylesheet()).toEqual(sheet)
+    expect(stylesheet().cssRules.length).toBe(1)
+    expect(element.computedStyleMap().get('display').toString(), 'flex')
   }))
