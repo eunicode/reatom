@@ -1,59 +1,53 @@
 import { bench, describe } from 'vitest'
+import { atom } from '@reatom/core'
 
 describe('Node extend', () => {
   const createNode = () => document.createElement('div')
-  const createExtends = () => ({ a: 1, b: 'b', c: {}, d: [], e: () => {} })
+  const extension = { a: 1, b: 'b', c: {}, d: [], e: () => {} }
 
   const strategies = {
-    'direct assingment': {
+    'property': {
       assert: (node: any) => '__extends' in node,
-      create: () => {
-        const node = createNode()
-        // @ts-expect-error
-        node.__extends = createExtends()
-        return node
-      },
+      extend: (node: any) => {node.__extends = extension},
       read: (node: any) => node.__extends,
     },
+    'symbol': (() => {
+      const symbol = Symbol()
+      return {
+        assert: (node: any) => symbol in node,
+        extend: (node: any) => {node[symbol] = extension},
+        read: (node: any) => node[symbol],
+      }
+    })(),
     'Object.assign': {
       assert: (node: any) => '__extends' in node,
-      create: () => Object.assign(createNode(), createExtends()),
+      extend: (node: any) => {Object.assign(node, extension)},
       read: (node: any) => node.__extends,
     },
     'WeakMap': (() => {
       const map = new WeakMap<Node, object>()
       return {
         assert: (node: any) => map.has(node),
-        create: () => {
-          const node = createNode()
-          map.set(node, createExtends())
-          return node
-        },
+        extend: (node: any) => {map.set(node, extension)},
         read: (node: any) => map.get(node),
       }
     })(),
   } as const
 
   describe('assert', () => Object.entries(strategies).forEach(([name, strategy]) => {
-    let node: Node
-    bench(
-      name,
-      () => {strategy.assert(node)},
-      {setup: () => {node = strategy.create()}},
-    )
+    const node = createNode()
+    strategy.extend(node)
+    bench(name, () => {strategy.assert(node)})
   }))
 
-  describe('create', () => Object.entries(strategies).forEach(([name, strategy]) => {
-    bench(name, () => {strategy.create()})
+  describe('extend', () => Object.entries(strategies).forEach(([name, strategy]) => {
+    bench(name, () => {strategy.extend(createNode())})
   }))
 
   describe('read', () => Object.entries(strategies).forEach(([name, strategy]) => {
-    let node: Node
-    bench(
-      name,
-      () => {strategy.read(node)},
-      {setup: () => {node = strategy.create()}},
-    )
+    const node = createNode()
+    strategy.extend(node)
+    bench(name, () => {strategy.read(node)})
   }))
 })
 
@@ -70,7 +64,7 @@ describe('location to save subscriptions', () => {
     parent.__unsubscribes = []
     const list = [parent]
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 50; i++) {
       const node = createNode()
       parent.appendChild(node)
       parent = node
@@ -98,20 +92,24 @@ describe('location to save subscriptions', () => {
   } as const
 
   describe('subscribe', () => Object.entries(strategies).forEach(([name, strategy]) => {
-    let nodes: NodeWithSubs[]
-    bench(
-      name,
-      () => nodes.forEach(strategy),
-      {setup: () => {nodes = createNodes()}}
-    )
+    bench(name, () => {
+      const nodes = createNodes()
+      nodes.forEach(strategy)
+    })
   }))
 
   describe('unsubscribe', () => Object.entries(strategies).forEach(([name, strategy]) => {
-    let nodes: NodeWithSubs[]
-    bench(
-      name,
-      () => nodes.forEach((node) => unsubscribe(node)),
-      {setup: () => {nodes = createNodes();nodes.forEach(strategy)}},
-    )
+    bench(name, () => {
+      const nodes = createNodes()
+      nodes.forEach(strategy)
+      nodes.forEach(unsubscribe)
+    })
   }))
+})
+
+describe('read value', () => {
+  const valueState = 'value'
+  const valueAtom = atom(valueState)
+  bench('state', () => {valueState})
+  bench('atom', () => {valueAtom()})
 })
