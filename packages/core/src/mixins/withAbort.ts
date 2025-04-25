@@ -1,6 +1,7 @@
-import { AssignerExt, atom, ReatomError, top } from '../core'
+import { AssignerExt, context, ReatomError, top } from '../core'
 import { AbortAtom, abortVar } from '../methods'
-import { assert, Fn, toAbortError } from '../utils'
+import { _getPrevAtomFrame, _getPrevFrame } from '../methods/context'
+import { assert, Fn, isAbort, noop, toAbortError } from '../utils'
 
 export interface AbortExt {
   abort: (reason?: any) => void
@@ -16,34 +17,26 @@ export let withAbort = (
   )
 
   return (target) => {
-    // TODO replace with context meta
-    let _abortContainer = atom<null | AbortAtom>(
-      null,
-      `${target.name}._abortContainer`,
-    )
-
     let abortMiddleware = (next: Fn, ...params: any[]) => {
-      let prevAbort = _abortContainer()
+      let frame = top()
+      let prevFrame = _getPrevFrame(frame)
+      let prevAbort = prevFrame && abortVar.current(prevFrame)
 
-      let prevState = top().state
+      let prevState = frame.state
       let state = prevState
       let abort: AbortAtom
 
       if (!prevAbort /* init */) {
-        // initiate in the current frame, not in the _abortContainer update callback
-        abort = abortVar.set(`${target.name}.abort`)
-        _abortContainer(() => abort)
+        abort = abortVar.set(`${target.name}._abort`)
+
         state = next(...params)
       } else {
-        // initiate in the current frame, not in the _abortContainer update callback
-        abort = abortVar.set(`${target.name}.abort`)
-        _abortContainer(() => abort)
+        abort = abortVar.set(`${target.name}._abort`)
 
         state = next(...params)
 
         if (target.__reatom.reactive && Object.is(prevState, state)) {
           abortVar.set(prevAbort)
-          _abortContainer(() => prevAbort)
 
           return state
         }
@@ -57,7 +50,17 @@ export let withAbort = (
 
       if (maybePromise instanceof Promise) {
         maybePromise = new Promise((res, rej) => {
-          maybePromise.finally(abort.subscribeAbort(rej)).then(res).catch(rej)
+          let un = abort.subscribeAbort(rej)
+          ;(maybePromise as Promise<any>)
+            .then((value) => {
+              un()
+              res(value)
+            })
+            .catch((error) => {
+              if (isAbort(error)) maybePromise.catch(noop)
+              un()
+              rej(error)
+            })
         })
 
         if (target.__reatom.reactive) {
@@ -73,9 +76,10 @@ export let withAbort = (
     target.__reatom.middlewares.push(abortMiddleware)
 
     let abort = (reason?: any) => {
-      _abortContainer()?.(reason)
+      let frame = context().state.store.get(target)
+      if (frame) abortVar.current(frame)?.(reason)
     }
 
-    return Object.assign(target, { abort, _abortContainer })
+    return Object.assign(target, { abort })
   }
 }

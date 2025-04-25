@@ -1,5 +1,14 @@
-import { AtomLike, Frame, isConnected, context, top } from './core'
-import { withCallHook, withChangeHook } from './mixins'
+import {
+  AtomLike,
+  Frame,
+  isConnected,
+  context,
+  top,
+  withMiddleware,
+  enqueue,
+  ActionState,
+  bind,
+} from './core'
 import { Fn, isBrowser } from './utils'
 
 let isSkip = (target: AtomLike) =>
@@ -102,36 +111,77 @@ export let connectLogger = () => {
       style = `${color}font-size: 12px; font-weight: 600; padding: 0.15em;  padding-right: 1ch;`
     }
 
-    let logStack = (payload: any, cb: Fn) => {
-      console.groupCollapsed(`${title}${getSerial()}`, style)
-      if (isNodeEnv) console.log(payload)
+    let logStack = (payload: any, error: any, cb: Fn) => {
+      console.groupCollapsed(
+        `${title}${getSerial()}`,
+        style + (error ? 'color: red;' : ''),
+      )
+      if (isNodeEnv) console.log(error ?? payload)
       cb()
-      console.log('stack:')
+      console.groupCollapsed('stack:')
       console.log(getStackTrace())
+      console.groupEnd()
       if (!isNodeEnv) console.log('frame:', top())
       console.groupEnd()
-      if (!isNodeEnv) console.log(payload)
+      if (!isNodeEnv) console.log(error ?? payload)
     }
 
     let initKey = {}
 
-    return target.__reatom.reactive
-      ? withChangeHook<T>((state, prevState) => {
-          let { init } = context().state.meta
-          if (!init.has(initKey)) {
-            init.set(initKey, null)
-            if (top().pubs[0]!.atom === context) return
-          }
+    return target.extend(
+      withMiddleware(
+        () =>
+          function logger(next, ...params) {
+            // enqueue log BEFORE `next` call to arrange logs with the order of atoms and actions call
+            enqueue(
+              bind(() => {
+                if (target.__reatom.reactive) {
+                  if (Object.is(prevState, state)) return
 
-          logStack(state, () => {
-            console.log('prev:', prevState)
-            console.log('connected:', isConnected(target))
-          })
-        })(target)
-      : withCallHook<T>((payload, params) => {
-          logStack(payload, () => {
-            params.forEach((param, i) => console.log(`param ${i + 1}:`, param))
-          })
-        })(target)
+                  let { init } = context().state.meta
+                  if (!init.has(initKey)) {
+                    init.set(initKey, null)
+                    if (params.length === 0) return
+                  }
+
+                  logStack(state, error, () => {
+                    console.log('prev:', prevState)
+                    console.log('connected:', isConnected(target))
+                  })
+                } else {
+                  let call = (state as ActionState)[state.length - 1]
+                  if (error) {
+                    logStack(undefined, error, () =>
+                      params.forEach((param, i) =>
+                        console.log(`param ${i + 1}:`, param),
+                      ),
+                    )
+                  } else if (call) {
+                    logStack(call.payload, error, () =>
+                      call.params.forEach((param, i) =>
+                        console.log(`param ${i + 1}:`, param),
+                      ),
+                    )
+                  }
+                }
+              }),
+              'hook',
+            )
+
+            let prevState = top().state
+            let state: typeof prevState
+            let error: any
+
+            try {
+              state = next(...params)
+            } catch (e) {
+              error = e ?? new Error('unknown error')
+              throw e
+            }
+
+            return state
+          },
+      ),
+    )
   })
 }

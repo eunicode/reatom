@@ -85,6 +85,8 @@ export interface Store extends WeakMap<Atom, Frame> {
   ): this
 }
 
+export type FunctionSource = string
+
 /** @internal */
 export interface ContextMeta {
   init: WeakMap<WeakKey, any>
@@ -97,6 +99,7 @@ export interface ContextMeta {
       next: Frame
     }
   >
+  select: WeakMap<AtomLike, Record<FunctionSource, AtomLike>>
   [key: string]: WeakMap<WeakKey, any>
 }
 
@@ -291,7 +294,7 @@ function subscribe(this: AtomLike, userCb?: Fn) {
     relink(frame!, [null])
   }
 
-  return contextFrame.run.bind(contextFrame, () => {
+  return bind(() => {
     // console.log('unsubscribe', this.name)
 
     if (!frame) return
@@ -307,7 +310,7 @@ function subscribe(this: AtomLike, userCb?: Fn) {
     }
 
     frame = undefined
-  })
+  }, contextFrame)
 }
 
 let i = 0
@@ -652,6 +655,7 @@ context.start = (cb = top) => {
           variable: new WeakMap(),
           abort: new WeakMap(),
           frames: new WeakMap(),
+          select: new WeakMap(),
         },
         hook: [],
         compute: [],
@@ -688,3 +692,10 @@ export let top = (): Frame => {
   }
   return STACK[STACK.length - 1]!
 }
+
+/** Light version of `wrap`, which is NOT follow abort context */
+export let bind = <Params extends any[], Payload>(
+  target: (...params: Params) => Payload,
+  frame = top(),
+): ((...params: Params) => Payload) =>
+  frame.run.bind(frame, target) as (...params: Params) => Payload

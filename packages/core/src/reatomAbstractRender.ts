@@ -1,6 +1,6 @@
-import { _read, atom, computed, type Frame, enqueue } from './core'
+import { _read, atom, computed, type Frame, enqueue, bind } from './core'
 import { _getPrevFrame } from './methods/context'
-import { AbortAtom, abortVar, variable, wrap } from './methods'
+import { AbortAtom, abortVar, peek, variable, wrap } from './methods'
 import { toAbortError, Unsubscribe } from './utils'
 
 export interface AbstractRender<Props, Result> {
@@ -44,6 +44,11 @@ export let reatomAbstractRender = <Props, Result>({
 
       if (rendering) {
         abortAtom = abortVar.set(abortAtom ?? `${name}._abort`)
+        // Related to react remounts of `StrictMode` and `Activity`.
+        if (peek(abortAtom) !== null) {
+          abortAtom(null)
+        }
+
         return { result: adapterRender(props) }
       }
 
@@ -62,7 +67,7 @@ export let reatomAbstractRender = <Props, Result>({
       return { result: state!.result }
     }, `${name}._render`)
 
-    let render = frame.run.bind(frame, (props: Props) => {
+    let render = bind((props: Props) => {
       try {
         rendering = true
         _props({ ...props })
@@ -70,7 +75,7 @@ export let reatomAbstractRender = <Props, Result>({
       } finally {
         rendering = false
       }
-    }) as (props: Props) => { result: Result }
+    }, frame) as (props: Props) => { result: Result }
 
     let mount = wrap(() => {
       adapterMount?.()

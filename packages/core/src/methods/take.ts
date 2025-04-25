@@ -1,8 +1,7 @@
-import { action, AtomLike, computed, top } from '../core'
-import { Fn, isAbort } from '../utils'
+import { action, AtomLike, bind, computed, top } from '../core'
+import { Fn, isAbort, noop } from '../utils'
 import { abortVar } from './abort'
 import { ifCalled } from './ifChanged'
-import { wrap } from './wrap'
 
 let i = 0
 
@@ -11,23 +10,19 @@ export let take = <T>(
   target: AtomLike<any, any, T>,
   name?: string,
 ): Promise<Awaited<T>> => {
-  name = `${top().atom.name}.take.${name || `#${++i}`}`
+  name = `${top().atom.name}.take${name ? `.${name}` : `#${++i}`}`
 
-  let log = wrap(action((_message: string, payload: any) => payload, name))
+  let log = bind(action((_message: string, payload: any) => payload, name))
 
   let cleanups: Array<Fn> = []
 
   let abort = abortVar.read()
-  if (!abort) {
-    debugger
-  }
-  abort ??= abortVar.set(name)
 
   let promise = new Promise<Awaited<T>>((res, rej) => {
     log('start', target.name)
 
     cleanups.push(
-      abort.subscribeAbort(rej),
+      abort?.subscribeAbort(rej) ?? noop,
       computed(async () => {
         try {
           let value: any
@@ -69,6 +64,7 @@ export let take = <T>(
       log('resolve', value)
     })
     .catch((error) => {
+      if (isAbort(error)) promise.catch(noop)
       cleanups.forEach((fn) => fn())
       log('reject', error)
     })

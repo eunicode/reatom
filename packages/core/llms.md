@@ -2,7 +2,9 @@
 
 This guide outlines the core principles and patterns for working with Reatom, a state management library for JavaScript/TypeScript applications. It's designed to help LLM code assistants understand and generate high-quality Reatom code.
 
-Version: `@reatom/core@alpha` (`@reatom/core@1000`).
+The version of Reatom used in this guide is `@reatom/core@^1000`, currently it should be installed as `@reatom/core@alpha`.
+
+The previous version of Reatom was full of `ctx` / `Ctx` in all APIs, which is not relevant now! Do not use `ctx` or `Ctx` anymore!
 
 ## Core Concepts
 
@@ -729,6 +731,100 @@ app.get('/', (req, res) => {
   })
   res.send(html)
 })
+```
+
+## onEvent
+
+The `onEvent` function enables you to respond to various types of events for the target element that supports the `addEventListener` interface, such as `HTMLInputElement` or `WebSocket`, among others.
+
+You can pass a callback as the last argument. In this case, the method will return an unsubscribe function. If you skip the callback, the returned value will be a promise that will resolve with the event.
+
+Please note that this API handles the abort context from the `withConnectHook` effect and other Reatom APIs. It enables you to describe complex logic in a concise and clear manner with memory safety underneath.
+
+### onEvent WebSocket example
+
+Here is a usage example, which was derived from [this observable example](https://github.com/domfarolino/observable/blob/c232b2e585b71a61034fd23ba4337570b537ef27/README.md?plain=1#L86):
+
+```ts
+import { atom, withConnectHook, onEvent, abortVar } from '@reatom/core'
+
+const socket = new WebSocket('wss://example.com')
+
+const reatomStock = (ticker) => {
+  const stockAtom = atom(null, `${ticker}StockAtom`).extend(
+    withConnectHook(async () => {
+      if (socket.readyState !== WebSocket.OPEN) {
+        await onEvent(socket, 'open')
+      }
+
+      socket.send(JSON.stringify({ ticker, type: 'sub' }))
+
+      onEvent(socket, 'message', (event) => {
+        if (event.data.ticker === ticker) stockAtom(JSON.parse(event.data))
+      })
+
+      onEvent(socket, 'close', () => abortVar.read()?.abort('close'))
+      onEvent(socket, 'error', () => abortVar.read()?.abort('error'))
+
+      abortVar
+        .read()
+        ?.subscribeAbort(() =>
+          socket.send(JSON.stringify({ ticker, type: 'unsub' })),
+        )
+    }),
+  )
+
+  return stockAtom
+}
+
+const googStockAtom = reatomStock('GOOG')
+
+googStockAtom.subscribe(updateView)
+```
+
+## onEvent checkpoint example
+
+Make sure to listen to event before you actually need it. As in `take` you should use checkpoints
+to handle all events without skipping it.
+
+```ts
+import { action, withAsync, onEvent } from '@reatom/async'
+import { onEvent } from '@reatom/web'
+import { heroAnimation } from '~/feature/hero'
+import { api } from '~/api'
+
+const heroElement = document.getElementById('#hero')
+
+const loadPageContent = action(async () => {
+  // Docs: https://developer.mozilla.org/en-US/docs/Web/API/Element/animate
+  const animation = heroElement.animate(heroAnimation)
+
+  const content = await api.fetchContent()
+
+  // ❌ Bug:
+  // If person's connection is not fast enough animation can finish before we load content.
+  // And we will be showing last frame of animation forever...
+  await onEvent(animation, 'finish')
+
+  pageContent(content)
+}).extend(withAsync())
+```
+
+And that's how we fix this behaviour using checkpoint:
+
+```ts
+const loadPageContent = action(async () => {
+  const animation = heroElement.animate(heroAnimation)
+  // ✅ We make a checkpoint before loading...
+  const animationFinishedCheckpoint = onEvent(animation, 'finish')
+
+  const content = await api.fetchContent()
+
+  // ...and we will catch that event even if content loading takes ages
+  await animationFinishedCheckpoint
+
+  pageContent(content)
+}).extend(withAsync())
 ```
 
 ## References

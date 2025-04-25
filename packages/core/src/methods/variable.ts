@@ -20,10 +20,12 @@ export let findVar = <T>(
   return undefined
 }
 
+// TODO rewrite to class for better mem usage
 export interface Variable<Params extends any[] = any[], Payload = any> {
   get(frame?: Frame): Payload
   set(...params: Params): Payload
   has(frame?: Frame): boolean
+  current(frame?: Frame): undefined | Payload
   read<T = Payload>(
     cb?: (value: undefined | Payload) => undefined | T,
     frame?: Frame,
@@ -54,7 +56,6 @@ export let variable: {
   }
 
   return {
-    read,
     get(frame?: Frame) {
       let value = read(identity, frame)
 
@@ -76,5 +77,9 @@ export let variable: {
     has(frame?: Frame) {
       return read(identity, frame) !== undefined
     },
+    current(frame = top()) {
+      return context().state.meta.variable.get(frame)?.get(key)
+    },
+    read,
   }
 }

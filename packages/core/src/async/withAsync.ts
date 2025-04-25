@@ -10,8 +10,9 @@ import {
   context,
   top,
   withMiddleware,
+  bind,
 } from '../core'
-import { ifCalled, ifChanged, wrap } from '../methods'
+import { ifCalled, ifChanged } from '../methods'
 import { assert, Fn, isAbort } from '../utils'
 
 export interface AsyncExt<
@@ -114,8 +115,10 @@ export let withAsync: {
       let state = next(...params)
       let promise = state
 
+      let frame = top()
+
       if (target.__reatom.reactive) {
-        for (let pub of top().pubs) {
+        for (let pub of frame.pubs) {
           if (pub !== null && pub.atom !== context) params.push(pub.state)
         }
       } else {
@@ -127,10 +130,9 @@ export let withAsync: {
       if (touched.has(promise)) return state
       touched.add(promise)
 
-      // outer promise handlers should tick after the async handlers
-      promise = promise.then(
-        wrap((payload) => onFulfill(payload, params)),
-        wrap((error) => onReject(error, params)),
+      promise.then(
+        bind((payload) => onFulfill(payload, params), frame),
+        bind((error) => onReject(error, params), frame),
       )
 
       if (!target.__reatom.reactive) {

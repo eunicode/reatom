@@ -15,7 +15,10 @@ export let wrap: {
   frame = top(),
 ): T extends Fn ? (Fn extends T ? T : Overloads<T>) : T => {
   if (typeof target === 'function') {
+    abortVar.throwIfAborted()
+
     return function wrap(...params: any) {
+      frame.run(() => abortVar.throwIfAborted())
       return frame.run(target, ...params)
     } as any
   }
@@ -25,10 +28,12 @@ export let wrap: {
   assert(target instanceof Promise, 'target should be promise', ReatomError)
 
   let promise = new Promise(async (resolve, reject) => {
+    let un = abortVar.subscribeAbort((error) => {
+      promise.catch(noop)
+      reject(error)
+    })
     try {
       let value = await target
-
-      frame.run(() => abortVar.read()?.throwIfAborted())
 
       var seal = () => resolve(value)
     } catch (error) {
@@ -36,13 +41,17 @@ export let wrap: {
       if (isAbort(error)) promise.catch(noop)
       seal = () => reject(error)
     }
+
     queueMicrotask(() => {
       // check context collision
       frame.run(noop)
 
       STACK.push(contextFrame, frame)
     })
+
+    un?.()
     seal()
+
     queueMicrotask(() => {
       STACK.pop()
       STACK.pop()

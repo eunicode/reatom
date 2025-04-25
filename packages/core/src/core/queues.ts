@@ -1,4 +1,4 @@
-import { Queue, context } from './'
+import { Queue, bind, context } from './'
 import type { Fn } from '../utils'
 
 /** @internal */
@@ -14,7 +14,7 @@ export let enqueue = (
     contextFrame.state.cleanup.length === 0 &&
     contextFrame.state.effect.length === 0
   ) {
-    Promise.resolve().then(contextFrame.run.bind(contextFrame, notify))
+    Promise.resolve().then(bind(notify, contextFrame))
     //.catch(noop) // TODO ?
   }
 

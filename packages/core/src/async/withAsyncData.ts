@@ -1,7 +1,7 @@
 import { Atom, AtomLike, createAtom } from '../core'
 import { ifCalled } from '../methods'
 import { AbortExt, withAbort, withCallHook } from '../mixins'
-import { identity } from '../utils'
+import { identity, noop } from '../utils'
 import { AsyncExt, AsyncOptions, withAsync } from './withAsync'
 
 export interface AsyncDataExt<
@@ -89,7 +89,7 @@ export let withAsyncData: {
         initState:
           typeof initState === 'function' ? () => initState : initState,
         computed(state) {
-          if (target.__reatom.reactive) target()
+          if (target.__reatom.reactive) target().catch(noop)
           ifCalled(asyncTarget.onFulfill, ({ payload, params }) => {
             state = map(payload, params, state)
           })
@@ -105,4 +105,3 @@ export let withAsyncData: {
 
     return Object.assign(asyncTarget, { data })
   }
-
