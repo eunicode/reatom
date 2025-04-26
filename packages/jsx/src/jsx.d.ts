@@ -71,7 +71,7 @@ export namespace JSX {
     [css: `css:${string}`]: string | number | false | null | undefined
   }
 
-  interface EventHandler<T extends Element = Element, E extends Event = Event> {
+  interface EventHandler<T, E extends Event = Event> {
     (
       e: E & {
         currentTarget: T
@@ -293,10 +293,12 @@ export namespace JSX {
     'on:contextmenu'?: EventHandler<T, PointerEvent>
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/copy_event
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/copy_event
      */
     'on:copy'?: EventHandler<T, ClipboardEvent>
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/cut_event
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/cut_event
      */
     'on:cut'?: EventHandler<T, ClipboardEvent>
     /**
@@ -413,6 +415,7 @@ export namespace JSX {
     'on:MozMousePixelScroll'?: EventHandler<T, WheelEvent>
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/paste_event
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/paste_event
      */
     'on:paste'?: EventHandler<T, ClipboardEvent>
     /**
@@ -540,14 +543,6 @@ export namespace JSX {
      */
     'on:command'?: EventHandler<T, Event>
     /**
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/copy_event
-     */
-    'on:copy'?: EventHandler<T, ClipboardEvent>
-    /**
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/cut_event
-     */
-    'on:cut'?: EventHandler<T, ClipboardEvent>
-    /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/drag_event
      */
     'on:drag'?: EventHandler<T, DragEvent>
@@ -583,10 +578,6 @@ export namespace JSX {
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/load_event
      */
     'on:load'?: EventHandler<T, Event>
-    /**
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/paste_event
-     */
-    'on:paste'?: EventHandler<T, ClipboardEvent>
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/toggle_event
      */
@@ -1338,7 +1329,7 @@ export namespace JSX {
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/data-*
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dataset
      */
-    [`data-${string}`]: string | number | boolean | null | undefined
+    [key: `data-${string}`]: string | number | boolean | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/accesskey
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/accessKey
@@ -1549,7 +1540,7 @@ export namespace JSX {
     typeof?: string | null | undefined
     vocab?: string | null | undefined
   }
-  interface AnchorHTMLAttributes<T = HTMLElementTagNameMap['anchor']>
+  interface AnchorHTMLAttributes<T = HTMLElementTagNameMap['a']>
     extends HTMLAttributes<T> {
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/a#attributionsrc
@@ -1910,7 +1901,7 @@ export namespace JSX {
      */
     width?: `${number}` | number | null | undefined
   }
-  interface FencedFrameHTMLAttributes<T = HTMLElementTagNameMap['embed']>
+  interface FencedFrameHTMLAttributes<T = HTMLElementTagNameMap['fencedframe']>
     extends HTMLAttributes<T> {
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/fencedframe#allow
@@ -2483,7 +2474,7 @@ export namespace JSX {
   /**
    * @deprecated
    */
-  interface KeygenHTMLAttributes<T = HTMLElementTagNameMap['keygen']>
+  interface KeygenHTMLAttributes<T = HTMLElementDeprecatedTagNameMap['keygen']>
     extends HTMLAttributes<T> {
     challenge?: string | null | undefined
     /**
@@ -3053,7 +3044,7 @@ export namespace JSX {
   /**
    * @deprecated
    */
-  interface ParamHTMLAttributes<T = HTMLElementTagNameMap['param']>
+  interface ParamHTMLAttributes<T = HTMLElementDeprecatedTagNameMap['param']>
     extends HTMLAttributes<T> {
     name?: string
     value?: string | number
@@ -3071,7 +3062,7 @@ export namespace JSX {
      */
     value?: `${number}` | number | null | undefined
   }
-  interface QuoteHTMLAttributes<T = HTMLElementTagNameMap['quote']>
+  interface QuoteHTMLAttributes<T = HTMLElementTagNameMap['q']>
     extends HTMLAttributes<T> {
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/q#cite
@@ -3950,7 +3941,7 @@ export namespace JSX {
     mask?: string
     opacity?: 'inherit' | `${number}` | number | null | undefined
     overflow?: 'visible' | 'hidden' | 'scroll' | 'auto' | 'inherit'
-    pathLength?: string | number
+    pathLength?: `${number}` | number | null | undefined
     'pointer-events'?:
       | 'bounding-box'
       | 'visiblePainted'
@@ -4475,7 +4466,6 @@ export namespace JSX {
         'marker-start' | 'marker-mid' | 'marker-end'
       > {
     d?: string
-    pathLength?: `${number}` | number | null | undefined
   }
   interface PatternSVGAttributes<T>
     extends ContainerElementSVGAttributes<T>,
