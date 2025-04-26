@@ -63,6 +63,7 @@ export function withAsyncData<
 >(
   options: AsyncOptions<Err, EmptyErr> & {
     initState: State
+    mapPayload?: never
   },
 ): (
   target: T,
@@ -78,7 +79,7 @@ export function withAsyncData<
 >(
   options: AsyncOptions<Err, EmptyErr> & {
     initState: State
-    mapPayload?: [State] extends [infer State]
+    mapPayload: [State] extends [infer State]
       ? T extends AtomLike<any, infer Params, Promise<infer Payload>>
         ? (payload: Payload, params: Params, state: State) => State
         : never
