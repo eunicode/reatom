@@ -70,6 +70,12 @@ export let variable: {
     recs.set(key, value)
   }
 
+  let run = action((value, cb: Fn) => {
+    write(value)
+
+    return cb()
+  }, name)
+
   return {
     get(frame?: Frame) {
       let value = read(identity, frame)
@@ -92,12 +98,6 @@ export let variable: {
       return context().state.meta.variable.get(frame)?.get(key)
     },
     read,
-    run(value: any, cb: Fn) {
-      return action((value) => {
-        write(value)
-
-        return cb()
-      }, name)(value)
-    },
+    run,
   }
 }
