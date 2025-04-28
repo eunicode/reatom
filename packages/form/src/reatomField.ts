@@ -18,7 +18,10 @@ import {
   withAbort,
   abortVar,
   wrap,
-  AbortExt
+  AbortExt,
+  BooleanAtom,
+  reatomBoolean,
+  AtomLike
 } from '@reatom/core'
 
 import { toError } from './utils'
@@ -48,17 +51,20 @@ export interface FieldValidation {
   validating: boolean
 }
 
-export interface FocusAtom extends RecordAtom<FieldFocus> {
+export interface FocusAtom extends AtomLike<FieldFocus> {
   /** Action for handling field focus. */
-  in: Action<[], void>
+  in: Action<[], FieldFocus>
 
   /** Action for handling field blur. */
-  out: Action<[], void>
+  out: Action<[], FieldFocus>
 }
 
-export interface ValidationAtom extends RecordAtom<FieldValidation> {
+export interface ValidationAtom extends AtomLike<FieldValidation> {
   /** Action to trigger field validation. */
   trigger: Action<[], FieldValidation> & AbortExt
+
+  /** Action to set an error for the field */
+  setError: Action<[error: string], FieldValidation>
 }
 
 export interface FieldLikeAtom<State = any> extends Atom<State> {
@@ -83,6 +89,9 @@ export interface FieldAtom<State = any, Value = State> extends FieldLikeAtom<Sta
 
   /** Atom with the "value" data, computed by the `fromState` option */
   value: Computed<Value>
+
+  /** Atom that defines if the field is disabled */
+  disabled: BooleanAtom
 
   /**
    * Defines the reset behavior of the validation state during async validation.
@@ -163,6 +172,12 @@ export interface FieldOptions<State = any, Value = State> {
   contract?: (state: State) => unknown
 
   /**
+   * Defines if the field is disabled by default.
+   * @default false
+   */
+  disabled?: boolean
+
+  /**
    * Defines the reset behavior of the validation state during async validation.
    * @default false
    */
@@ -220,7 +235,7 @@ export function reatomField<State, A extends Atom<State>, Value = State>(
   stateAtom: A
 ): A & FieldAtom<State, Value>;
 
-export function reatomField <State, Value = State>(
+export function reatomField<State, Value = State>(
   _initState: State,
   options: string | FieldOptions<State, Value> = {},
   stateAtom?: Atom<State>
@@ -258,6 +273,13 @@ export function reatomField <State, Value = State>(
     target => ({ value: computed(() => target() ?? !!(validateFn || contract), `${target.name}.value`) })
   )
 
+  const disabled = reatomBoolean(restOptions.disabled ?? false, `${name}.disabled`).extend(
+    withChangeHook((status) => {
+      if(!status)
+        validation.trigger()
+    })
+  )
+
   const field = stateAtom ?? atom(_initState, `${name}.field`)
   const initState = atom(_initState, `${name}.initState`)
   // TODO: make sure it's ok to copy initState of other atom. 
@@ -278,115 +300,125 @@ export function reatomField <State, Value = State>(
           : { validating: false, triggered: false, error: undefined }
       ) 
 
-      if (validateOnChange.value())
+      if (!disabled() && validateOnChange.value())
         validation.trigger()
     }),
   )
 
   const value: This['value'] = computed(() => fromState(field()), `${name}.value`)
 
-  const focus = reatomRecord(fieldInitFocus, `${name}.focus`) as This['focus']
-  focus.extend(
-    withComputed((state) => {
-      const dirty = isDirty(value(), fromState(initState()))
-      return state.dirty === dirty ? state : { ...state, dirty }
-    })
-  ) 
+  const focus = reatomRecord(fieldInitFocus, `${name}.focus`)
+    .actions((target) => ({
+      in: () => target.merge({ active: true }),
+      out: () => target.merge({ active: false, touched: true })
+    }))
+    .extend(
+      withComputed((state) => {
+        const dirty = isDirty(value(), fromState(initState()))
+        return state.dirty === dirty ? state : { ...state, dirty }
+      })
+    ) 
 
-  focus.in = action(() => {
-    focus.merge({ active: true })
-  }, `${name}.focus.in`)
-
-  focus.out = action(() => {
-    focus.merge({ active: false, touched: true })
-  }, `${name}.focus.out`).extend(
+  focus.out.extend(
     withCallHook(() => {
-      if (validateOnBlur.value())
+      if (!disabled() && validateOnBlur.value())
         validation.trigger()
     })
   )
 
   const validation = reatomRecord(
-    fieldInitValidationLess,
-    `${name}.validation`,
-  ) as This['validation']
-
-  validation.extend(
+    fieldInitValidationLess, `${name}.validation`
+  ).extend(
     withInit(() => shouldValidate.value() ? fieldInitValidation : fieldInitValidationLess),
     withComputed((state) => {
       if(!shouldValidate.value()) 
-        return state
+        return fieldInitValidationLess
+
+      if(disabled())
+        return fieldInitValidation
 
       value()
       return state.triggered ? { ...state, triggered: false } : state
-    })
-  )
-
-  validation.trigger = action(() => {
-    const validationValue = validation()
-
-    if (validationValue.triggered) 
-      return validationValue
-
-    if (!shouldValidate.value()) 
-      return validation.merge({ triggered: true })
-
-    let promise: any
-    let message: undefined | string
-    const state = field()
-
-    try {
-      contract?.(state)
-      promise = validateFn?.({
-        state,
-        value: value(),
-        focus: focus(),
-        validation: validationValue,
-      })
-    } catch (error) {
-      message = toError(error)
-    }
-
-    if (promise instanceof Promise) {
-      promise
-        .then(wrap(() => {
-          if (abortVar.read()?.()) 
-            return
-
-          validation.merge({
-            error: undefined,
+    }),
+    target => ({
+      trigger: action(() => {
+        const validationValue = target()
+    
+        if (validationValue.triggered) 
+          return validationValue
+    
+        if (!shouldValidate.value()) 
+          return target.merge({ triggered: true })
+    
+        let promise: any
+        let message: undefined | string
+        const state = field()
+    
+        try {
+          contract?.(state)
+          promise = validateFn?.({
+            state,
+            value: value(),
+            focus: focus(),
+            validation: validationValue,
+          })
+        } catch (error) {
+          message = toError(error)
+        }
+    
+        if (promise instanceof Promise) {
+          promise
+            .then(wrap(() => {
+              if (abortVar.read()?.()) 
+                return
+    
+              target.merge({
+                error: undefined,
+                meta: undefined,
+                triggered: true,
+                validating: false,
+              })
+            }))
+            .catch(wrap((error) => {
+              if (abortVar.read()?.()) 
+                return
+    
+              target.merge({
+                error: toError(error),
+                meta: undefined,
+                triggered: true,
+                validating: false,
+              })
+            }))
+    
+          return target.merge({
+            error: keepErrorDuringValidating.value() ? validationValue.error : undefined,
             meta: undefined,
             triggered: true,
-            validating: false,
+            validating: true,
           })
-        }))
-        .catch(wrap((error) => {
-          if (abortVar.read()?.()) 
-            return
+        }
+    
+        return target.merge({
+          validating: false,
+          error: message,
+          meta: undefined,
+          triggered: true,
+        })
+      }, `${target.name}.validation.trigger`).extend(withAbort()),
+    }),
+  ).actions(target => ({
+    setError: (error: string) => {
+      target.trigger.abort('setError');
 
-          validation.merge({
-            error: toError(error),
-            meta: undefined,
-            triggered: true,
-            validating: false,
-          })
-        }))
-
-      return validation.merge({
-        error: keepErrorDuringValidating.value() ? validationValue.error : undefined,
+      return target.merge({
+        error,
         meta: undefined,
         triggered: true,
-        validating: true,
-      })
+        validating: false,
+      });
     }
-
-    return validation.merge({
-      validating: false,
-      error: message,
-      meta: undefined,
-      triggered: true,
-    })
-  }, `${name}.validation.trigger`).extend(withAbort())
+  }))
 
   const change: This['change'] = action((newValue) => {
     const prevValue = value()
@@ -414,6 +446,7 @@ export function reatomField <State, Value = State>(
     reset,
     validation,
     value,
+    disabled,
     keepErrorDuringValidating,
     keepErrorOnChange,
     validateOnChange,

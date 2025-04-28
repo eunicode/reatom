@@ -1,5 +1,5 @@
 import { test, expect, describe } from 'vitest'
-import { notify, reatomBoolean, sleep } from '@reatom/core'
+import { notify, reatomBoolean, sleep, wrap } from '@reatom/core'
 import { experimental_fieldArray, reatomField, reatomForm, withField } from '.'
 import { z } from 'zod';
 
@@ -127,7 +127,7 @@ test('validation states', async () => {
 
 	field2.reset();
 
-	await form.submit().catch(() => { })
+	await wrap(form.submit().catch(() => { }))
 	expect(form.submit.error()?.message).toBe('Form validation error')
 
 	expect(form.validation()).toEqual({
@@ -156,6 +156,58 @@ test('validation states', async () => {
 		triggered: true,
 		validating: false,
 	})
+})
+
+test('validation and focus states with disabled fields', async () => {
+	const contract = (value: string) => {
+		if (value === 'errorValue')
+			throw new Error('Contract error')
+	}
+
+	const form = reatomForm({
+		field1: { initState: '', contract, validateOnChange: true },
+	}, 'testForm')
+
+	form.fields.field1.change('errorValue');
+	notify();
+	expect(form.validation()).toMatchObject({ error: 'Contract error', triggered: true });
+	expect(form.focus()).toMatchObject({ touched: true, dirty: true });
+
+	form.fields.field1.disabled(true);
+	notify();
+	expect(form.validation()).toMatchObject({ error: undefined, triggered: true });
+	expect(form.focus()).toMatchObject({ touched: false, dirty: false })
+
+	form.fields.field1.disabled(false);
+	notify();
+	expect(form.validation()).toMatchObject({ error: 'Contract error', triggered: true });
+	expect(form.focus()).toMatchObject({ touched: true, dirty: true });
+})
+
+test('validation states with disabled fields and defined schema', async () => {
+	const formWithSchema = reatomForm({
+		field1: '',
+	}, {
+		validateOnChange: true,
+		schema: z.object({ 
+			field1: z.string().refine(value => value !== 'errorValue', 'Schema contract error') 
+		})
+	})
+
+	const targetField = formWithSchema.fields.field1;
+
+	targetField.change('errorValue');
+	notify();
+	expect(formWithSchema.validation()).toMatchObject({ error: 'Schema contract error' });
+
+	targetField.change('validValue');
+	notify();
+	expect(formWithSchema.validation()).toMatchObject({ error: undefined });
+
+	targetField.disabled(true);
+	targetField.change('errorValue');
+	notify();
+	expect(formWithSchema.validation()).toMatchObject({ error: undefined });
 })
 
 test('default options for fields', async () => {
@@ -432,5 +484,30 @@ test('triggering schema validation only for one field', async () => {
 	form.fields.age.change(17);
 	notify()
 	expect(form.validation().error).toBe('must be minimum 18');
+	expect(form.fields.age.validation().error).toBe('must be minimum 18');
+})
+
+test('concurrent field validation with schema', async () => {
+	const form = reatomForm({
+		age: { 
+			initState: 12, 
+			validate: async () => { 
+				await sleep();
+				throw new Error('validation error')
+			},
+		}
+	}, {
+		validateOnChange: true,
+		schema: z.object({
+			age: z.number().min(18, 'must be minimum 18'),
+		})
+	});
+
+	form.fields.age.change(10);
+	notify();
+
+	expect(form.fields.age.validation().error).toBe('must be minimum 18');
+	await wrap(sleep());
+
 	expect(form.fields.age.validation().error).toBe('must be minimum 18');
 })
