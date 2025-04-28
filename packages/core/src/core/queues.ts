@@ -1,7 +1,18 @@
 import { Queue, bind, context } from './'
 import type { Fn } from '../utils'
 
-/** @internal */
+/**
+ * @internal
+ * Schedules a function to be executed in a specific queue of the current context.
+ *
+ * This is the core mechanism for scheduling reactive updates in Reatom. When an atom's
+ * state changes, tasks are queued to be executed afterwards in the appropriate order.
+ * If this is the first task being scheduled, a microtask is created to process the
+ * queues asynchronously.
+ *
+ * @param fn - The function to schedule for execution
+ * @param queue - The queue to add the function to ('hook', 'compute', 'cleanup', or 'effect')
+ */
 export let enqueue = (
   fn: Fn,
   queue: 'hook' | 'compute' | 'cleanup' | 'effect',
@@ -28,10 +39,30 @@ export let enqueue = (
   }, queue)
 }
 
+/**
+ * Creates an iterator function for a queue that returns items sequentially.
+ *
+ * @param queue - The queue to iterate over
+ * @param i - The starting index
+ * @returns A function that returns the next item in the queue or undefined when empty
+ * @internal
+ */
 let QueueIterator = (queue: Queue, i: number) => () =>
   i < queue.length ? queue[i++] : undefined
 
-// TODO reschedule notify if the amount of tasks is changed??
+/**
+ * Processes all scheduled tasks in the current context's queues.
+ *
+ * This function is called automatically after tasks have been scheduled via `enqueue`.
+ * It processes tasks in the following priority order:
+ * 1. hook tasks
+ * 2. compute tasks
+ * 3. cleanup tasks
+ * 4. effect tasks
+ *
+ * The function resets priority after each task execution to ensure higher priority
+ * tasks (which may have been added during execution) are processed first.
+ */
 export let notify = () => {
   let { state } = context()
 

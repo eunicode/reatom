@@ -12,6 +12,26 @@ import {
 import { _getPrevFrame } from './context'
 import { assert } from '../utils'
 
+/**
+ * Executes a callback when an atom's state changes
+ *
+ * This utility evaluates if an atom's state has changed during the current
+ * frame execution and calls the provided callback with the new state (and optionally
+ * the previous state if available).
+ *
+ * @template T - Type extending AtomLike
+ * @param {T} target - The atom to monitor for changes
+ * @param {(newState: AtomState<T>, oldState?: AtomState<T>) => void} cb - Callback to execute when the atom changes
+ * @throws {ReatomError} If target is not a reactive atom
+ *
+ * @example
+ * ```ts
+ * // Log when the user's name changes
+ * ifChanged(userName, (newName, oldName) => {
+ *   console.log(`Name changed from ${oldName} to ${newName}`);
+ * });
+ * ```
+ */
 export const ifChanged = <T extends AtomLike>(
   target: T,
   cb: (newState: AtomState<T>, oldState?: AtomState<T>) => void,
@@ -34,7 +54,27 @@ export const ifChanged = <T extends AtomLike>(
   }
 }
 
-/** Allow to react to action calls, works only in reactive (atom) context */
+/**
+ * Executes a callback when an action is called
+ *
+ * This utility detects when an action is called during the current frame execution
+ * and executes the provided callback with the action's payload and parameters.
+ * Only works within a reactive (atom) context.
+ *
+ * @template Params - Array type of action parameters
+ * @template Payload - Return type of the action
+ * @param {Action<Params, Payload>} target - The action to monitor for calls
+ * @param {(payload: Payload, params: Params) => void} cb - Callback function to execute when the action is called
+ * @throws {ReatomError} If target is not an action or if not used in a reactive context
+ *
+ * @example
+ * ```ts
+ * // Log when a user is created
+ * ifCalled(createUser, (user, params) => {
+ *   console.log(`User created: ${user.name} with ID ${user.id}`);
+ * });
+ * ```
+ */
 export const ifCalled = <Params extends any[], Payload>(
   target: Action<Params, Payload>,
   cb: (payload: Payload, params: Params) => void,

@@ -65,6 +65,22 @@ let prepareFrameStack = (frame: Frame): Node => {
   return node
 }
 
+/**
+ * Concatenates a tree structure representation into a string format.
+ *
+ * This function recursively builds a formatted ASCII/Unicode tree representation
+ * of a Node structure with proper branch indentation and connections.
+ *
+ * @param {string} acc - The accumulator string that holds the current tree representation
+ * @param {string} steps - Indentation padding string for proper alignment
+ * @param {Node} node - The current node to process and display in the tree
+ * @returns {string} A formatted string representation of the tree structure
+ *
+ * @example
+ * // For a node with children, might produce something like:
+ * // myNode ┬─ child1 ─ grandChild
+ * //        └─ child2
+ */
 export let concatTree = (acc: string, steps: string, node: Node): string => {
   // if (steps.length > 200) return acc + ' [...]'
 
@@ -87,10 +103,48 @@ export let concatTree = (acc: string, steps: string, node: Node): string => {
   return acc
 }
 
+/**
+ * Generates a formatted stack trace string based on the current execution context.
+ *
+ * Creates a visual representation of the dependency tree from the current frame
+ * up through its publishers, using ASCII/Unicode characters to show relationships.
+ *
+ * @param {string} [acc='─ '] - Initial accumulator string for the result
+ * @param {string} [steps=''] - Initial indentation padding for proper alignment
+ * @param {Frame} [frame=top()] - The starting frame to trace from (defaults to current top frame)
+ * @returns {string} A formatted string representation of the stack trace
+ *
+ * @example
+ * // Might produce output like:
+ * // ─ counter ┬─ doubleCounter
+ * //           └─ displayValue
+ */
 export let getStackTrace = (acc = '─ ', steps = '', frame = top()): string => {
   return concatTree(acc, steps, prepareFrameStack(frame))
 }
 
+/**
+ * Sets up and connects a logger to the Reatom system for debugging and tracing.
+ *
+ * This function enhances all non-private atoms and actions with logging capabilities.
+ * When an atom's value changes or an action is called, it logs the event with relevant
+ * information to the console including:
+ * - Previous and current state for atoms
+ * - Parameters and return values for actions
+ * - Complete dependency stack traces
+ * - Error information when exceptions occur
+ *
+ * The logger adapts to the environment, using different formatting for browser and Node.js.
+ * Private atoms (those with names starting with '_' or containing '._') are not logged.
+ *
+ * @returns {void}
+ *
+ * @example
+ * // Connect the logger at application startup
+ * import { connectLogger } from '@reatom/core'
+ *
+ * connectLogger()
+ */
 export let connectLogger = () => {
   let isNodeEnv = !isBrowser()
 

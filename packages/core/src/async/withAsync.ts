@@ -15,39 +15,120 @@ import {
 import { ifCalled, ifChanged } from '../methods'
 import { assert, Fn, isAbort } from '../utils'
 
+/**
+ * Extension interface added by {@link withAsync} to atoms or actions that return promises.
+ * Provides utilities for tracking async state, handling errors, and responding to async events.
+ *
+ * @template Params - The parameter types of the original atom or action
+ * @template Payload - The resolved value type of the promise
+ * @template Error - The type of errors that can be caught
+ */
 export interface AsyncExt<
   Params extends any[] = any[],
   Payload = any,
   Error = any,
 > {
+  /**
+   * Computed atom that indicates when no async operations are pending
+   * @returns Boolean indicating if all operations have completed (true) or some are still pending (false)
+   */
   ready: Computed<boolean>
 
+  /**
+   * Action that is called when the promise resolves successfully
+   * @param payload - The resolved value from the promise
+   * @param params - The original parameters passed to the atom/action
+   * @returns An object containing the payload and parameters
+   */
   onFulfill: Action<
     [payload: Payload, params: Params],
     { payload: Payload; params: Params }
   >
 
+  /**
+   * Action that is called when the promise rejects with an error
+   * @param error - The error thrown by the promise
+   * @param params - The original parameters passed to the atom/action
+   * @returns An object containing the error and parameters
+   */
   onReject: Action<
     [error: Error, params: Params],
     { error: Error; params: Params }
   >
 
+  /**
+   * Action called after either successful resolution or rejection
+   * @param result - Either a payload+params object or an error+params object
+   * @returns The same result object that was passed in
+   */
   onSettle: Action<
     [{ payload: Payload; params: Params } | { error: Error; params: Params }],
     { payload: Payload; params: Params } | { error: Error; params: Params }
   >
 
+  /**
+   * Computed atom tracking how many async operations are currently pending
+   * @returns Number of pending operations (0 when none are pending)
+   */
   pending: Computed<number>
 
+  /**
+   * Atom containing the most recent error or undefined if no error has occurred
+   */
   error: Atom<undefined | Error>
 }
 
+/**
+ * Configuration options for the {@link withAsync} extension
+ *
+ * @template Err - The type of errors after parsing
+ * @template EmptyErr - The type of the empty error state (default: undefined)
+ */
 export type AsyncOptions<Err = Error, EmptyErr = undefined> = {
+  /**
+   * Function to transform raw errors into a specific error type
+   * @param error - The caught error of unknown type
+   * @returns A properly typed error object
+   */
   parseError?: (error: unknown) => Err
+  
+  /**
+   * Initial/reset value for the error atom
+   */
   emptyError?: EmptyErr
+  
+  /**
+   * When to reset the error state
+   * - 'onCall': Reset error when the async operation starts (default)
+   * - 'onFulfill': Reset error only when the operation succeeds
+   * - null: Never automatically reset errors
+   */
   resetError?: null | 'onCall' | 'onFulfill'
 }
 
+/**
+ * Extension that adds async state tracking to atoms or actions that return promises.
+ * Manages pending state, errors, and provides lifecycle actions for async operations.
+ *
+ * This extension preserves Reatom context across async operations, ensuring that
+ * the async operation's results properly update Reatom state.
+ *
+ * @template Err - The type of errors after parsing
+ * @template EmptyErr - The type of the empty error state
+ * @param options - Configuration options for error handling
+ * @returns An extension function that can be applied to atoms or actions
+ *
+ * @example
+ * // Basic usage with an action:
+ * const fetchUser = action(async (userId: string) => {
+ *   const response = await wrap(fetch(`/api/users/${userId}`))
+ *   return await wrap(response.json())
+ * }, 'fetchUser').extend(withAsync())
+ *
+ * // Can then access:
+ * fetchUser.error()   // → latest error if any
+ * fetchUser.ready()   // → are all operations complete?
+ */
 export let withAsync: {
   <Err = Error, EmptyErr = undefined>(
     options?: null | AsyncOptions<Err, EmptyErr>,

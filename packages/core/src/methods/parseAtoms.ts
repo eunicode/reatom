@@ -10,6 +10,16 @@ import { isRec, Rec } from '../utils'
 type Primitive = string | number | boolean | null | undefined
 type Builtin = Date | RegExp | Function
 
+/**
+ * Type utility that recursively unwraps atom types to their state types
+ *
+ * This complex type recursively traverses a type structure, unwrapping atoms
+ * to their contained state types. It handles various container types like
+ * arrays, maps, sets, and objects.
+ *
+ * @template T - The type to unwrap
+ * @returns Unwrapped version of the type with atoms replaced by their state types
+ */
 export type ParseAtoms<T> = T extends Action
   ? T
   : T extends LinkedListLikeAtom<infer T>
@@ -32,6 +42,32 @@ export type ParseAtoms<T> = T extends Action
                   }
                 : T
 
+/**
+ * Recursively unwraps atoms in a value to get their current states
+ *
+ * This function deeply traverses a value, including nested objects, arrays, maps, and sets,
+ * replacing atoms with their current state values. It's useful for serialization, debugging,
+ * or creating snapshots of state that don't contain reactive references.
+ *
+ * @template Value - The type of value to parse
+ * @param {Value} value - The value containing atoms to unwrap
+ * @returns {ParseAtoms<Value>} A new value with all atoms replaced by their current states
+ *
+ * @example
+ * ```ts
+ * const user = {
+ *   id: 42,
+ *   name: atom('John', 'userName'),
+ *   stats: {
+ *     score: atom(100, 'userScore'),
+ *     badges: atom(['gold', 'silver'], 'userBadges')
+ *   }
+ * };
+ *
+ * // Results in: { id: 42, name: 'John', stats: { score: 100, badges: ['gold', 'silver'] }}
+ * const plainUser = parseAtoms(user);
+ * ```
+ */
 export const parseAtoms = <Value>(value: Value): ParseAtoms<Value> => {
   if (isAction(value)) return value as ParseAtoms<Value>
 
