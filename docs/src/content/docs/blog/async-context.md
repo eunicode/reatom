@@ -400,4 +400,4 @@ Reatom's implementation offers several key advantages over other solutions:
 
 5. **Debuggability**: Reatom provides complete traceability for all actions and includes a built-in logging system that works out of the box. This makes tracking async workflows and identifying issues much easier than with traditional approaches, where you'd need to manually add logging throughout your code.
 
-I can't imagine writing complex asynchronous and concurrent multi-stage logic without some form of asynchronous context. Or more precisely, I can't imagine doing it reliably and simply. Reatom provides a pragmatic solution that works today while staying close to the probable future standard.
+P.S. we have more features on top of async context, including transactions with automatic rollbacks! Come to our docs 🙌

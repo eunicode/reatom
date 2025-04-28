@@ -193,6 +193,7 @@ export let withAsync: {
     let touched = new WeakSet<Promise<any>>()
 
     let asyncMiddleware = (next: Fn, ...params: any[]) => {
+      // TODO should throw abort if the cause it rollback?
       let state = next(...params)
       let promise = state
 
