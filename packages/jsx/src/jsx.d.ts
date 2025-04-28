@@ -11,6 +11,9 @@ import {
   LLNode,
   Fn,
 } from '@reatom/core'
+import {
+  ClassNameValue,
+} from './utils'
 
 type AtomMaybe<T = any> = T | AtomLike<T>
 type AtomOrGetterMaybe<T = any> = T | AtomLike<T> | (() => T)
@@ -1366,11 +1369,11 @@ export namespace JSX {
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/className
      * @alias className
      */
-    class?: string | null | undefined
+    class?: ClassNameValue
     /**
      * @alias class
      */
-    className?: string | null | undefined
+    className?: ClassNameValue
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/contenteditable
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/contentEditable
@@ -3832,11 +3835,11 @@ export namespace JSX {
     /**
      * @alias className
      */
-    class?: string | null | undefined
+    class?: ClassNameValue
     /**
      * @alias class
      */
-    className?: string | null | undefined
+    className?: ClassNameValue
     style?: CSSProperties | string
   }
   interface TransformableSVGAttributes {
