@@ -169,37 +169,47 @@ To define a style property value, you should prepend the namespace `style:`:
 
 ### Class name utility
 
-The `cn` function is designed for creating a string of CSS classes. It allows the use of multiple data types: strings, objects, arrays, functions, and atoms, which are converted into a class string.
+The `reatomClassName` function is designed for creating a string of CSS classes. It allows the use of multiple data types: strings, objects, arrays, functions, and atoms, which are converted into a class string.
 
 ```ts
-cn('my-class') // Atom<'my-class'>
+reatomClassName('my-class') // Computed<'my-class'>
 
-cn(['first', atom('second')]) // Atom<'first second'>
+reatomClassName(['first', atom('second')]) // Computed<'first second'>
 
 /** The `active` class will be determined by the truthiness of the data property `isActiveAtom`. */
-cn({ active: isActiveAtom }) // Computed<'active' | ''>
+reatomClassName({ active: isActiveAtom }) // Computed<'active' | ''>
 
-cn(computed(() => (isActiveAtom() ? 'active' : undefined))) // Computed<'active' | ''>
+reatomClassName(() => isActiveAtom() ? 'active' : undefined) // Computed<'active' | ''>
 ```
 
-The `cn` function supports various complex data combinations, making it easier to declaratively describe classes for complex UI components.
+The `reatomClassName` function supports various complex data combinations, making it easier to declaratively describe classes for complex UI components.
 
 ```ts
-const Button = (props) => {
-  /** @example Computed<'button button--size-medium button--theme-primary button--is-active'> */
-  const classNameAtom = cn(computed(() => [
-    'button',
-    `button--size-${props.size}`,
-    `button--theme-${props.theme}`,
-    {
-      'button--is-disabled': props.isDisabled(),
-      'button--is-active':
-        props.isActive() && !props.isDisabled(),
-    },
-  ]))
+/** @example Computed<'button button--size-medium button--theme-primary button--is-active'> */
+reatomClassName([
+  'button',
+  `button--size-${props.size}`,
+  `button--theme-${props.theme}`,
+  {
+    'button--is-disabled': props.isDisabled,
+    'button--is-active': props.isActive() && !props.isDisabled(),
+  },
+])
+```
 
-  return <button class={classNameAtom}>{props.children}</button>
-}
+You don't need to call `reatomClassName` manually when working with the `class` or `className` attributes. JSX runtime processes all passed values automatically using the same logic.
+
+```ts
+/** @example <button class="button button--size-medium button--theme-primary button--is-active"></button> */
+const Button = (props) => (<button class={[
+  'button',
+  `button--size-${props.size}`,
+  `button--theme-${props.theme}`,
+  {
+    'button--is-disabled': props.isDisabled,
+    'button--is-active': props.isActive() && !props.isDisabled(),
+  },
+]}>{props.children}</button>)
 ```
 
 ### CSS-in-JS

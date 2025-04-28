@@ -63,7 +63,7 @@ test('dynamic props', () =>
     expect(element.getAttribute('atr')).toBe('atr1')
   }))
 
-test.only('getter props', () =>
+test('getter props', () =>
   context.start(async () => {
     const val = atom('val', 'val')
     const getter = () => val() + ' ' + val()
