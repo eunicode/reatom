@@ -201,9 +201,9 @@ Use extensions for handling async states (loading, error).
     const response = await wrap(fetch(`/api/users/${id}`))
     if (!response.ok) throw new Error('Fetch failed')
     return await wrap(response.json())
-  }, 'userData').extend(withAsyncData(null)) // `null` is the initial data state
+  }, 'userData').extend(withAsyncData()) // `undefined` is the initial data state
 
-  userData.data() // Atom<YourDataType | null>: Stores the fetched data
+  userData.data() // Atom<YourDataType | undefined>: Stores the fetched data
   userData.pending() // Atom<boolean>: true while fetching
   userData.error() // Atom<undefined | Error>: Stores fetch error
   ```
@@ -289,7 +289,7 @@ const UserProfile = reatomComponent<{ className?: string }>(({ className }) => {
 - **`.extend(extension)`**: Method on atoms/actions to apply extensions.
 - **`.actions(builderFn)`**: Method on atoms to add related actions.
 - **`withAsync()`**: Extension for async action state tracking (pending, error).
-- **`withAsyncData(initialData?)`**: Extension for async computed data fetching (data, pending, error, cancellation).
+- **`withAsyncData({initialState?}?)`**: Extension for async computed data fetching (data, pending, error, cancellation).
 - **`take(target, name?)`**: Await next update/call within async context (use `wrap(take(target))`).
 - **`onEvent(target, eventName, callback?)`**: Handle DOM/WebSocket events safely.
 - **`connectLogger()`**: Enables debug logging.

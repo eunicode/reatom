@@ -190,7 +190,7 @@ export function withAsyncData<
  *   const response = await wrap(fetch(`/api/users/${id}`))
  *   if (!response.ok) throw new Error('Failed to fetch user')
  *   return await wrap(response.json())
- * }, 'userData').extend(withAsyncData(null))
+ * }, 'userData').extend(withAsyncData())
  *
  * // Access the fetched data and loading states:
  * userData.data()     // → the fetched user data

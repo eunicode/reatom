@@ -695,12 +695,12 @@ const userProfile = computed(async (ctx) => {
   return await wrap(response.json()) // Return data to be stored
 }, 'userProfile')
   // Apply extension, provide initial data state
-  .extend(withAsyncData(null)) // Initial data is null
+  .extend(withAsyncData()) // Initial data is undefined
 
 // Usage:
-console.log('Data:', userProfile.data()) // Atom<UserProfile | null> -> null initially
+console.log('Data:', userProfile.data()) // Atom<UserProfile | undefined> -> undefined initially
 console.log('Loading:', !userProfile.ready()) // Computed<boolean> -> false initially
-console.log('Error:', userProfile.error()) // Atom<null | Error> -> null initially
+console.log('Error:', userProfile.error()) // Atom<undefined | Error> -> undefined initially
 
 // Trigger fetch by reading (if subscribed) or changing dependency
 userId('2') // Change dependency, triggers re-computation and fetch
@@ -1219,7 +1219,7 @@ server.get('*', (req, res) => {
     -   `withCallHook(hookFn): Ext`: Run side effect on action call.
 -   **`@reatom/async`:**
     -   `withAsync(): AsyncExt`: Adds `.pending`, `.ready`, `.error`, `.onFulfill`, `.onReject`, `.onSettle`.
-    -   `withAsyncData(initialData): AsyncDataExt`: Extends `withAsync`, adds `.data` atom. Includes abort logic.
+    -   `withAsyncData({ initialState }): AsyncDataExt`: Extends `withAsync`, adds `.data` atom. Includes abort logic.
     -   `withAbort(): AbortExt`: Adds abort controller integration.
 -   **`@reatom/primitives` (Examples):**
     -   `reatomBoolean(initState, name?)`: Creates boolean atom with `.toggle()`.
