@@ -64,7 +64,8 @@ export let reatomAbstractRender = <Props, Result>({
         pubs[i]!.atom()
       }
 
-      return { result: state!.result }
+
+      return { result: state?.result as Result }
     }, `${name}._render`)
 
     let render = bind((props: Props) => {
