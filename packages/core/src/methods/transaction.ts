@@ -7,10 +7,9 @@ import {
   GenericExt,
   isAction,
   top,
-  withMiddleware,
 } from '../core'
 import { isCausedBy, Variable, variable } from '.'
-import { Fn } from '../utils'
+import { Fn, isAbort } from '../utils'
 import { AsyncExt } from '../async'
 import { withCallHook } from '../mixins'
 
@@ -59,11 +58,15 @@ export let reatomTransaction = (): TransactionVariable => {
                   let result = next(...params) as ActionState
                   let call = result[result.length - 1]
                   if (call?.payload instanceof Promise) {
-                    call.payload.catch(bind(transactionVar.rollback))
+                    call.payload.catch(
+                      bind((error) => {
+                        if (!isAbort(error)) transactionVar.rollback(error)
+                      }),
+                    )
                   }
                   return result
                 } catch (error) {
-                  transactionVar.rollback(error)
+                  if (!isAbort(error)) transactionVar.rollback(error)
                   throw error
                 }
               })
@@ -93,6 +96,7 @@ export let reatomTransaction = (): TransactionVariable => {
         transactionVar
           .read()
           ?.splice(0)
+          .reverse()
           .forEach((rollback) => rollback())
       }, 'transactionVar.rollback'),
     },
@@ -101,4 +105,5 @@ export let reatomTransaction = (): TransactionVariable => {
   return transactionVar
 }
 
-export let { withRollback, rollback } = reatomTransaction()
+export let transactionVar = reatomTransaction()
+export let { withRollback, rollback } = transactionVar
