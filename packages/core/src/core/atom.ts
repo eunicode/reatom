@@ -620,47 +620,55 @@ function atomMiddleware(next: Fn) {
   let dirty = pubs[0] === null
   let dependent = pubs.length !== 1
   let subscribed = frame.subs.length !== 0
+  let computed = next !== identity
+  let emptyComputed = computed && !dependent
   let newState = state
 
   // console.log((push ? COLOR.cyan : COLOR.yellow)('enter'), frame.atom.name)
 
-  if (push) {
-    let update = arguments[1]
-
-    newState = frame.state =
-      typeof update === 'function' ? update(state) : update
-    frame.error = null
-    frame.pubs[0] = STACK[STACK.length - 2]!
-  }
-
   let invalid =
-    next !== identity &&
-    (dirty ||
-      (dependent
-        ? !subscribed
-        : // computed without dependencies should rerun only after direct state change
-          push && !Object.is(state, frame.state)))
+    computed &&
+    (dirty || (dependent && !subscribed)) &&
+    (!dependent || _isPubsChanged(contextFrame, frame, pubs, 1))
 
-  if (invalid && (!dependent || _isPubsChanged(contextFrame, frame, pubs, 1))) {
-    frame.pubs = [null]
-    try {
-      frame.atom.__reatom.linking = true
-      frame.state = newState = next(newState)
-    } finally {
-      frame.atom.__reatom.linking = false
-    }
-    frame.error = null
-    frame.pubs[0] = push ? STACK[STACK.length - 2]! : contextFrame
-    // TODO
-    // Object.freeze(frame.pubs)
+  // the second loop may come from push to emptyComputed
+  while (push || invalid) {
+    if (invalid) {
+      invalid = false
 
-    if (frame.subs.length) {
-      // TODO may be a bug with resubscribing
-      relink(frame, pubs)
+      frame.pubs = [null]
+      try {
+        frame.atom.__reatom.linking = true
+        frame.state = newState = next(newState)
+      } finally {
+        frame.atom.__reatom.linking = false
+      }
+      frame.error = null
+      frame.pubs[0] = contextFrame
+      // TODO
+      // Object.freeze(frame.pubs)
+
+      if (frame.subs.length) {
+        // TODO may be a bug with resubscribing
+        relink(frame, pubs)
+      }
     }
-  } else {
-    if (frame.error != null) throw frame.error
+
+    if (push) {
+      push = false
+
+      let update = arguments[1]
+
+      newState = frame.state =
+        typeof update === 'function' ? update(state) : update
+      frame.error = null
+      frame.pubs[0] = STACK[STACK.length - 2]!
+
+      invalid = emptyComputed && !Object.is(state, frame.state)
+    }
   }
+
+  if (frame.error != null) throw frame.error
 
   return newState
 }
