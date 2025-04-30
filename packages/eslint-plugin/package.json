@@ -1,8 +1,8 @@
 {
   "name": "@reatom/eslint-plugin",
-  "version": "3.8.0",
+  "version": "1000.0.0-alpha.1",
   "publishConfig": {
-    "tag": "experimental"
+    "tag": "alpha"
   },
   "private": true,
   "sideEffects": false,
