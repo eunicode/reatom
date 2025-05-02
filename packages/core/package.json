@@ -19,10 +19,11 @@
     "last 1 year"
   ],
   "scripts": {
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "npm run test && npm run test:browser && npm run build",
     "build": "yoctobundle",
-    "test": "vitest run src/*",
-    "test:watch": "vitest src/*",
+    "test": "vitest run",
+    "test:browser": "vitest run --config=vitest.browser.config.ts",
+    "test:watch": "vitest",
     "deopt": "dexnode deopt.js",
     "bench_dynamic": "tsx bench_dynamic.ts",
     "bench_computed": "tsx bench_computed.ts",
@@ -63,6 +64,7 @@
     "@frp-ts/core": "latest",
     "@ngrx/store": "latest",
     "@preact/signals-core": "latest",
+    "@standard-schema/spec": "^1.0.0",
     "@types/node": "latest",
     "@webreflection/signal": "latest",
     "alien-signals": "^1.0.13",
@@ -82,6 +84,7 @@
     "spred": "latest",
     "usignal": "latest",
     "whatsup": "latest",
-    "wonka": "latest"
+    "wonka": "latest",
+    "zod": "^3.24.3"
   }
 }

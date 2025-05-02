@@ -10,13 +10,18 @@ export default defineConfig({
   },
 
   test: {
-    include: ['./src/**/*.test.ts', './src/**/*.test-d.ts'],
-    typecheck: {
+    include: ['./src/**/*.test.browser.ts'],
+    browser: {
       enabled: true,
-      tsconfig: './tsconfig.json',
-      include: ['./src/**/*.test-d.ts'],
-      ignoreSourceErrors: true,
-      allowJs: false,
+      provider: 'playwright',
+      headless: true,
+      screenshotFailures: false,
+      instances: [
+        {
+          name: 'chromium',
+          browser: 'chromium',
+        },
+      ],
     },
   },
 })
