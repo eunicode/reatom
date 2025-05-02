@@ -2,7 +2,6 @@ import {
   action,
   assert,
   type AtomLike,
-  type Atom,
   isAtom,
   type Rec,
   type Unsubscribe,
@@ -183,7 +182,7 @@ let walk = (
   } else if (isLinkedListAtom(child)) {
     walkLinkedList(dom, el, child as any)
   } else if (isAtom(child)) {
-    el.append(walkAtom(dom, child))
+    el.append(walkAtom(dom, child as any))
   } else if (!isSkipped(child)) {
     el.append(child as Node | string)
   }

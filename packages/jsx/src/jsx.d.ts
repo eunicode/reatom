@@ -20,7 +20,7 @@ type AtomOrGetterMaybe<T = any> = T | AtomLike<T> | (() => T)
 
 // TODO write it manually to improve perf
 type AttributesAtomMaybe<T extends Record<keyof any, any>> = {
-  [K in keyof T]: K extends `${'on' | 'model'}:${string}`
+  [K in keyof T]: K extends `${'on' | 'model'}:${string}` | 'ref'
     ? T[K]
     : AtomOrGetterMaybe<T[K]>
 }

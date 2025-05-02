@@ -19,7 +19,7 @@ clearStack()
 DEBUG.extend(withInit(() => false))
 
 const parent = atom(() => {
-  const div = <div />
+  const div = <div /> as HTMLElement
   window.document.body.appendChild(div)
 
   return div
@@ -407,7 +407,7 @@ test('custom component', () =>
 
     await wrap(sleep())
     expect(<Component />).toBeInstanceOf(window.HTMLElement)
-    expect(((<Component draggable="true" />) as HTMLElement).draggable).toBe(
+    expect(((<Component draggable />) as HTMLElement).draggable).toBe(
       true,
     )
     expect(((<Component>123</Component>) as HTMLElement).innerText).toBe('123')
@@ -970,8 +970,8 @@ test('role property', () =>
 
 test('list property', () =>
   context.start(async () => {
-    const element = <input list="list"></input>
-    const list = <datalist id="list"></datalist>
+    const element = <input list="list"></input> as HTMLInputElement
+    const list = <datalist id="list"></datalist> as HTMLDataListElement
     mount(
       parent(),
       <div>
@@ -990,8 +990,8 @@ test('list property', () =>
 
 test('form property', () =>
   context.start(async () => {
-    const element = <input form="form"></input>
-    const form = <form id="form"></form>
+    const element = <input form="form"></input> as HTMLInputElement
+    const form = <form id="form"></form> as HTMLFormElement
     mount(
       parent(),
       <div>
@@ -1067,7 +1067,7 @@ test('custom stylesheet for css property', () =>
 
     expect(stylesheet()).toEqual(sheet)
     expect(stylesheet().cssRules.length).toBe(1)
-    expect(element.computedStyleMap().get('display').toString(), 'flex')
+    expect(element.computedStyleMap().get('display')!.toString(), 'flex')
   }))
 
 test('element subscribes to atom when mounted to DOM', () =>
@@ -1121,7 +1121,7 @@ test('preserves atom connection when moved within DOM', () =>
 
     mount(parent(), element)
     await wrap(sleep())
-    parent().parentElement.append(element)
+    parent().parentElement!.append(element)
     await wrap(sleep())
     valueAtom('bbb')
     await wrap(sleep())
