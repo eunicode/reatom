@@ -18,7 +18,7 @@ export interface AbstractRender<Props, Result> {
    * @returns {{ result: Result }} - Object containing the render result
    */
   render: (props: Props) => { result: Result }
-  
+
   /**
    * Mounts the renderer, setting up subscriptions and event handling
    *
@@ -115,7 +115,6 @@ export let reatomAbstractRender = <Props, Result>({
         pubs[i]!.atom()
       }
 
-
       return { result: state?.result as Result }
     }, `${name}._render`)
 
@@ -132,7 +131,12 @@ export let reatomAbstractRender = <Props, Result>({
     let mount = wrap(() => {
       adapterMount?.()
       let unsubscribe = _render.subscribe((state) => {
-        if (changedVar.find()) {
+        let deps = 0
+        if (
+          changedVar.find((changed) =>
+            ++deps === 2 ? (changed ?? false) : changed,
+          )
+        ) {
           changedVar.set(false)
           rerender(state)
         }

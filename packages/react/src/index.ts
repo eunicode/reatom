@@ -31,12 +31,6 @@ export let getComponentDebugName = (fallback?: string): string => {
   return name || named('Component')
 }
 
-let batch = (cb: Fn) => cb()
-
-export let setupBatch = (newBatch: typeof batch) => {
-  batch = newBatch
-}
-
 export let reatomContext = React.createContext<null | Frame>(null)
 
 export let useFrame = (): Frame => {
@@ -104,11 +98,4 @@ export let reatomFactoryComponent = <Props extends Rec>(
   init: (initProps: Props) => (props: Props) => React.ReactNode,
   name?: string,
 ): ((props: Props) => React.ReactNode) =>
-  reatomComponent(
-    (props) =>
-      React.useMemo(
-        wrap(() => init(props)),
-        [],
-      )(props),
-    name,
-  )
+  reatomComponent((props) => React.useMemo(() => init(props), [])(props), name)
