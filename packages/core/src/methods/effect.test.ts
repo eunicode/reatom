@@ -1,0 +1,35 @@
+import { _read, atom } from '../core'
+import { expect, test, vi } from 'test'
+import { effect } from './effect'
+import { withAbort } from '../mixins'
+import { abortVar } from './abort'
+import { wrap } from './wrap'
+import { sleep } from '../utils'
+
+// FIXME
+test.skip('different types of abort', async () => {
+  abortVar.set('test')
+
+  const a = atom(0)
+  let e1Log = vi.fn()
+  const e1 = effect(() => {
+    a()
+    e1Log('rerun')
+    abortVar.subscribeAbort(e1Log)
+  })
+  let e2Log = vi.fn()
+  const e2 = effect(() => {
+    a()
+    e2Log('rerun')
+    abortVar.subscribeAbort(e2Log)
+    abortVar.subscribeAbort(() => console.log('abort'))
+  }).extend(withAbort())
+
+  expect(e1Log).toBeCalledTimes(1)
+  expect(e2Log).toBeCalledTimes(1)
+
+  a((s) => s + 1)
+  await wrap(sleep())
+  expect(e1Log).toBeCalledTimes(2)
+  expect(e2Log).toBeCalledTimes(3)
+})

@@ -1,6 +1,10 @@
-import { top, named, context, computed } from '../core'
-import { Fn, isAbort } from '../utils'
+import { top, named, context, computed, Computed } from '../core'
+import { Fn, isAbort, Unsubscribe } from '../utils'
 import { abortVar } from './abort'
+
+export interface Effect<State> extends Computed<State> {
+  unsubscribe: Unsubscribe
+}
 
 /**
  * Creates a reactive side effect that automatically tracks dependencies and cleans itself up.
@@ -51,23 +55,21 @@ import { abortVar } from './abort'
  * // polling()
  * ```
  */
-export let effect = (cb: Fn, name?: string) => {
+export let effect = <T>(cb: () => T, name?: string): Effect<T> => {
   let parentFrame = top()
   if (!name) {
     let frame = parentFrame
     name = named(frame.atom === context ? '' : `${frame.atom.name}.` + 'effect')
   }
 
-  // TODO optimize! It would be nice to remove this thing
+  // TODO optimize! It would be nice to remove extra atom
   let parentMemo = computed(
     () => void top().pubs.push(parentFrame),
     `${name}._parentMemo`,
   )
 
-  var unabort = abortVar.subscribeAbort(un)
-
-  let unsubscribe = computed(() => {
-    // put the relative context to this frame
+  let target = computed(() => {
+    // put the relative context to this frame without subscribing to it
     parentMemo()
 
     let res = cb()
@@ -77,12 +79,16 @@ export let effect = (cb: Fn, name?: string) => {
         if (!isAbort(error)) throw error
       })
     }
-  }, name).subscribe()
+    return res
+  }, name)
 
-  function un() {
-    unsubscribe()
+  var unabort = abortVar.subscribeAbort(unsubscribe)
+  var uncomputed = target.subscribe()
+
+  function unsubscribe() {
+    uncomputed()
     unabort?.()
   }
 
-  return un
+  return target.extend(() => ({ unsubscribe }))
 }
