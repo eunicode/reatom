@@ -93,3 +93,18 @@ export let wrap: {
 
   return promise as any
 }
+
+// const { then } = Promise.prototype
+// Object.defineProperty(Promise.prototype, 'then', {
+//   get() {
+//     if (WRAP_CALL) {
+//       WRAP_CALL = false
+//       return then.bind(this)
+//     }
+//     const frame = top()
+//     const self = this
+//     return function (resolve: Fn, reject: Fn) {
+//       return then.call(self, wrap(resolve, frame), wrap(reject, frame))
+//     }
+//   },
+// })
