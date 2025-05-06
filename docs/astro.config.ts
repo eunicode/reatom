@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config'
 import starlight from '@astrojs/starlight'
 import starlightLinksValidator from 'starlight-links-validator'
+import starlightLlmsTxt from 'starlight-llms-txt'
 import rehypeSlug from 'rehype-slug'
 import { sidebar } from './astro.sidebar'
 import { devServerFileWatcher } from './config/integrations/dev-server-file-watcher'
@@ -17,7 +18,7 @@ export default defineConfig({
     ]),
     starlight({
       sidebar,
-      plugins: [starlightLinksValidator()],
+      plugins: [starlightLinksValidator(), starlightLlmsTxt()],
       components: {
         Header: './src/components/starlight/Header.astro',
         MobileMenuFooter: './src/components/starlight/MobileMenuFooter.astro',
