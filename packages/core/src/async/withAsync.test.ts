@@ -85,3 +85,43 @@ test('withAsync for action error handling', async () => {
     params: [false],
   })
 })
+
+test('withAsync for computed retry', async () => {
+  const name = 'computedRetry'
+  let shouldFail = true
+  const params = atom(0, `${name}.params`)
+  const data = computed(async () => {
+    params() // dependency
+    if (shouldFail) {
+      throw new Error('Initial failure')
+    }
+    return 'Success'
+  }, `${name}.data`).extend(withAsync())
+
+  const onReject = vi.fn()
+  data.onReject.extend(withCallHook((call) => onReject(call)))
+  const onFulfill = vi.fn()
+  data.onFulfill.extend(withCallHook((call) => onFulfill(call)))
+
+  // Initial evaluation should fail
+  await wrap(data().catch(noop))
+
+  expect(data.ready()).toBe(true)
+  expect(data.error()).instanceOf(Error)
+  expect(data.error()?.message).toBe('Initial failure')
+  expect(onReject).toHaveBeenCalledTimes(1)
+  expect(onFulfill).not.toHaveBeenCalled()
+
+  // Retry should succeed
+  shouldFail = false
+  await wrap(data.retry().catch(noop))
+
+  expect(data.ready()).toBe(true)
+  expect(data.error()).toBeUndefined()
+  expect(onReject).toHaveBeenCalledTimes(1) // Should not be called again
+  expect(onFulfill).toHaveBeenCalledTimes(1)
+  expect(onFulfill).toHaveBeenCalledWith({
+    payload: 'Success',
+    params: [0], // params from the initial computed evaluation
+  })
+})

@@ -891,7 +891,7 @@ export let atom: {
   <T>(initState: T, name?: string): Atom<T>
 } = (initState: any, name?: string) => createAtom({ initState }, name)
 
-function computedParams(next: Fn) {
+export function computedParams(next: Fn) {
   if (arguments.length > 1) {
     console.error("Computed can't accept parameters")
   }

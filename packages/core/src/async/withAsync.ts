@@ -11,6 +11,8 @@ import {
   top,
   withMiddleware,
   bind,
+  computedParams,
+  STACK,
 } from '../core'
 import { ifCalled, ifChanged } from '../methods'
 import { assert, Fn, isAbort } from '../utils'
@@ -76,6 +78,8 @@ export interface AsyncExt<
    * Atom containing the most recent error or undefined if no error has occurred
    */
   error: Atom<undefined | Error>
+
+  retry: Action<Params, Promise<Payload>>
 }
 
 /**
@@ -91,12 +95,12 @@ export type AsyncOptions<Err = Error, EmptyErr = undefined> = {
    * @returns A properly typed error object
    */
   parseError?: (error: unknown) => Err
-  
+
   /**
    * Initial/reset value for the error atom
    */
   emptyError?: EmptyErr
-  
+
   /**
    * When to reset the error state
    * - 'onCall': Reset error when the async operation starts (default)
@@ -152,7 +156,7 @@ export let withAsync: {
     }, `${target.name}.onFulfill`)
     let onReject: AsyncExt['onReject'] = action((err, params) => {
       if (!isAbort(err)) {
-        error(err = parseError(err))
+        error((err = parseError(err)))
       }
       return onSettle({ error: err, params }) as any // TODO
     }, `${target.name}.onReject`)
@@ -230,12 +234,32 @@ export let withAsync: {
       return state
     }
 
-    return Object.assign(target.extend(withMiddleware(() => asyncMiddleware)), {
-      ready,
-      onFulfill,
-      onReject,
-      onSettle,
-      pending,
-      error,
-    }) satisfies AtomLike & AsyncExt
+    if (target.__reatom.reactive) {
+      let computedIdx = target.__reatom.middlewares.indexOf(computedParams)
+      if (computedIdx !== -1) {
+        let asyncComputedParams = (next: Fn) => {
+          if (STACK[STACK.length - 2]!.atom === retry) {
+            top().pubs.splice(1)
+          }
+
+          return next()
+        }
+        target.__reatom.middlewares[computedIdx] = asyncComputedParams
+      }
+    }
+
+    let retry = action(target, `${target.name}.retry`)
+
+    return target.extend(
+      withMiddleware(() => asyncMiddleware),
+      () => ({
+        ready,
+        onFulfill,
+        onReject,
+        onSettle,
+        pending,
+        error,
+        retry,
+      }),
+    ) satisfies AtomLike & AsyncExt
   }
