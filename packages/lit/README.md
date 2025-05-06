@@ -2,7 +2,7 @@ Integration of Reatom with Lit for creating reactive web components.
 
 ## About the package
 
-The package provides the following functions:
+The package provides the following functions.
 
 - `withReatomElement` - mixin for creating Lit elements with Reatom support
 - `watch` - directive for tracking atom changes in templates
