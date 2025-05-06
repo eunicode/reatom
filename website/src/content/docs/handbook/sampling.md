@@ -1,3 +1,7 @@
+---
+title: Sampling
+description: Documentation on sampling states and events in Reatom
+---
 **To debounce, to abort, or to wrap? How to handle concurrent user input without losing your mind!**
 
 I am the author of the Reatom state manager, and today I want to share with you a comparison between traditional debounce patterns and Reatom's modern concurrency model. This tackles a problem every developer faces: efficiently handling rapid-fire user input that triggers asynchronous operations.
@@ -276,4 +280,126 @@ Key takeaways:
 3. **Better debugging** - inspect intermediate values and follow the execution flow naturally
 4. **Flexible timing control** - easily implement debounce, throttle, or custom timing patterns
 
-Need to depend yor async functions not just from time, but from from other events? Check out the next post!
+**Sampling states and events with atoms and actions: The reactive event pattern that will change how you think about data flow!**
+
+I am the author of the Reatom state manager, and today I want to introduce you to one of the most powerful yet underappreciated patterns in reactive programming: sampling states and events using atoms and actions.
+
+While most state managers force you to choose between imperative events or reactive state, Reatom bridges this gap with an elegant unification of both paradigms. This approach provides the clarity of event-driven programming with the consistency of reactive state management.
+
+## ▍ The Problem with Traditional Approaches
+
+Traditional state management typically falls into one of two categories:
+
+1. **Event-driven approaches** where events trigger reactive streams (RxJS)
+2. **State-driven approaches** where derived values automatically update (MobX, signals)
+
+Each has its strengths, but also critical weaknesses. Event-driven systems need a lot of additional methods to handle complex state properly. Reactive systems with "excel" design fails with event tracking and proper async logic handling.
+
+What if we could have the best of both worlds?
+
+## ▍ Actions as Reactive Events: A Core Insight
+
+The key insight of Reatom is treating actions as first-class reactive events that can be both triggered and observed. Let's see a simple example:
+
+```javascript
+import { atom, action } from '@reatom/core'
+
+// Create an atom - a state container
+const counter = atom(0, 'counter')
+
+// Create an action - a callable function that also works as an event emitter
+const increment = action((amount = 1) => {
+  counter(counter() + amount)
+  return counter()
+}, 'increment')
+
+// Subscribe to state changes
+counter.subscribe((count) => {
+  console.log(`Counter is now: ${count}`)
+})
+
+// Call the action like a normal function
+increment(10) // Counter is now: 10
+```
+
+So far, this looks like a typical action pattern. But here's where Reatom's unique perspective shines: **actions themselves are observable reactive entities**. This means you can subscribe to action calls just like you subscribe to atom changes:
+
+```javascript
+// Subscribe to action calls
+increment.subscribe((calls) => {
+  console.log('Counter calls:', ...calls)
+})
+
+// Call the action like a normal function
+increment()
+increment(5)
+// To the next tick:
+// Counter calls: { params: [], payload: 11 }, { params: [5], payload: 16 }
+```
+
+This dual nature of actions as both callable functions and observable events creates a foundation for powerful patterns that are difficult to implement in other libraries.
+
+## ▍ The `take` Operator: Awaiting Events Procedurally
+
+The `take` operator is a powerful tool for orchestrating asynchronous workflows by allowing you to `await` the next update of an atom or the next call of an action. This enables writing procedural-style logic that reacts to state changes and events. Always use `wrap(take(target))` to ensure proper Reatom context propagation.
+
+For instance, you can wait for a form to become valid before proceeding:
+```javascript
+// Simplified concept
+const formIsValid = atom(false, 'formIsValid');
+const submitAction = action(async () => {
+  if (!formIsValid()) {
+    await wrap(take(formIsValid, (isValid) => isValid === true)); // Wait for formIsValid to be true
+  }
+  // Proceed with submission...
+}, 'submitAction');
+```
+
+`take` also supports conditional waiting by providing a filter function as its second argument, allowing you to wait for specific state conditions or action payloads.
+
+Furthermore, Reatom allows combining multiple `take` operations:
+- `race({ key: take(target1), ... })`: Waits for the first of several events to occur.
+- `all([take(target1), take(target2)])`: Waits for all specified events to occur.
+
+These patterns simplify building complex, multi-step processes that depend on various asynchronous events or state changes, such as form submissions with timeouts or loading multiple data sources in parallel.
+
+## ▍ The `onEvent` Operator: Handling External Events
+
+For integrating with external event sources like DOM elements or WebSockets, Reatom provides the `onEvent` operator. It allows you to `await` specific events (e.g., a button click or a WebSocket message) in a way that respects Reatom's abort context, ensuring proper cleanup when an action is aborted or a component unmounts.
+
+```javascript
+// Conceptual usage
+const button = document.getElementById('myButton');
+const handleClick = action(async () => {
+  await wrap(onEvent(button, 'click'));
+  // Button was clicked, proceed...
+}, 'handleClick');
+```
+`onEvent` is also useful for the "checkpoint pattern" to avoid race conditions: start listening for an event *before* an unrelated long-running async operation, ensuring the event isn't missed if it fires during the operation.
+
+## ▍ Benefits Over Traditional Approaches
+
+Compared to other approaches, Reatom's sampling pattern offers significant advantages:
+
+1. **Readability**: Describe complex flows in a procedural style that's easy to follow
+2. **Maintainability**: No deeply nested callbacks or complex state machines
+3. **Flexibility**: Combine reactive and imperative patterns seamlessly
+4. **Type Safety**: Full TypeScript support with excellent inference
+5. **Testing**: Easily isolate and test individual steps or entire flows
+6. **Concurrency Control**: Built-in handling of race conditions
+
+## ▍ Conclusion
+
+The unification of events and state through Reatom's action and atom primitives enables a uniquely powerful approach to managing application state and behavior. By treating actions as reactive events and providing tools like `take` for procedural event sampling, Reatom creates a programming model that's both more expressive and simpler than traditional approaches.
+
+This pattern is especially valuable for:
+
+- Complex user flows and multi-step processes
+- Form validation and submission
+- Authentication and authorization
+- API request coordination
+- Animation sequences
+
+Next time you find yourself building complex state logic with multiple steps and conditions, consider how Reatom's event sampling approach might help you create code that's more maintainable and easier to reason about.
+
+The power of reactive events awaits!

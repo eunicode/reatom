@@ -1,5 +1,3 @@
-# @reatom/lit
-
 Integration of Reatom with Lit for creating reactive web components.
 
 ## About the package
@@ -26,12 +24,12 @@ import { LitElement, html } from 'lit'
 // Create atoms
 const timer = atom(0, 'timer')
 const count = atom(0, 'count').mix((target) => ({
-  increment: () => target((state) => state + 1)
+  increment: () => target((state) => state + 1),
 }))
 
 // Update timer every second
 setInterval(() => {
-  timer(state => state + 1)
+  timer((state) => state + 1)
 }, 1_000)
 
 // Create a component that tracks render count
@@ -102,7 +100,7 @@ Mixin for creating Lit elements with Reatom support. Allows using atoms in compo
 const MyElement = withReatomElement(
   class MyElement extends LitElement {
     // ...
-  }
+  },
 )
 ```
 
