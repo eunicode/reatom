@@ -1,4 +1,4 @@
-import { actions, type Actions, Ext, extend, type Extend, enqueue } from './'
+import { actions, type Actions, Ext, extend, type Extend, _enqueue } from './'
 import type { Fn, Unsubscribe } from '../utils'
 
 let identity = <T>(value: T): T => value
@@ -238,7 +238,6 @@ export interface Store extends WeakMap<Atom, Frame> {
 export type FunctionSource = string
 
 /**
- * @internal
  * Metadata container for the Reatom context.
  * Stores various maps used for managing atoms and their relationships.
  */
@@ -289,7 +288,6 @@ export interface Context {
   store: Store
 
   /**
-   * @internal
    * Additional metadata for this context.
    */
   meta: ContextMeta
@@ -410,7 +408,7 @@ let mark = (contextFrame: ContextFrame, frame: Frame) => {
     let sub = frame.subs[i]!
 
     if (sub === frame.atom) {
-      enqueue(sub, 'compute')
+      _enqueue(sub, 'compute')
     } else {
       let subFrame = contextFrame.state.store.get(sub as Atom)!
       if (subFrame.pubs[0] !== null) {
@@ -429,7 +427,7 @@ let link = (frame: Frame) => {
     let pub = pubs[i]!
     if (pub.subs.push(atom) === 1) {
       if (pub.atom.__reatom.onConnect !== undefined) {
-        enqueue(pub.atom.__reatom.onConnect, 'effect')
+        _enqueue(pub.atom.__reatom.onConnect, 'effect')
       }
       link(pub)
     }
@@ -456,7 +454,7 @@ let unlink = (sub: Atom, oldPubs: Frame['pubs']) => {
     if (pub.subs.length === 1) {
       pub.subs.pop()
       if (pub.atom.__reatom.onDisconnect !== undefined) {
-        enqueue(pub.atom.__reatom.onDisconnect, 'effect')
+        _enqueue(pub.atom.__reatom.onDisconnect, 'effect')
       }
       unlink(pub.atom, pub.pubs)
     }
@@ -528,7 +526,7 @@ function subscribe(this: AtomLike, userCb?: Fn) {
 
   if (frame!.subs.push(this) === 1) {
     if (frame!.atom.__reatom.onConnect !== undefined) {
-      enqueue(frame!.atom.__reatom.onConnect, 'effect')
+      _enqueue(frame!.atom.__reatom.onConnect, 'effect')
     }
     relink(frame!, [null])
   }
@@ -543,7 +541,7 @@ function subscribe(this: AtomLike, userCb?: Fn) {
 
     if (frame.subs.length === 0) {
       if (frame.atom.__reatom.onDisconnect !== undefined) {
-        enqueue(frame.atom.__reatom.onDisconnect, 'effect')
+        _enqueue(frame.atom.__reatom.onDisconnect, 'effect')
       }
       unlink(this, contextFrame.state.store.get(this)!.pubs)
     }
@@ -1007,7 +1005,6 @@ context.start = (cb = top) => {
 }
 
 /**
- * @internal
  * Reads the current frame for an atom from the context store.
  *
  * This internal utility function retrieves the frame associated with an atom

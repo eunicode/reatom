@@ -1,4 +1,4 @@
-import { _read, atom, computed, type Frame, enqueue, bind } from './core'
+import { _read, atom, computed, type Frame, _enqueue, bind } from './core'
 import { _getPrevFrame } from './methods/context'
 import { AbortAtom, abortVar, peek, variable, wrap } from './methods'
 import { toAbortError, Unsubscribe } from './utils'
@@ -89,7 +89,7 @@ export let reatomAbstractRender = <Props, Result>({
     let _render = computed((state?: { result: Result }): { result: Result } => {
       let pubs = _getPrevFrame()?.pubs ?? [null]
 
-      enqueue(() => (pubs.length = 1), 'cleanup')
+      _enqueue(() => (pubs.length = 1), 'cleanup')
 
       let props = _props()
 

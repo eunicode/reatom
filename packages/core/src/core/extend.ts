@@ -50,7 +50,6 @@ export interface AssignerExt<
  *
  * @template Target - The base atom or action type
  * @template Extensions - Array of extension results to merge with the target
- * @internal
  */
 export type Merge<
   Target extends AtomLike,

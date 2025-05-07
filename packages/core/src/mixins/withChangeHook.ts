@@ -4,7 +4,7 @@ import {
   AtomState,
   ReatomError,
   Ext,
-  enqueue,
+  _enqueue,
   top,
   withMiddleware,
 } from '../core'
@@ -28,7 +28,7 @@ export let withChangeHook = <Target extends AtomLike>(
         let state = next(...params)
 
         if (!Object.is(prevState, state)) {
-          enqueue(frame.run.bind(frame, cb, state, prevState), 'hook')
+          _enqueue(frame.run.bind(frame, cb, state, prevState), 'hook')
         }
         return state
       },
@@ -70,7 +70,7 @@ export let withCallHook = <Target extends Action>(
       if (!Object.is(prevState, state)) {
         for (let i = prevState?.length ?? 0; i < state.length; i++) {
           let { params, payload } = state[i]!
-          enqueue(
+          _enqueue(
             frame.run.bind(
               frame,
               cb,

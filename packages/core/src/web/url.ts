@@ -8,7 +8,7 @@ import {
   atom,
   computed,
   context,
-  enqueue,
+  _enqueue,
   named,
   top,
   withMiddleware,
@@ -238,7 +238,7 @@ export let urlAtom: UrlAtom = /* @__PURE__ */ (() =>
               history.pushState({}, '', href)
 
               if (window.location.hash !== hash) {
-                enqueue(() => {
+                _enqueue(() => {
                   window.location.hash = hash
                   if (href === '' || href === '#') {
                     window.dispatchEvent(new HashChangeEvent('hashchange'))
@@ -580,7 +580,7 @@ export function withSearchParamsPersist<T = string>(
 
             const prevState = serialize(state)
             if (prevState !== undefined) {
-              enqueue(() => {
+              _enqueue(() => {
                 searchParamsAtom.set(key, prevState, true)
               }, 'hook')
             }

@@ -120,7 +120,6 @@ export interface FieldAtom<State = any, Value = State>
      */
     validateOnBlur: boolean | undefined
 
-    /* @internal */
     shouldValidate: boolean | undefined
   }>
 }
@@ -229,7 +228,6 @@ export function reatomField<State, Value = State>(
   options: string | FieldOptions<State, Value>,
 ): FieldAtom<State, Value>
 
-/** @internal */
 export function reatomField<State, A extends Atom<State>, Value = State>(
   _initState: State,
   options: string | FieldOptions<State, Value>,

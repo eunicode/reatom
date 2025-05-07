@@ -4,7 +4,7 @@ import {
   named,
   ReatomError,
   STACK,
-  enqueue,
+  _enqueue,
   createAtom,
   AtomMeta,
 } from './'
@@ -26,7 +26,7 @@ let actionMiddleware = (next: Fn, ...params: any[]) => {
 
   frame.pubs = [STACK[STACK.length - 2]!]
 
-  enqueue(() => (frame.state = []), 'cleanup')
+  _enqueue(() => (frame.state = []), 'cleanup')
 
   return (frame.state = [...frame.state, { params, payload: next(...params) }])
 }

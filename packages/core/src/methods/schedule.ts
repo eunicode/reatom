@@ -1,9 +1,9 @@
-import { enqueue, top } from '../core'
+import { _enqueue, top } from '../core'
 
 /** Delay some work to the end of all computations */
 export let schedule = <T>(fn: () => T, frame = top()) => {
   let promise = new Promise((res, rej) =>
-    enqueue(() => {
+    _enqueue(() => {
       try {
         let result = frame ? frame.run(fn) : fn()
 

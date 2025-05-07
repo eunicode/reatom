@@ -1,9 +1,9 @@
-import { atom, enqueue } from '../core'
+import { atom, _enqueue } from '../core'
 import { wrap } from '../methods'
 
 export let rAF = /* @__PURE__ */ (() =>
   atom(() => {
-    enqueue(async () => {
+    _enqueue(async () => {
       while (true) {
         await wrap(new Promise((r) => requestAnimationFrame(r)))
         rAF((state) => {

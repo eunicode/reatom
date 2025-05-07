@@ -5,7 +5,7 @@ import {
   context,
   top,
   withMiddleware,
-  enqueue,
+  _enqueue,
   ActionState,
   bind,
 } from './core'
@@ -187,7 +187,7 @@ export let connectLogger = () => {
         () =>
           function logger(next, ...params) {
             // enqueue log BEFORE `next` call to arrange logs with the order of atoms and actions call
-            enqueue(
+            _enqueue(
               bind(() => {
                 if (target.__reatom.reactive) {
                   if (Object.is(prevState, state)) return

@@ -2,7 +2,6 @@ import { Queue, bind, context } from './'
 import type { Fn } from '../utils'
 
 /**
- * @internal
  * Schedules a function to be executed in a specific queue of the current context.
  *
  * This is the core mechanism for scheduling reactive updates in Reatom. When an atom's
@@ -13,7 +12,7 @@ import type { Fn } from '../utils'
  * @param fn - The function to schedule for execution
  * @param queue - The queue to add the function to ('hook', 'compute', 'cleanup', or 'effect')
  */
-export let enqueue = (
+export let _enqueue = (
   fn: Fn,
   queue: 'hook' | 'compute' | 'cleanup' | 'effect',
 ): void => {
@@ -45,7 +44,6 @@ export let enqueue = (
  * @param queue - The queue to iterate over
  * @param i - The starting index
  * @returns A function that returns the next item in the queue or undefined when empty
- * @internal
  */
 let QueueIterator = (queue: Queue, i: number) => () =>
   i < queue.length ? queue[i++] : undefined
