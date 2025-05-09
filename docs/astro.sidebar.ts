@@ -6,14 +6,22 @@ import { adapters } from './adapters.config'
 export const sidebar = [
   group('Start', {
     items: [
-      'start/setup',
-      'start/atoms',
-      'start/actions',
-      'start/async',
-      'start/forms',
-      'start/persist',
-      'start/routing',
-      'start/tooling',
+      group('Essentials', {
+        items: [
+          'start/setup',
+          'start/atoms',
+          'start/actions',
+          'start/async',
+        ],
+      }),
+      group('Advanced', {
+        items: [
+          'start/forms',
+          'start/persist',
+          'start/routing',
+          'start/tooling',
+        ],
+      }),
     ],
   }),
 
