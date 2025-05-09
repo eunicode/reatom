@@ -238,7 +238,7 @@ export let withAsync: {
       let computedIdx = target.__reatom.middlewares.indexOf(computedParams)
       if (computedIdx !== -1) {
         let asyncComputedParams = (next: Fn) => {
-          if (STACK[STACK.length - 2]!.atom === retry) {
+          if (STACK[STACK.length - 2]?.atom === retry) {
             top().pubs.splice(1)
           }
 

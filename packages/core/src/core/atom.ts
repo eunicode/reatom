@@ -56,7 +56,6 @@ export interface AtomMeta {
  * providing the foundation for Reatom's reactivity system.
  *
  * @template State - The type of state stored in the atom
- * @template Params - The parameter types the atom accepts when called
  * @template Payload - The return type when the atom is called
  */
 export interface AtomLike<
@@ -138,7 +137,7 @@ export interface Computed<State = any> extends AtomLike<State, []> {}
 /**
  * Call stack snapshot for an atom or action execution.
  *
- * Frames represent the execution context of an atom at a specific point in time,
+ * Frames represent the execution context of an atom at a specific point in a call stack,
  * tracking its current state, error status, and dependencies.
  *
  * @template State - The state type of the atom
@@ -186,6 +185,9 @@ export interface Frame<
    * @returns The result of the function call
    */
   run<I extends any[], O>(fn: (...params: I) => O, ...params: I): O
+
+  /** The root frame state with all meta information */
+  root: RootState
 }
 
 /**
@@ -238,59 +240,36 @@ export interface Store extends WeakMap<Atom, Frame> {
 export type FunctionSource = string
 
 /**
- * Metadata container for the Reatom context.
- * Stores various maps used for managing atoms and their relationships.
- */
-export interface ContextMeta {
-  /**
-   * Stores initialization values for WeakKeys.
-   */
-  init: WeakMap<WeakKey, any>
-  /**
-   * Maps frames to their associated variable maps.
-   */
-  variable: WeakMap<Frame, WeakMap<WeakKey, any>>
-
-  // abort: WeakMap<Frame, AbortAtom>
-
-  /**
-   * Maps atoms to their previous and next frames for tracking frame transitions.
-   */
-  frames: WeakMap<
-    Atom,
-    {
-      prev: null | Frame
-      next: Frame
-    }
-  >
-
-  /**
-   * Cache for memoized selectors, keyed by source function.
-   */
-  select: WeakMap<AtomLike, Record<FunctionSource, AtomLike>>
-
-  /**
-   * Additional metadata entries that can be dynamically added.
-   */
-  [key: string]: WeakMap<WeakKey, any>
-}
-
-/**
  * Reatom's execution context that manages reactive state.
  *
  * The context handles tracking relationships between atoms, scheduling operations,
  * and maintaining the execution stack during Reatom operations.
  */
-export interface Context {
+export interface RootState {
   /**
    * Store that maps atoms to their frames in this context.
    */
   store: Store
 
   /**
-   * Additional metadata for this context.
+   * Frame history.
    */
-  meta: ContextMeta
+  frames: WeakMap<Atom, { prev: null | Frame; next: Frame }>
+
+  /**
+   * Initialization flags for init hooks.
+   */
+  inits: WeakMap<WeakKey, any>
+
+  /**
+   * Cache for memoized selectors, keyed by source function.
+   */
+  selects: WeakMap<AtomLike, Record<FunctionSource, AtomLike>>
+
+  /**
+   * Async variables maps.
+   */
+  variables: WeakMap<Frame, WeakMap<WeakKey, any>>
 
   /**
    * Queue for hook callbacks to be executed.
@@ -319,18 +298,21 @@ export interface Context {
    * @param queue - Queue to add the callback to
    */
   pushQueue(cb: Fn, queue: 'hook' | 'compute' | 'cleanup' | 'effect'): void
+
+  /** Link to itself frame for internal use */
+  frame: RootFrame
 }
 
 /**
  * Special frame type for the context atom.
  */
-export interface ContextFrame extends Frame<Context, [], ContextFrame> {}
+export interface RootFrame extends Frame<RootState, []> {}
 
 /**
  * Atom interface for the context atom.
  * Provides methods to start new isolated contexts.
  */
-export interface ContextAtom extends AtomLike<Context, [], ContextFrame> {
+export interface ContextAtom extends AtomLike<RootState, [], RootFrame> {
   /**
    * Start a new isolated context and run a callback within it.
    *
@@ -344,7 +326,7 @@ export interface ContextAtom extends AtomLike<Context, [], ContextFrame> {
    *
    * @returns The new context frame
    */
-  start(): ContextFrame
+  start(): RootFrame
 }
 
 export class ReatomError extends Error {}
@@ -355,26 +337,15 @@ export function run<I extends any[], O>(
   fn: (...params: I) => O,
   ...params: I
 ): O {
-  let contextFrame = this
-
-  while (contextFrame.atom !== context) {
-    contextFrame = contextFrame.pubs.find((pub) => pub !== null)!
-  }
-
-  if (STACK.length !== 0 && STACK[0] !== contextFrame) {
-    throw new ReatomError('context collision')
-  }
-
   try {
-    STACK.push(contextFrame, this)
+    STACK.push(this)
     return fn(...params)
   } finally {
-    STACK.pop()
     STACK.pop()
   }
 }
 
-export let _copy = (contextFrame: ContextFrame, frame: Frame) => {
+export let _copy = (frame: Frame) => {
   // console.log(COLOR.dimGreen('copy'), frame.atom.name)
 
   let pubs = (
@@ -390,9 +361,10 @@ export let _copy = (contextFrame: ContextFrame, frame: Frame) => {
     pubs,
     subs: frame.subs,
     run,
+    root: frame.root,
   }
 
-  contextFrame.state.store.set(frame.atom, frame)
+  frame.root.store.set(frame.atom, frame)
 
   return frame
 }
@@ -401,7 +373,7 @@ export let isAtom = (value: any): value is AtomLike => {
   return typeof value === 'function' && '__reatom' in value
 }
 
-let mark = (contextFrame: ContextFrame, frame: Frame) => {
+let mark = (frame: Frame) => {
   // console.log(COLOR.dimGreen('mark'), frame.atom.name)
 
   for (let i = 0; i < frame.subs.length; i++) {
@@ -410,9 +382,9 @@ let mark = (contextFrame: ContextFrame, frame: Frame) => {
     if (sub === frame.atom) {
       _enqueue(sub, 'compute')
     } else {
-      let subFrame = contextFrame.state.store.get(sub as Atom)!
+      let subFrame = frame.root.store.get(sub)!
       if (subFrame.pubs[0] !== null) {
-        mark(contextFrame, _copy(contextFrame, subFrame))
+        mark(_copy(subFrame))
       }
     }
   }
@@ -501,7 +473,7 @@ let relink = (frame: Frame, oldPubs: Frame['pubs']) => {
  * @returns `true` if the atom has subscribers, `false` otherwise
  */
 export let isConnected = (anAtom: AtomLike): boolean =>
-  !!context().state.store.get(anAtom)?.subs.length
+  !!top().root.store.get(anAtom)?.subs.length
 
 export function assertFn(fn: unknown): asserts fn is Fn {
   if (typeof fn !== 'function') {
@@ -518,11 +490,12 @@ function subscribe(this: AtomLike, userCb?: Fn) {
     }, `${this.name}._subscribe`).subscribe()
   }
 
-  let contextFrame = context()
+  let rootFrame = top().root.frame
 
-  contextFrame.run(this)
+  // prevent reactive tracking
+  rootFrame.run(this)
 
-  let frame = contextFrame.state.store.get(this)
+  let frame = rootFrame.state.store.get(this)
 
   if (frame!.subs.push(this) === 1) {
     if (frame!.atom.__reatom.onConnect !== undefined) {
@@ -543,11 +516,11 @@ function subscribe(this: AtomLike, userCb?: Fn) {
       if (frame.atom.__reatom.onDisconnect !== undefined) {
         _enqueue(frame.atom.__reatom.onDisconnect, 'effect')
       }
-      unlink(this, contextFrame.state.store.get(this)!.pubs)
+      unlink(this, rootFrame.state.store.get(this)!.pubs)
     }
 
     frame = undefined
-  }, contextFrame)
+  }, rootFrame)
 }
 
 let i = 0
@@ -557,11 +530,11 @@ declare global {
   // @ts-ignore TODO
   var __REATOM: Array<Ext>
 }
+// TODO put STACK to globalThis
 if (globalThis.__REATOM) throw new ReatomError('package duplication')
 globalThis.__REATOM = []
 
 export function _isPubsChanged(
-  contextFrame: ContextFrame,
   frame: Frame,
   pubs: Frame['pubs'],
   from: number,
@@ -576,7 +549,7 @@ export function _isPubsChanged(
     let pubFreshError = pubError
 
     // try to reduce extra atom calls
-    let pubFrame = contextFrame.state.store.get(pubAtom)!
+    let pubFrame = frame.root.store.get(pubAtom)!
     if (
       pubFrame.pubs.length === 1 ||
       (pubFrame.pubs[0] !== null && pubFrame.subs.length !== 0)
@@ -607,9 +580,7 @@ export function _isPubsChanged(
 
 /** The hurt of atom internal logic*/
 function atomMiddleware(next: Fn) {
-  let contextFrame = STACK[0]!
   let frame = STACK[STACK.length - 1]!
-  // let causeFrame = STACK[STACK.length - 2]!
 
   let push = arguments.length > 1
   let { state, pubs } = frame
@@ -625,7 +596,7 @@ function atomMiddleware(next: Fn) {
   let invalid =
     computed &&
     (dirty || (dependent && !subscribed)) &&
-    (!dependent || _isPubsChanged(contextFrame, frame, pubs, 1))
+    (!dependent || _isPubsChanged(frame, pubs, 1))
 
   // the second loop may come from push to emptyComputed
   while (push || invalid) {
@@ -640,7 +611,7 @@ function atomMiddleware(next: Fn) {
         frame.atom.__reatom.linking = false
       }
       frame.error = null
-      frame.pubs[0] = contextFrame
+      frame.pubs[0] = frame.root.frame
       // TODO
       // Object.freeze(frame.pubs)
 
@@ -722,9 +693,8 @@ export let createAtom: {
       // Use computed property name to setup the function name for better stack traces
       [name](): State {
         let { reactive, initState, middlewares } = target.__reatom
-        let contextFrame = context()
         let topFrame = top()
-        let frame = contextFrame.state.store.get(target)!
+        let frame = topFrame.root.store.get(target)!
         let push = !reactive || arguments.length !== 0
         let isInit = frame === undefined
 
@@ -736,8 +706,9 @@ export let createAtom: {
             pubs: [null],
             subs: [],
             run,
+            root: topFrame.root,
           }
-          contextFrame.state.store.set(target, frame)
+          topFrame.root.store.set(target, frame)
 
           if (typeof initState === 'function') {
             try {
@@ -746,7 +717,7 @@ export let createAtom: {
               frame.state = initState() as State
             } catch (error) {
               frame.error = error ?? new ReatomError('Unknown error')
-              frame.pubs[0] = contextFrame
+              frame.pubs[0] = topFrame.root.frame
               throw error
             } finally {
               if (reactive) target.__reatom.processing = false
@@ -768,7 +739,7 @@ export let createAtom: {
           !target.__reatom.processing &&
           (push || dirty || (dependent && !subscribed))
         ) {
-          STACK.push(isInit ? frame : (frame = _copy(contextFrame, frame)))
+          STACK.push(isInit ? frame : (frame = _copy(frame)))
 
           if (reactive) target.__reatom.processing = true
 
@@ -807,7 +778,7 @@ export let createAtom: {
 
           frame.error = newError
           frame.state = newState
-          frame.pubs[0] ??= contextFrame
+          frame.pubs[0] ??= topFrame.root.frame
 
           if (!push && topFrame.atom.__reatom.linking) {
             // if (topFrame.atom === frame.atom) console.log(COLOR.bgRed('topFrame.atom === frame.atom')) // prettier-ignore
@@ -819,7 +790,7 @@ export let createAtom: {
             subscribed &&
             (!Object.is(state, frame.state) || !Object.is(error, frame.error))
           ) {
-            mark(contextFrame, frame)
+            mark(frame)
           }
 
           target.__reatom.processing = false
@@ -839,8 +810,6 @@ export let createAtom: {
         }
 
         return frame.state
-        // TODO if `isInit` triggers some logic which change (with a new frame) the atom, what state should we return??
-        return contextFrame.state.store.get(target)!.state
       },
     }[name]!,
     {
@@ -945,63 +914,47 @@ export let isComputed = (target: AtomLike): boolean =>
  * @returns The current context frame
  * @throws {ReatomError} If called outside a valid context (broken async stack)
  */
-export let context = castAtom<ContextAtom>(
-  () => {
-    let contextFrame = STACK[0] as ContextFrame
-    // @ts-ignore
-    if (contextFrame?.atom !== context) {
-      throw new ReatomError('broken async stack')
-    }
-    return contextFrame
-  },
-  {
-    reactive: false,
-    initState: undefined,
-    middlewares: [],
-  },
-)
-/**
- * Starts a new isolated Reatom context.
- *
- * Creates a fresh reactive context with its own state store, allowing for isolated
- * execution of reactive code. This is used for creating separate reactivity scopes
- * that don't interfere with each other, which is useful for features like SSR, testing,
- * or isolating different parts of an application.
- *
- * @param cb - Callback function to run in the new context (defaults to returning the top frame)
- * @returns The result of running the callback in the new context
- * @throws {ReatomError} If there's an existing context in the stack (collision)
- */
+export let context = castAtom<ContextAtom>(() => top().root.frame, {
+  reactive: false,
+  initState: undefined,
+  middlewares: [],
+})
+
 context.start = (cb = top) => {
-  if (STACK.length !== 0) {
-    throw new ReatomError('context collision')
+  let frame: RootFrame = {
+    error: null,
+    state: {
+      store: new WeakMap() as Store,
+
+      // meta
+      frames: new WeakMap(),
+      inits: new WeakMap(),
+      selects: new WeakMap(),
+      variables: new WeakMap(),
+
+      // queues
+      hook: [],
+      compute: [],
+      cleanup: [],
+      effect: [],
+
+      pushQueue(cb: Fn, queue: 'hook' | 'compute' | 'effect') {
+        this[queue].push(cb)
+      },
+
+      frame: undefined as any,
+    } satisfies RootState,
+    atom: context as any,
+    pubs: [null],
+    subs: [],
+    run,
+    root: undefined as any,
   }
-  return (
-    {
-      error: null,
-      state: {
-        store: new WeakMap() as Store,
-        meta: {
-          init: new WeakMap(),
-          variable: new WeakMap(),
-          abort: new WeakMap(),
-          frames: new WeakMap(),
-          select: new WeakMap(),
-        },
-        hook: [],
-        compute: [],
-        cleanup: [],
-        effect: [],
-        pushQueue(cb: Fn, queue: 'hook' | 'compute' | 'effect') {
-          this[queue].push(cb)
-        },
-      } satisfies Context,
-      atom: context as any,
-      pubs: [null],
-      subs: [],
-      run,
-    } satisfies ContextFrame
-  ).run(cb)
+
+  frame.root = frame.state
+  frame.state.frame = frame
+
+  return frame.run(cb)
 }
 
 /**
@@ -1019,23 +972,7 @@ context.start = (cb = top) => {
  */
 export let _read = <State = any, Params extends any[] = [], Payload = State>(
   target: AtomLike<State, Params, Payload>,
-): undefined | Frame<State, Params, Payload> =>
-  context().state.store.get(target)
-
-export let STACK: Array<Frame> = []
-
-STACK.push(context.start(() => context()))
-
-/**
- * Clears the current Reatom context stack.
- *
- * This is primarily used to force explicit context preservation via `wrap()`.
- * By clearing the stack, any atom operations outside of a properly wrapped
- * function will throw "missing async stack" errors, ensuring proper context handling.
- */
-export let clearStack = () => {
-  STACK = []
-}
+): undefined | Frame<State, Params, Payload> => top().root.store.get(target)
 
 /**
  * Gets the current top frame in the Reatom context stack.
@@ -1051,6 +988,21 @@ export let top = (): Frame => {
     throw new ReatomError('missing async stack')
   }
   return STACK[STACK.length - 1]!
+}
+
+export let STACK: Array<Frame> = []
+
+STACK.push(context.start())
+
+/**
+ * Clears the current Reatom context stack.
+ *
+ * This is primarily used to force explicit context preservation via `wrap()`.
+ * By clearing the stack, any atom operations outside of a properly wrapped
+ * function will throw "missing async stack" errors, ensuring proper context handling.
+ */
+export let clearStack = () => {
+  STACK = []
 }
 
 /**
@@ -1092,10 +1044,10 @@ export let mock = <Params extends any[], Payload>(
   target: AtomLike<any, Params, Payload>,
   cb: (...params: Params) => Payload,
 ): Unsubscribe => {
-  let contextFrame = context()
+  let { root } = top()
   let mockMiddleware = (next: Fn, ...params: Params) => {
     // The user forgot to clean mocks in a prev test
-    if (contextFrame !== context()) return next(...params)
+    if (root !== top().root) return next(...params)
 
     return cb(...params)
   }

@@ -7,7 +7,6 @@ import {
   action,
   atom,
   computed,
-  context,
   _enqueue,
   named,
   top,
@@ -594,7 +593,7 @@ export function withSearchParamsPersist<T = string>(
         let prevFrame = _getPrevFrame(frame)
         if (
           // process only the last update
-          frame === context().state.store.get(target) &&
+          frame === frame.root.store.get(target) &&
           // process only mutation or computed update
           frame.pubs[1]?.state === prevFrame?.pubs[1]?.state &&
           isSubpath(urlAtom().pathname, path)

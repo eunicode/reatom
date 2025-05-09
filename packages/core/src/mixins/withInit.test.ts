@@ -41,6 +41,8 @@ test('different contexts', () => {
     expect(data()).toBe(3)
     expect(data()).toBe(3)
     expect(data()).toBe(3)
+
+    expect(context.start(() => data())).toBe(4)
   })
 })
 

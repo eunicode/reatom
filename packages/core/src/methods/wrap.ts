@@ -1,5 +1,5 @@
 import { assert, Fn, isAbort, noop, Overloads } from '../utils'
-import { top, context, STACK, ReatomError, Frame } from '../core'
+import { top, STACK, ReatomError, Frame } from '../core'
 import { abortVar } from './abort'
 
 /**
@@ -56,8 +56,6 @@ export let wrap: {
     } as any
   }
 
-  let contextFrame = context()
-
   assert(target instanceof Promise, 'target should be promise', ReatomError)
 
   let promise = new Promise(async (resolve, reject) => {
@@ -75,20 +73,12 @@ export let wrap: {
       seal = () => reject(error)
     }
 
-    queueMicrotask(() => {
-      // check context collision
-      frame.run(noop)
-
-      STACK.push(contextFrame, frame)
-    })
+    queueMicrotask(() => void STACK.push(frame))
 
     un?.()
     seal()
 
-    queueMicrotask(() => {
-      STACK.pop()
-      STACK.pop()
-    })
+    queueMicrotask(() => void STACK.pop())
   })
 
   return promise as any

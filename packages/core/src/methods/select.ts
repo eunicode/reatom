@@ -1,6 +1,5 @@
 import {
   computed,
-  context,
   named,
   ReatomError,
   top,
@@ -20,7 +19,7 @@ export let select = <T>(
     touchedMap.set(frame, (touched = {}))
   }
 
-  const map = context().state.meta.select
+  const map = frame.root.selects
   let atoms = map.get(frame.atom)
 
   if (!atoms) {

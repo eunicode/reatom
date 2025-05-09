@@ -8,8 +8,12 @@ import {
   _enqueue,
   ActionState,
   bind,
+  action,
 } from './core'
 import { Fn, isBrowser } from './utils'
+
+export let log = /* @__PURE__ */ (() =>
+  action<[name: string, payload: any]>((_name, payload) => payload))()
 
 let isSkip = (target: AtomLike) =>
   target.name.startsWith('_') || /\._/.test(target.name)
@@ -148,7 +152,7 @@ export let getStackTrace = (acc = '─ ', steps = '', frame = top()): string => 
 export let connectLogger = () => {
   let isNodeEnv = !isBrowser()
 
-  globalThis.__REATOM.push(<T extends AtomLike>(target: T): T => {
+  let logExt = <T extends AtomLike>(target: T): T => {
     if (isSkip(target)) return target
 
     let title = `%c ${target.name}`
@@ -192,9 +196,9 @@ export let connectLogger = () => {
                 if (target.__reatom.reactive) {
                   if (Object.is(prevState, state)) return
 
-                  let { init } = context().state.meta
-                  if (!init.has(initKey)) {
-                    init.set(initKey, null)
+                  let inits = top().root.inits
+                  if (!inits.has(initKey)) {
+                    inits.set(initKey, null)
                     if (params.length === 0) return
                   }
 
@@ -204,6 +208,11 @@ export let connectLogger = () => {
                   })
                 } else {
                   let call = (state as ActionState)[state.length - 1]
+
+                  if (target === log) {
+                    title = call?.params[0]
+                  }
+
                   if (error) {
                     logStack(undefined, error, () =>
                       params.forEach((param, i) =>
@@ -237,5 +246,9 @@ export let connectLogger = () => {
           },
       ),
     )
-  })
+  }
+
+  globalThis.__REATOM.push(logExt)
+
+  log.extend(logExt)
 }

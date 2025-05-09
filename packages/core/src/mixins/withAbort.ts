@@ -1,4 +1,4 @@
-import { AssignerExt, context, ReatomError, top } from '../core'
+import { AssignerExt, ReatomError, top } from '../core'
 import { AbortAtom, abortVar } from '../methods'
 import { _getPrevAtomFrame, _getPrevFrame } from '../methods/context'
 import { assert, Fn, isAbort, noop, toAbortError } from '../utils'
@@ -79,7 +79,7 @@ export let withAbort = (
 
     return {
       abort(reason?: any) {
-        let frame = context().state.store.get(target)
+        let frame = top().root.store.get(target)
         if (frame) {
           abortVar.find((maybeAbort) => maybeAbort ?? null, frame)?.(reason)
         }
