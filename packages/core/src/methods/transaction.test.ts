@@ -10,7 +10,7 @@ test('optimistic update', async () => {
   type List = Array<{ todo: string; done: boolean }>
 
   const add = action((todo: string) => {
-    list((list) => [...list, { todo, done: false }])
+    list.set((list) => [...list, { todo, done: false }])
   }, 'add')
 
   const updateList = action(async () => {

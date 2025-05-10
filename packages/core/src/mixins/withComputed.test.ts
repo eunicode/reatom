@@ -17,12 +17,12 @@ test('withComputed', () => {
   data()
   expect(computed).toBeCalledTimes(1)
 
-  data(2)
+  data.set(2)
   notify()
   expect(track).toBeCalledWith(2)
   expect(computed).toBeCalledTimes(1)
 
-  param(3)
+  param.set(3)
   notify()
   expect(track).toBeCalledWith(3)
   expect(computed).toBeCalledTimes(2)

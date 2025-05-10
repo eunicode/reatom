@@ -34,7 +34,7 @@ test('suspense', async () => {
   expect(track).toBeCalledTimes(2)
   expect(track).toBeCalledWith(0)
 
-  param(1)
+  param.set(1)
   expect(() => result()).toThrow()
 
   await wrap(sleep())
@@ -68,7 +68,7 @@ test('suspense reject propagation', async () => {
   expect(calls).toBe(2)
   expect(track.mock.lastCall?.[0]).instanceof(Error)
 
-  param(10)
+  param.set(10)
   notify()
   expect(calls).toBe(3)
   expect(track.mock.lastCall?.[0]).instanceof(Promise)

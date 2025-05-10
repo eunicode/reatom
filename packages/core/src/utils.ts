@@ -154,6 +154,13 @@ export type Overloads<T> = T extends {
     ) => Return1 | Return2 | Return3 | Return4 | Return5
   : never
 
+// ? | ((...params: Overload1Params) => Return1)
+//     | ((...params: Overload2Params) => Return2)
+//     | ((...params: Overload3Params) => Return3)
+//     | ((...params: Overload4Params) => Return4)
+//     | ((...params: Overload5Params) => Return5)
+// : never
+
 /**
  * Extracts the parameters type from an overloaded function.
  * Returns a union of all possible parameter tuples.

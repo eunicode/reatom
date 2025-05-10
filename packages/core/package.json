@@ -1,10 +1,9 @@
 {
   "name": "@reatom/core",
-  "version": "1000.0.0-alpha.22",
+  "version": "1000.0.0-alpha.23",
   "publishConfig": {
     "tag": "alpha"
   },
-  "private": false,
   "description": "The ultimate state manager",
   "exports": {
     "types": "./build/index.d.ts",

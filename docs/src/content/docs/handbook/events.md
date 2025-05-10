@@ -31,7 +31,7 @@ const counter = atom(0, 'counter')
 
 // Create an action - a callable function that also works as an event emitter
 const increment = action((amount = 1) => {
-  counter(counter() + amount)
+  counter.set(counter() + amount)
   return counter()
 }, 'increment')
 
@@ -78,7 +78,7 @@ const saveUser = action(async () => {
   if (response.success) {
     // Wait for form confirmation
     await wrap(take(confirmSave))
-    successAtom(true)
+    successAtom.set(true)
   }
 }, 'saveUser')
 ```
@@ -131,7 +131,7 @@ const search = action(async () => {
   const results = await wrap(searchApi(filters))
 
   // Update results
-  resultsAtom(results)
+  resultsAtom.set(results)
 }, 'search')
 
 // Attach to a button in UI
@@ -161,11 +161,11 @@ const isValidAtom = computed(() => {
 
 // Form actions
 const setUsername = action((value) => {
-  usernameAtom(value)
+  usernameAtom.set(value)
 }, 'setUsername')
 
 const setPassword = action((value) => {
-  passwordAtom(value)
+  passwordAtom.set(value)
 }, 'setPassword')
 
 const submit = action(async () => {
@@ -195,7 +195,7 @@ const formFlowController = action(async () => {
 
   // Show success message and wait for user acknowledgment
   const showSuccessMessageAtom = atom(false, 'showSuccessMessage')
-  showSuccessMessageAtom(true)
+  showSuccessMessageAtom.set(true)
 
   // Wait for a specific button click to close the success message
   const closeButton = document.getElementById('closeSuccess')
@@ -318,16 +318,16 @@ const authFlow = action(async () => {
     password: formData.get('password'),
   }
 
-  loadingAtom(true)
+  loadingAtom.set(true)
 
   try {
     // Attempt login
     const user = await wrap(login(credentials))
-    userAtom(user)
+    userAtom.set(user)
 
     // If 2FA is required, wait for verification code
     if (user.requires2FA) {
-      twofaRequiredAtom(true)
+      twofaRequiredAtom.set(true)
 
       // Get reference to verification form
       const verificationForm = document.getElementById('2faForm')
@@ -359,15 +359,15 @@ const authFlow = action(async () => {
       window.location.href = '/dashboard'
     }
   } catch (error) {
-    errorAtom(error)
+    errorAtom.set(error)
 
     // Reset after error is acknowledged
     const dismissButton = document.getElementById('dismissError')
     await wrap(onEvent(dismissButton, 'click'))
 
-    errorAtom(null)
+    errorAtom.set(null)
   } finally {
-    loadingAtom(false)
+    loadingAtom.set(false)
   }
 }, 'authFlow')
 

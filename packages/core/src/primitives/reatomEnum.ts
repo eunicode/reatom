@@ -60,7 +60,7 @@ export const reatomEnum = <
         return value
       }),
     )
-    .actions((target) => ({ reset: () => target(initState!) }))
+    .actions((target) => ({ reset: () => target.set(initState!) }))
     .actions((target) =>
       variants.reduce(
         (acc, variant) => {
@@ -74,7 +74,7 @@ export const reatomEnum = <
           ) as keyof typeof acc
 
           // @ts-expect-error bad types inference for dynamic actions
-          acc[setterName] = () => target(variant)
+          acc[setterName] = () => target.set(variant)
           return acc
         },
         {} as EnumVariantSetters<T, Format>,

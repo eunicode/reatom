@@ -7,7 +7,7 @@ describe('reatomString', () => {
 
     expect(a()).toBe(`string`)
 
-    a((s) => `s`)
+    a.set((s) => `s`)
 
     expect(a()).toBe(`s`)
     a.reset()

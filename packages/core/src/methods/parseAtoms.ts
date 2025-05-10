@@ -1,4 +1,4 @@
-import { Action, Atom, isAction, isAtom } from '../core'
+import { Action, AtomLike, isAction, isAtom } from '../core'
 import {
   isLinkedListAtom,
   LinkedList,
@@ -26,7 +26,7 @@ export type ParseAtoms<T> = T extends Action
     ? T extends LinkedList<LLNode<infer T>>
       ? Array<ParseAtoms<T>>
       : never
-    : T extends Atom<infer T>
+    : T extends AtomLike<infer T, any, any>
       ? ParseAtoms<T>
       : T extends Map<infer K, infer T>
         ? Map<K, ParseAtoms<T>>

@@ -1,5 +1,5 @@
 import { expectTypeOf, test } from 'vitest'
-import { AtomMut, NumberAtom, reatomZod, ZodAtom } from '.'
+import { AtomMut, NumberAtom, reatomZod } from '.'
 import { z } from 'zod'
 
 test('right types for basic schema', async () => {

@@ -97,7 +97,7 @@ export let reatomAbstractRender = <Props, Result>({
         abortAtom = abortVar.set(abortAtom ?? `${name}._abort`)
         // Related to react remounts of `StrictMode` and `Activity`.
         if (peek(abortAtom) !== null) {
-          abortAtom(null)
+          abortAtom.set(null)
         }
 
         return { result: adapterRender(props) }
@@ -121,7 +121,7 @@ export let reatomAbstractRender = <Props, Result>({
     let render = bind((props: Props) => {
       try {
         rendering = true
-        _props({ ...props })
+        _props.set({ ...props })
         return _render()
       } finally {
         rendering = false
@@ -144,7 +144,7 @@ export let reatomAbstractRender = <Props, Result>({
 
       return wrap(() => {
         unsubscribe()
-        abortAtom(toAbortError('unmount ' + name))
+        abortAtom.set(toAbortError('unmount ' + name))
       })
     }, frame)
 

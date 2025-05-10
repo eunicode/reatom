@@ -432,17 +432,17 @@ export function reatomField<State, Value = State>(
     const prevValue = value()
     if (!filter(newValue, prevValue)) return prevValue
 
-    field(toState(newValue))
+    field.set(toState(newValue))
     focus.merge({ touched: true })
 
     return value()
   }, `${name}.change`)
 
   const reset: This['reset'] = action(() => {
-    field(initState())
-    focus(fieldInitFocus)
+    field.set(initState())
+    focus.set(fieldInitFocus)
 
-    validation(fieldInitValidation)
+    validation.set(fieldInitValidation)
     validation.trigger.abort('reset')
   }, `${name}.reset`)
 

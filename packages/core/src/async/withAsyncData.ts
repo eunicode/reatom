@@ -221,7 +221,7 @@ export function withAsyncData(
       /**
        * Resets the data atom to its initial state
        */
-      reset: () => target(() => initState),
+      reset: () => target.set(() => initState),
     }))
 
     asyncTarget.onFulfill.extend(withCallHook(() => data()))

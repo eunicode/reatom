@@ -9,5 +9,5 @@ export const reatomString: {
   <T extends string>(init: T, name?: string): StringAtom<T>
 } = (init = '', name = named('stringAtom')) =>
   atom(init, name).actions((target) => ({
-    reset: () => target(init),
+    reset: () => target.set(init),
   }))

@@ -230,7 +230,7 @@ const reatomFormFields = <T extends FormInitState>(
         return Object.assign(linkedListAtom, {
           initState,
           reset: action(() => {
-            linkedListAtom(initState())
+            linkedListAtom.set(initState())
           }),
         })
       } else if ('initState' in element) {
@@ -389,12 +389,13 @@ export function reatomForm<T extends FormInitState, SchemaState>(
     {
       name: `${name}.fields`,
       onFieldResolved: (field) => {
-        field.options(options => ({
+        field.options.set((options) => ({
           validateOnChange: options.validateOnChange ?? validateOnChange,
           validateOnBlur: options.validateOnBlur ?? validateOnBlur,
-          keepErrorDuringValidating: options.keepErrorDuringValidating ?? keepErrorDuringValidating,
+          keepErrorDuringValidating:
+            options.keepErrorDuringValidating ?? keepErrorDuringValidating,
           keepErrorOnChange: options.keepErrorOnChange ?? keepErrorOnChange,
-          shouldValidate: !!schema || options.shouldValidate
+          shouldValidate: !!schema || options.shouldValidate,
         }))
 
         if (schema) {
@@ -423,7 +424,7 @@ export function reatomForm<T extends FormInitState, SchemaState>(
 
   reset.extend(
     withCallHook(() => {
-      submitted(false)
+      submitted.set(false)
       submit.error.reset()
 
       if (!isCausedBy(submit)) submit.abort(`${name}.reset`)
@@ -496,16 +497,17 @@ export function reatomForm<T extends FormInitState, SchemaState>(
       if (promise instanceof Promise) await wrap(promise)
     }
 
-    submitted(true)
+    submitted.set(true)
 
     if (resetOnSubmit) reset()
   }, `${name}.onSubmit`).extend(
     withAsync({ resetError: 'onFulfill' }),
-    (target) => ({
-      error: target.error.actions((target) => ({
-        reset: () => target(undefined),
-      })),
-    }),
+    (target) =>
+      Object.assign(target, {
+        error: target.error.actions((target) => ({
+          reset: () => target.set(undefined),
+        })),
+      }),
     withAbort(),
   )
 

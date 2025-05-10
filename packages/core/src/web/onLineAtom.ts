@@ -15,7 +15,7 @@ type OnlineAtom = Atom<boolean> & {
 export let onLineAtom: OnlineAtom = /* @__PURE__ */ (() =>
   atom(() => navigator.onLine, 'onLine').extend(
     withMiddleware(
-      () => (_next, update?: boolean) =>
+      () => (_next, update) =>
         update === undefined ? navigator.onLine : update,
     ),
     () => ({
@@ -26,14 +26,14 @@ export let onLineAtom: OnlineAtom = /* @__PURE__ */ (() =>
       onlineAtAtom: atom<number | undefined>(undefined, 'onLine.onlineAtAtom'),
     }),
     withConnectHook((target) => {
-      target(navigator.onLine)
+      target.set(navigator.onLine)
       onEvent(window, 'online', () => {
-        target(true)
-        target.onlineAtAtom(Date.now())
+        target.set(true)
+        target.onlineAtAtom.set(Date.now())
       })
       onEvent(window, 'offline', () => {
-        target(false)
-        target.offlineAtAtom(Date.now())
+        target.set(false)
+        target.offlineAtAtom.set(Date.now())
       })
     }),
   ))()

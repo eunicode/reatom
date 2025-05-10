@@ -6,7 +6,7 @@ import { sleep, wrap } from '.'
 test('calc deps graph', async () => {
   // Create atoms for a counter feature
   const counter = atom(0, 'counter').actions((target) => ({
-    inc: () => target((s) => s + 1),
+    inc: () => target.set((s) => s + 1),
   }))
   const doubled = computed(() => counter() * 2, 'doubled')
   const isEven = computed(() => counter() % 2 === 0, 'isEven')
@@ -54,7 +54,7 @@ test('BFS log simplification', () => {
     stack = getStackTrace()
   })
 
-  a(1)
+  a.set(1)
   notify()
 
   expect(stack).toBe(

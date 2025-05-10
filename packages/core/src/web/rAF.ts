@@ -6,7 +6,7 @@ export let rAF = /* @__PURE__ */ (() =>
     _enqueue(async () => {
       while (true) {
         await wrap(new Promise((r) => requestAnimationFrame(r)))
-        rAF((state) => {
+        rAF.set((state) => {
           let timestamp = performance.now()
           return {
             timestamp,

@@ -28,7 +28,7 @@ test('async frame stack', async () => {
 
           await wrap(sleep())
 
-          if (v < 5) a0(v)
+          if (v < 5) a0.set(v)
           else resolve()
         } catch (error) {
           reject(error)

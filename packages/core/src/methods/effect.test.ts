@@ -29,7 +29,7 @@ test('different types of abort', async () => {
   expect(e1Log).toBeCalledTimes(1)
   expect(e2Log).toBeCalledTimes(1)
 
-  a((s) => s + 1)
+  a.set((s) => s + 1)
   await wrap(sleep())
   expect(e1Log).toBeCalledTimes(2)
   expect(e2Log).toBeCalledTimes(3)

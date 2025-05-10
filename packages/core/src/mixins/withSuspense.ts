@@ -66,7 +66,7 @@ export let withSuspense =
                 wrap(target.suspended!),
                 wrap((error) => {
                   try {
-                    ;(target.suspended as Atom)(() => {
+                    ;(target.suspended as Atom).set(() => {
                       throw error
                     })
                   } catch {

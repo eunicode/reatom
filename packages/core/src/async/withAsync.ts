@@ -151,17 +151,17 @@ export let withAsync: {
     } = options ?? {}
 
     let onFulfill: AsyncExt['onFulfill'] = action((payload, params) => {
-      if (resetError === 'onFulfill') error(emptyError)
+      if (resetError === 'onFulfill') error.set(emptyError)
       return onSettle({ payload, params }) as any // TODO
     }, `${target.name}.onFulfill`)
     let onReject: AsyncExt['onReject'] = action((err, params) => {
       if (!isAbort(err)) {
-        error((err = parseError(err)))
+        error.set((err = parseError(err)))
       }
       return onSettle({ error: err, params }) as any // TODO
     }, `${target.name}.onReject`)
     let onSettle: AsyncExt['onSettle'] = action((call) => {
-      pending((state) => state - 1)
+      pending.set((state) => state - 1)
       return call
     }, `${target.name}._onSettle`)
 
@@ -229,7 +229,7 @@ export let withAsync: {
 
       pending()
 
-      if (resetError === 'onCall') error(emptyError)
+      if (resetError === 'onCall') error.set(emptyError)
 
       return state
     }

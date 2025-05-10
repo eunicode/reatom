@@ -22,7 +22,7 @@ test('base API', async () => {
   expect(model.readonly).toBe('foo')
   expect(model.n()).toBe(42)
 
-  model.s('bar')
+  model.s.set('bar')
   notify()
   expect(track).toHaveBeenLastCalledWith({ n: 42, s: 'bar', readonly: 'foo' })
 })
@@ -117,13 +117,16 @@ test('right values for lazy', async () => {
 })
 
 test('should throw errors for mismatching contracts', async () => {
-  const schema = reatomZod(z.object({
-    n: z.number().min(0),
-    s: z.string().max(3),
-  }), {
-    initState: { n: 0, s: '333' },
-  })
+  const schema = reatomZod(
+    z.object({
+      n: z.number().min(0),
+      s: z.string().max(3),
+    }),
+    {
+      initState: { n: 0, s: '333' },
+    },
+  )
 
-  expect(() => schema.n(-1)).toThrow()
-  expect(() => schema.s('3333')).toThrow()
+  expect(() => schema.n.set(-1)).toThrow()
+  expect(() => schema.s.set('3333')).toThrow()
 })

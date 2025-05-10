@@ -143,13 +143,13 @@ test('withAsyncData atom concurrent', async () => {
 
   expect(track).toBeCalledWith(1)
 
-  param((s) => s + 1)
+  param.set((s) => s + 1)
   await wrap(sleep())
   expect(track.mock.calls.flat()).toEqual([1, 2, 1])
-  param((s) => s + 1)
+  param.set((s) => s + 1)
   await wrap(sleep())
   expect(track.mock.calls.flat()).toEqual([1, 2, 1, 2, 1])
-  param((s) => s + 1)
+  param.set((s) => s + 1)
   await wrap(sleep())
   expect(track.mock.calls.flat()).toEqual([1, 2, 1, 2, 1, 2, 1])
 
@@ -200,7 +200,7 @@ test('withAsyncData for atom error handling', async () => {
   })
   expect(onFulfill).not.toHaveBeenCalled()
 
-  shouldFailAtom(false)
+  shouldFailAtom.set(false)
   expect(resource.ready()).toBe(false)
   await wrap(resource())
 
@@ -213,7 +213,7 @@ test('withAsyncData for atom error handling', async () => {
     params: [false],
   })
 
-  expect(resource.error('test')).toBe('test')
+  expect(resource.error.set('test')).toBe('test')
 })
 
 // TODO just predefine actions WITH PERSIST CACHE and you get a nicer version of FSM.

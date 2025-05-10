@@ -309,7 +309,7 @@ const counter = atom(0, 'counter')
 
 // Create an action - a callable function that also works as an event emitter
 const increment = action((amount = 1) => {
-  counter(counter() + amount)
+  counter.set(counter() + amount)
   return counter()
 }, 'increment')
 

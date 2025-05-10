@@ -1,12 +1,28 @@
-import { type Action, type Atom, atom, computed, named } from '../core'
+import { action, type Action, atom, AtomLike, computed, named } from '../core'
 import { Computed } from '../core'
 
-export interface MapAtom<Key, Value> extends Atom<Map<Key, Value>> {
+export interface MapAtom<Key, Value> extends AtomLike<Map<Key, Value>, []> {
+  /**
+   * Update the atom's state using a function that receives the previous state
+   * @param update - Function that takes the current state and returns a new state
+   * @returns The new state value
+   */
+  setState(update: (state: Map<Key, Value>) => Map<Key, Value>): Map<Key, Value>
+
+  /**
+   * Set the atom's state to a new value
+   * @param newState - The new state value
+   * @returns The new state value
+   */
+  setState(newState: Map<Key, Value>): Map<Key, Value>
+
   getOrCreate: (key: Key, creator: () => Value) => Value
+
   set: Action<[key: Key, value: Value], Map<Key, Value>>
   delete: Action<[key: Key], Map<Key, Value>>
   clear: Action<[], Map<Key, Value>>
   reset: Action<[], Map<Key, Value>>
+
   size: Computed<number>
 }
 
@@ -25,37 +41,51 @@ export const reatomMap = <Key, Value>(
     initState instanceof Map ? initState : new Map(initState)
 
   return atom(atomInitState, name)
-    .actions((target) => {
-      const actions = {
-        getOrCreate: (key: Key, creator: () => Value) => {
-          const state = target()
-          if (state.has(key)) return state.get(key)!
+    .extend((target) => ({
+      setState(
+        update: Map<Key, Value> | ((state: Map<Key, Value>) => Map<Key, Value>),
+      ) {
+        if (typeof update === 'function') {
+          update = update(target())
+        }
+        // @ts-expect-error
+        return target(update)
+      },
+    }))
+    .extend((target) =>
+      Object.assign(target, {
+        set: action(
+          (key: Key, value: Value) =>
+            target.setState((prev) => {
+              const valuePrev = prev.get(key)
+              return Object.is(valuePrev, value) &&
+                (value !== undefined || prev.has(key))
+                ? prev
+                : new Map(prev).set(key, value)
+            }),
+          `${target.name}.set`,
+        ),
+      }),
+    )
+    .actions((target) => ({
+      getOrCreate: (key: Key, creator: () => Value) => {
+        const state = target()
+        if (state.has(key)) return state.get(key)!
 
-          const value = creator()
-          actions.set(key, value)
-          return value
-        },
-        set: (key: Key, value: Value) =>
-          target((prev) => {
-            const valuePrev = prev.get(key)
-            return Object.is(valuePrev, value) &&
-              (value !== undefined || prev.has(key))
-              ? prev
-              : new Map(prev).set(key, value)
-          }),
-        delete: (key: Key) =>
-          target((prev) => {
-            if (!prev.has(key)) return prev
-            const next = new Map(prev)
-            next.delete(key)
-            return next
-          }),
-        clear: () => target(new Map()),
-        reset: () => target(atomInitState),
-      }
-
-      return actions
-    })
+        const value = creator()
+        target.set(key, value)
+        return value
+      },
+      delete: (key: Key) =>
+        target.setState((prev) => {
+          if (!prev.has(key)) return prev
+          const next = new Map(prev)
+          next.delete(key)
+          return next
+        }),
+      clear: () => target.setState(new Map()),
+      reset: () => target.setState(atomInitState),
+    }))
     .extend((target) => ({
       size: computed(() => target().size, `${target.name}.size`),
     }))

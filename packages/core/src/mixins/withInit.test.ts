@@ -18,7 +18,7 @@ test('init callback', () => {
   expect(init).toBeCalledTimes(1)
 
   data()
-  data(123)
+  data.set(123)
   expect(init).toBeCalledTimes(1)
 })
 

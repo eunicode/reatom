@@ -184,12 +184,12 @@ test('validation and focus states with disabled fields', async () => {
   })
   expect(form.focus()).toMatchObject({ touched: true, dirty: true })
 
-  form.fields.field1.disabled(true)
+  form.fields.field1.disabled.set(true)
   notify()
   expect(form.validation()).toMatchObject({ error: undefined, triggered: true })
   expect(form.focus()).toMatchObject({ touched: false, dirty: false })
 
-  form.fields.field1.disabled(false)
+  form.fields.field1.disabled.set(false)
   notify()
   expect(form.validation()).toMatchObject({
     error: 'Contract error',
@@ -225,7 +225,7 @@ test('validation states with disabled fields and defined schema', async () => {
   notify()
   expect(formWithSchema.validation()).toMatchObject({ error: undefined })
 
-  targetField.disabled(true)
+  targetField.disabled.set(true)
   targetField.change('errorValue')
   notify()
   expect(formWithSchema.validation()).toMatchObject({ error: undefined })

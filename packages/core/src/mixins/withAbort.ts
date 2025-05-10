@@ -43,7 +43,7 @@ export let withAbort = (
           return state
         }
 
-        prevAbort(toAbortError(`${target.name} concurrent`))
+        prevAbort.set(toAbortError(`${target.name} concurrent`))
       }
 
       let maybePromise = target.__reatom.reactive
@@ -81,7 +81,7 @@ export let withAbort = (
       abort(reason?: any) {
         let frame = top().root.store.get(target)
         if (frame) {
-          abortVar.find((maybeAbort) => maybeAbort ?? null, frame)?.(reason)
+          abortVar.find((maybeAbort) => maybeAbort ?? null, frame)?.set(reason)
         }
       },
     }

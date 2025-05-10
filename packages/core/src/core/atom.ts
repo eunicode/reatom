@@ -71,6 +71,8 @@ export interface AtomLike<
    */
   (...params: Params): Payload
 
+  set: unknown
+
   /**
    * Bind methods to the atom to extend its functionality.
    */
@@ -107,20 +109,21 @@ export interface AtomLike<
  *
  * @template State - The type of state stored in the atom
  */
-export interface Atom<State = any> extends AtomLike<State, []> {
+export interface Atom<State = any, Params extends any[] = [newState: State]>
+  extends AtomLike<State, []> {
   /**
    * Update the atom's state using a function that receives the previous state
    * @param update - Function that takes the current state and returns a new state
    * @returns The new state value
    */
-  (update: (state: State) => State): State
+  set(update: (state: State) => State): State
 
   /**
    * Set the atom's state to a new value
    * @param newState - The new state value
    * @returns The new state value
    */
-  (newState: State): State
+  set(...params: Params): State
 }
 
 /**
@@ -209,7 +212,7 @@ export interface Queue extends Array<Fn> {}
  * The Store maps atoms to their frames in the current context,
  * allowing atoms to retrieve their state and dependencies.
  */
-export interface Store extends WeakMap<Atom, Frame> {
+export interface Store extends WeakMap<AtomLike, Frame> {
   /**
    * Get the frame for an atom in the current context.
    *
@@ -254,7 +257,7 @@ export interface RootState {
   /**
    * Frame history.
    */
-  frames: WeakMap<Atom, { prev: null | Frame; next: Frame }>
+  frames: WeakMap<AtomLike, { prev: null | Frame; next: Frame }>
 
   /**
    * Initialization flags for init hooks.
@@ -410,7 +413,7 @@ let link = (frame: Frame) => {
 // but in the real data, it is in the best case quite often (pub.subs.pop()).
 // For example, as we run `link` before `unlink` during deps invalidation,
 // for deps duplication we want to find just added dep.
-let unlink = (sub: Atom, oldPubs: Frame['pubs']) => {
+let unlink = (sub: AtomLike, oldPubs: Frame['pubs']) => {
   // console.log(COLOR.red('unlink'), sub.name)
 
   // Start from the end to try to revet the link sequence with just "pop" complexity.
@@ -649,6 +652,10 @@ let castAtom = <T extends AtomLike>(
 
     extend,
 
+    set(...params: any) {
+      return target(...params)
+    },
+
     subscribe: subscribe.bind(target as T),
 
     __reatom: {
@@ -688,7 +695,7 @@ export let createAtom: {
 ): Atom<State> => {
   let computed = setup.computed && atomMiddleware.bind(null, setup.computed)
 
-  let target = castAtom<AtomLike<State>>(
+  let target = castAtom<Atom<State>>(
     {
       // Use computed property name to setup the function name for better stack traces
       [name](): State {
@@ -819,10 +826,15 @@ export let createAtom: {
     },
   )
 
+  Object.assign(target, {
+    set(...params: any[]) {
+      return target(...(params as Parameters<typeof target>))
+    },
+  })
+
   return globalThis.__REATOM.length === 0
     ? target
-    : // @ts-expect-error
-      target.extend(...globalThis.__REATOM)
+    : (target.extend(...globalThis.__REATOM) as typeof target)
 }
 
 /**
@@ -858,7 +870,7 @@ export let atom: {
 
 export function computedParams(next: Fn) {
   if (arguments.length > 1) {
-    console.error("Computed can't accept parameters")
+    throw new ReatomError("Computed can't accept parameters")
   }
   return next()
 }
@@ -892,6 +904,8 @@ export let computed = <State>(
 
   return createAtom({ computed }, name).extend((target) => {
     target.__reatom.middlewares.push(computedParams)
+    // @ts-expect-error
+    target.set = undefined
     return target
   })
 }

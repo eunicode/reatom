@@ -13,31 +13,39 @@ export const reatomArray = <T>(
 ): ArrayAtom<T> =>
   atom(initState, name).actions((target) => ({
     push: (...items: T[]) => {
-      const arrCopy = target().slice()
-      const pushed = arrCopy.push(...items)
-      target(arrCopy)
-
-      return pushed
+      let pushed: number
+      target.set((prev) => {
+        const arrCopy = prev.slice()
+        pushed = arrCopy.push(...items)
+        return arrCopy
+      })
+      return pushed!
     },
     pop: () => {
-      const arrCopy = target().slice()
-      const popped = arrCopy.pop()
-      target(arrCopy)
-
+      let popped: T | undefined
+      target.set((prev) => {
+        const arrCopy = prev.slice()
+        popped = arrCopy.pop()
+        return arrCopy
+      })
       return popped
     },
     shift: () => {
-      const arrCopy = target().slice()
-      const shifted = arrCopy.shift()
-      target(arrCopy)
-
+      let shifted: T | undefined
+      target.set((prev) => {
+        const arrCopy = prev.slice()
+        shifted = arrCopy.shift()
+        return arrCopy
+      })
       return shifted
     },
     unshift: (...items: T[]) => {
-      const arrCopy = target().slice()
-      const unshifted = arrCopy.unshift(...items)
-      target(arrCopy)
-
-      return unshifted
+      let unshifted: number
+      target.set((prev) => {
+        const arrCopy = prev.slice()
+        unshifted = arrCopy.unshift(...items)
+        return arrCopy
+      })
+      return unshifted!
     },
   }))

@@ -47,7 +47,7 @@ test('diamonds', () => {
 
   atomCalls = 0
   computedCalls = 0
-  a1(1)
+  a1.set(1)
   notify()
   expect(atomCalls).toBe(6)
   expect(computedCalls).toBe(5)

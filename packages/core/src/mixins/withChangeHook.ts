@@ -25,6 +25,7 @@ export let withChangeHook = <Target extends AtomLike>(
       function withChangeHook(next, ...params) {
         let frame = top()
         let prevState = frame.state
+        // @ts-ignore
         let state = next(...params)
 
         if (!Object.is(prevState, state)) {
@@ -62,9 +63,10 @@ export let withCallHook = <Target extends Action>(
       throw new ReatomError('withCallHook can be used only with actions')
     }
 
-    return function withChangeHook(next, ...params) {
+    return function withCallHook(next, ...params) {
       let frame = top()
       let prevState = frame.state
+      // @ts-ignore
       let state = next(...params)
 
       if (!Object.is(prevState, state)) {

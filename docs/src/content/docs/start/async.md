@@ -155,7 +155,7 @@ const pollingEffect = effect(async () => {
         return Math.random();
       }
       const newData = await wrap(fetchData())
-      dataAtom(newData)
+      dataAtom.set(newData)
       console.log('Data updated:', newData)
 
       // Wait for 5 seconds or until aborted

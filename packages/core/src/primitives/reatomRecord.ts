@@ -13,7 +13,7 @@ export const reatomRecord = <T extends Rec>(
 ): RecordAtom<T> =>
   atom(initState, name).actions((target) => ({
     merge: (slice: Partial<T>) =>
-      target((prev) => {
+      target.set((prev) => {
         for (const key in prev) {
           if (!Object.is(prev[key], slice[key])) {
             return { ...prev, ...slice }
@@ -22,12 +22,12 @@ export const reatomRecord = <T extends Rec>(
         return prev
       }),
     omit: (...keys: Array<keyof T>) =>
-      target((prev) => {
+      target.set((prev) => {
         if (keys.some((key) => key in prev)) return omit(prev, keys) as any
         return prev
       }),
     reset: (...keys: (keyof T)[]) =>
-      target(
+      target.set(
         // @ts-ignore
         (prev) => {
           if (keys.length === 0) return initState

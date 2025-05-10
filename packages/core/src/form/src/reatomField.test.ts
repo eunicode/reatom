@@ -98,11 +98,11 @@ test(`disabled state`, async () => {
   notify()
   expect(field.validation().error).toBe('validation error')
 
-  field.disabled(true)
+  field.disabled.set(true)
   notify()
   expect(field.validation()).toMatchObject(fieldInitValidation)
 
-  field.disabled(false)
+  field.disabled.set(false)
   notify()
   expect(field.validation().error).toBe('validation error')
 })
@@ -119,7 +119,7 @@ test(`toState and fromState`, async () => {
     },
   )
 
-  field({ label, value: 1000 })
+  field.set({ label, value: 1000 })
   expect(field.value()).toEqual(1000)
 
   field.change(2000)

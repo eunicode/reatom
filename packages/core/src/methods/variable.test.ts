@@ -1,6 +1,6 @@
-import { expect, test, vi } from 'test'
+import { expect, silentQueuesErrors, test, vi } from 'test'
 import { variable } from './variable'
-import { action, atom, computed, context } from '../core'
+import { action, atom, computed, top } from '../core'
 import { withAsyncData } from '../async'
 import { wrap } from '../methods'
 import { sleep } from '../utils'
@@ -30,16 +30,7 @@ test('scope propagation for actions', async () => {
 })
 
 test('scope propagation for atoms', async () => {
-  const { state } = context()
-  state.pushQueue = function (cb, queue) {
-    this[queue].push(async () => {
-      try {
-        await cb()
-      } catch (error) {
-        // nothing
-      }
-    })
-  }
+  silentQueuesErrors()
 
   const param = atom(0)
   const paramVar = variable<number>()
@@ -53,7 +44,7 @@ test('scope propagation for atoms', async () => {
     }),
   )
   const update = action((value: number) => {
-    param(value)
+    param.set(value)
     paramVar.set(value)
   })
 

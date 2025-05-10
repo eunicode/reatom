@@ -317,7 +317,7 @@ export const reatomZod = <Schema extends z.ZodFirstPartySchemaTypes>(
 
       const originAtom = atom(getState(initState), name)
       theAtom = Object.assign((value: any) => {
-        originAtom(getState(value))
+        originAtom.set(getState(value))
       }, originAtom)
       break
     }
