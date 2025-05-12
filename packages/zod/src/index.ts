@@ -29,7 +29,7 @@ import {
 import { z } from 'zod'
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface ZodAtom<T> {}
+export interface ZodAtom<_T> {}
 export interface AtomMut<T = any> extends ZodAtom<T>, ReatomAtomMut<T> {}
 export interface BooleanAtom extends ZodAtom<boolean>, ReatomBooleanAtom {}
 export interface NumberAtom extends ZodAtom<number>, ReatomNumberAtom {}
@@ -130,7 +130,7 @@ export type ZodAtomization<T extends z.ZodFirstPartySchemaTypes, Union = never, 
                                                       ? ZodAtomization<T, Union, z.BRAND<Brand> & Intersection>
                                                       : T extends z.ZodEffects<infer T, infer Output>
                                                         ? ZodAtomization<T, Union | Output, Intersection>
-                                                        : T extends z.ZodPipeline<infer T, infer Output>
+                                                        : T extends z.ZodPipeline<infer _T, infer Output>
                                                           ? ZodAtomization<Output>
                                                           : T extends z.ZodLazy<infer T>
                                                             ? ZodAtomization<T>
@@ -138,7 +138,7 @@ export type ZodAtomization<T extends z.ZodFirstPartySchemaTypes, Union = never, 
                                                               ? ZodAtomization<T, null | Union, Intersection>
                                                               : T extends z.ZodUnion<infer T>
                                                                 ? AtomMut<DistributeIntersection<z.infer<T[number]>, Intersection> | Union>
-                                                                : T extends z.ZodDiscriminatedUnion<infer K, infer T>
+                                                                : T extends z.ZodDiscriminatedUnion<infer _K, infer T>
                                                                   ? [Union] extends [never]
                                                                     ? T extends Array<z.ZodObject<infer Shape>>
                                                                       ? Computed<{
@@ -258,7 +258,7 @@ export const reatomZod = <Schema extends z.ZodFirstPartySchemaTypes>(
       // TODO @artalar generate a better name, instead of using `named`
       theAtom = reatomLinkedList(
         {
-          create: (ctx, initState) =>
+          create: (initState) =>
             reatomZod(def.type, { sync, initState, name: named(name) }),
           initState: (initState as any[] | undefined)?.map((initState: any) =>
             reatomZod(def.type, { sync, initState, name: named(name) }),
@@ -389,8 +389,6 @@ export const reatomZod = <Schema extends z.ZodFirstPartySchemaTypes>(
     ),
     withChangeHook(() => {
       if (isCausedBy(silentUpdate)) return
-      // TODO @artalar the parse is required for using the default values
-      // type.parse(parseAtoms(ctx, value));
       sync?.()
     }),
   )
