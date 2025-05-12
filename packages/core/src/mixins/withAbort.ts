@@ -1,7 +1,8 @@
-import { AssignerExt, ReatomError, top } from '../core'
+import { AssignerExt, ReatomError, STACK, top } from '../core'
 import { AbortAtom, abortVar } from '../methods'
 import { _getPrevAtomFrame, _getPrevFrame } from '../methods/context'
-import { assert, Fn, isAbort, noop, toAbortError } from '../utils'
+import { assert, Fn, identity, isAbort, noop, toAbortError } from '../utils'
+import { withComputed } from './withComputed'
 
 export interface AbortExt {
   abort: (reason?: any) => void
@@ -16,6 +17,15 @@ export let withAbort = (
     ReatomError,
   )
 
+  let topAbort: AbortAtom | undefined = undefined
+  if (STACK[STACK.length - 1]) {
+    topAbort = abortVar.find()
+  }
+  let wrapTopAbort = topAbort
+    ? (abort: AbortAtom) =>
+        abort.extend(withComputed((state) => state ?? topAbort(), false))
+    : identity
+
   return (target) => {
     let abortMiddleware = (next: Fn, ...params: any[]) => {
       let frame = top()
@@ -29,11 +39,11 @@ export let withAbort = (
       let abort: AbortAtom
 
       if (!prevAbort /* init */) {
-        abort = abortVar.set(`${target.name}._abort`)
+        abort = wrapTopAbort(abortVar.set(`${target.name}._abort`))
 
         state = next(...params)
       } else {
-        abort = abortVar.set(`${target.name}._abort`)
+        abort = wrapTopAbort(abortVar.set(`${target.name}._abort`))
 
         state = next(...params)
 

@@ -1,5 +1,5 @@
 import { expect, test, vi } from 'test'
-import { action } from '../core'
+import { action, atom, computed } from '../core'
 import { withAbort } from './withAbort'
 import { sleep } from '../utils'
 import { wrap } from '../methods'
@@ -24,4 +24,29 @@ test('abort propagation', async () => {
   expect(track).toBeCalledTimes(1)
   expect(track).toBeCalledWith(3)
 })
-;[].shift
+
+test('abortable model', async () => {
+  const fn = vi.fn()
+  const id = atom(0)
+  const model = computed(() => {
+    id()
+
+    return action(async () => {
+      await wrap(sleep())
+      fn()
+    }).extend(withAbort())
+  }).extend(withAbort())
+
+  const doSome1 = model()
+
+  doSome1()
+  doSome1()
+  doSome1()
+  await wrap(sleep())
+  expect(fn).toBeCalledTimes(1)
+
+  id.set(1)
+  const doSome2 = model()
+  doSome1()
+  expect(fn).toBeCalledTimes(1)
+})

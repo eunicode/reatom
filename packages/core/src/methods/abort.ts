@@ -139,14 +139,10 @@ export let abortVar: AbortVar = /* @__PURE__ */ (() =>
       return createAtom<null | AbortError>(
         {
           initState: null,
-          computed: (state) => {
-            if (state !== null) return state
-
-            return (
-              abortVar.find((maybeAbortAtom) => maybeAbortAtom?.(), frame) ??
-              null
-            )
-          },
+          computed: (state) =>
+            state ??
+            abortVar.find((maybeAbortAtom) => maybeAbortAtom?.(), frame) ??
+            null,
         },
         option,
       ).extend(

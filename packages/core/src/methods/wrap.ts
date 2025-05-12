@@ -58,9 +58,11 @@ export let wrap: {
 
   assert(target instanceof Promise, 'target should be promise', ReatomError)
 
-  let promise = new Promise(async (resolve, reject) => {
+  let aborted = false
+  var promise = new Promise(async (resolve, reject) => {
     let un = abortVar.subscribeAbort((error) => {
-      promise.catch(noop)
+      aborted = true
+      promise?.catch(noop)
       reject(error)
     })
     try {
@@ -80,6 +82,8 @@ export let wrap: {
 
     queueMicrotask(() => void STACK.pop())
   })
+
+  if (aborted) promise.catch(noop)
 
   return promise as any
 }
