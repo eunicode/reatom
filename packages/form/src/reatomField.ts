@@ -28,7 +28,7 @@ export interface FieldValidation {
   triggered: boolean
 
   /** The field async validation status */
-  validating: boolean
+  validating: undefined | Promise<{ error: undefined | string }>
 }
 
 export interface FocusAtom extends Atom<FieldFocus> {
@@ -208,14 +208,14 @@ export const fieldInitValidation: FieldValidation = {
   error: undefined,
   meta: undefined,
   triggered: false,
-  validating: false,
+  validating: undefined,
 }
 
 export const fieldInitValidationLess: FieldValidation = {
   error: undefined,
   meta: undefined,
   triggered: true,
-  validating: false,
+  validating: undefined,
 }
 
 export function reatomField<State, Value = State>(
@@ -298,8 +298,8 @@ export function reatomField<State, Value = State>(
 
     validation.merge(ctx,
       ctx.get(fieldOptions.value).keepErrorOnChange
-        ? { validating: false }
-        : { validating: false, error: undefined }
+        ? { validating: undefined }
+        : { validating: undefined, error: undefined }
     )
 
     if (!ctx.get(disabled) && ctx.get(fieldOptions.value).validateOnChange)
@@ -373,26 +373,29 @@ export function reatomField<State, Value = State>(
         }
     
         if (promise instanceof Promise) {
-          __thenReatomed(
+          const validationPromise = __thenReatomed(
             ctx,
             promise,
             () => {
-              if (controller.signal.aborted) return
+              if (controller.signal.aborted) return { error: ctx.get(target).error }
               target.merge(ctx, {
                 error: undefined,
                 meta: undefined,
                 triggered: true,
-                validating: false,
+                validating: undefined,
               })
+              return { error: undefined }
             },
             (error) => {
-              if (controller.signal.aborted) return
+              if (controller.signal.aborted) return { error: ctx.get(target).error }
+              const validationError = toError(error)
               target.merge(ctx, {
-                error: toError(error),
+                error: validationError,
                 meta: undefined,
                 triggered: true,
-                validating: false,
+                validating: undefined,
               })
+              return { error: validationError }
             },
           ).catch(noop)
     
@@ -400,12 +403,12 @@ export function reatomField<State, Value = State>(
             error: ctx.get(fieldOptions.value).keepErrorDuringValidating ? validationValue.error : undefined,
             meta: undefined,
             triggered: true,
-            validating: true,
+            validating: validationPromise,
           })
         }
     
         return target.merge(ctx, {
-          validating: false,
+          validating: undefined,
           error: message,
           meta: undefined,
           triggered: true,
@@ -418,7 +421,7 @@ export function reatomField<State, Value = State>(
           error,
           meta: undefined,
           triggered: true,
-          validating: false,
+          validating: undefined,
         });
       }, `${name}.setError`),
     }))
