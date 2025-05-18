@@ -1,9 +1,10 @@
-import { _read, action, atom, computed } from '../core'
 import { expect, test, vi } from 'test'
-import { ifChanged, ifCalled } from './ifChanged'
-import { sleep } from '../utils'
-import { wrap } from './wrap'
+
+import { _read, action, atom, computed } from '../core'
 import { notify } from '../core'
+import { sleep } from '../utils'
+import { ifCalled, ifChanged } from './ifChanged'
+import { wrap } from './wrap'
 
 test('ifChanged', () => {
   const name = 'ifChanged'

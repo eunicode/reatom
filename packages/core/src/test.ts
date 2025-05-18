@@ -1,5 +1,7 @@
-import { test as viTest, vi, type Mock } from 'vitest'
-import { clearStack, context, AtomLike, top } from './core'
+import { type Mock, test as viTest, vi } from 'vitest'
+
+import type { AtomLike } from './core'
+import { clearStack, context, top } from './core'
 import { noop, type Unsubscribe } from './utils'
 
 clearStack()
@@ -98,14 +100,14 @@ export function subscribe<State, T extends (state: State) => any>(
  * compatibility with Reatom's testing utilities defined in this file.
  */
 export {
-  expect,
-  vi,
-  describe,
-  beforeAll,
   afterAll,
-  beforeEach,
   afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
   expectTypeOf,
+  vi,
 } from 'vitest'
 
 /**

@@ -1,16 +1,8 @@
-import {
-  Atom,
-  atom,
-  AtomLike,
-  Action,
-  isAction,
-  AssignerExt,
-  withParams,
-  action,
-} from './'
-import { withChangeHook } from '../mixins'
-
 import { expect, expectTypeOf, test } from 'test'
+
+import { withChangeHook } from '../mixins'
+import type { Action, AssignerExt, Atom, AtomLike } from './'
+import { action, atom, isAction, withParams } from './'
 
 // Simple extension for testing
 const withProp =

@@ -1,4 +1,5 @@
-import { test, expect, describe } from 'test'
+import { describe, expect, test } from 'test'
+
 import { reatomSet } from './reatomSet'
 
 describe('reatomSet', () => {
@@ -7,9 +8,7 @@ describe('reatomSet', () => {
   })
 
   test(`add`, () => {
-    expect(reatomSet(new Set([1, 2, 3])).add(4)).toEqual(
-      new Set([1, 2, 3, 4]),
-    )
+    expect(reatomSet(new Set([1, 2, 3])).add(4)).toEqual(new Set([1, 2, 3, 4]))
   })
 
   test(`delete`, () => {

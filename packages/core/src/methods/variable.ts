@@ -1,5 +1,7 @@
-import { Frame, ReatomError, action, context, named, top } from '../core'
-import { assert, Fn, identity } from '../utils'
+import type { Frame } from '../core'
+import { action, context, named, ReatomError, top } from '../core'
+import type { Fn } from '../utils'
+import { assert, identity } from '../utils'
 
 /**
  * Interface for context variables in Reatom

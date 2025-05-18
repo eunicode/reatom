@@ -1,5 +1,6 @@
-import { Action, Atom, atom, named, ReatomError, withMiddleware } from '../core'
-import { Fn } from '../utils'
+import type { Action, Atom } from '../core'
+import { atom, named, ReatomError, withMiddleware } from '../core'
+import type { Fn } from '../utils'
 
 export type EnumFormat = 'camelCase' | 'snake_case'
 

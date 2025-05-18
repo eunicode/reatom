@@ -1,5 +1,6 @@
-import { atom, clearStack, context } from '../core'
 import { expect, test, vi } from 'test'
+
+import { atom, clearStack, context } from '../core'
 import { withInit } from './withInit'
 
 test('init value', () => {

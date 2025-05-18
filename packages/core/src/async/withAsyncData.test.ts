@@ -1,9 +1,11 @@
 import { expect, expectTypeOf, subscribe, test, vi } from 'test'
-import { _read, action, Atom, atom, computed } from '../core'
-import { withCallHook } from '../mixins'
+
+import type { Atom } from '../core'
+import { action, atom, computed } from '../core'
 import { wrap } from '../methods'
-import { withAsyncData } from './withAsyncData'
+import { withCallHook } from '../mixins'
 import { noop, sleep } from '../utils'
+import { withAsyncData } from './withAsyncData'
 
 test('withAsyncData for action', async () => {
   const name = 'actionAsyncData'

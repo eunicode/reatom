@@ -1,4 +1,5 @@
-import { top, Frame, AtomLike } from '../core'
+import type { AtomLike, Frame } from '../core'
+import { top } from '../core'
 
 export let _getPrevFrame = (frame = top()): null | Frame => {
   let rec = frame.root.frames.get(frame.atom)

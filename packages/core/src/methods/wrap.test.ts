@@ -1,16 +1,16 @@
 import { expect, expectTypeOf, test } from 'test'
 
-import { atom, computed, context } from '../core'
-import { wrap } from './wrap'
-import { sleep } from '../utils'
 import { getStackTrace } from '../connectLogger'
+import { atom, computed, context } from '../core'
+import { sleep } from '../utils'
+import { wrap } from './wrap'
 
 test('async frame stack', async () => {
   const name = 'asyncStack'
   const getTrace = () =>
     getStackTrace()
       .replaceAll(`${name}.`, '')
-      .replace(/\[\#\d*\]/g, '')
+      .replace(/\[#\d*\]/g, '')
 
   const a0 = atom(0, `${name}.a0`)
   const a1 = computed(() => {

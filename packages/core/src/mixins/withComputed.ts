@@ -1,10 +1,10 @@
 import {
   _isPubsChanged,
-  top,
-  withMiddleware,
   type AtomLike,
   type AtomState,
   type Ext,
+  top,
+  withMiddleware,
 } from '../core'
 import { _getPrevFrame } from '../methods/context'
 

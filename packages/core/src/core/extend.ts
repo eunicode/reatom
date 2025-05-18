@@ -1,5 +1,6 @@
-import { Action, Atom, AtomLike, AtomState, isAtom, ReatomError, top } from '.'
 import type { Fn, OverloadParameters, Rec } from '../utils'
+import type { Action, Atom, AtomLike, AtomState } from '.'
+import { isAtom, ReatomError, top } from '.'
 
 /**
  * Extension function interface for modifying atoms and actions.

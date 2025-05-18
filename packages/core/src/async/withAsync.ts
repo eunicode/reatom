@@ -1,21 +1,19 @@
+import type { Action, Atom, AtomLike, Computed } from '../core'
 import {
   action,
-  Action,
-  Atom,
-  AtomLike,
+  bind,
   computed,
-  Computed,
+  computedParams,
+  context,
   createAtom,
   ReatomError,
-  context,
+  STACK,
   top,
   withMiddleware,
-  bind,
-  computedParams,
-  STACK,
 } from '../core'
 import { ifCalled, ifChanged } from '../methods'
-import { assert, Fn, isAbort } from '../utils'
+import type { Fn } from '../utils'
+import { assert, isAbort } from '../utils'
 
 /**
  * Extension interface added by {@link withAsync} to atoms or actions that return promises.

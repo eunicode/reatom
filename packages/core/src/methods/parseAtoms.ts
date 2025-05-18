@@ -1,13 +1,16 @@
-import { Action, AtomLike, isAction, isAtom } from '../core'
-import {
-  isLinkedListAtom,
+import type { Action, AtomLike } from '../core'
+import { isAction, isAtom } from '../core'
+import type {
   LinkedList,
   LinkedListLikeAtom,
   LLNode,
 } from '../primitives/reatomLinkedList'
-import { isRec, Rec } from '../utils'
+import { isLinkedListAtom } from '../primitives/reatomLinkedList'
+import type { Rec } from '../utils'
+import { isRec } from '../utils'
 
 type Primitive = string | number | boolean | null | undefined
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 type Builtin = Date | RegExp | Function
 
 /**

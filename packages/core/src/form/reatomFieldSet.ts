@@ -1,36 +1,30 @@
+import type { AbortExt, Action, Computed, Rec } from '../'
 import {
+  action,
+  computed,
+  entries,
+  isAtom,
   isLinkedListAtom,
   isObject,
-  entries,
   named,
-  computed,
-  withMemo,
   parseAtoms,
-  Computed,
-  Action,
-  isAtom,
-  action,
-  Rec,
-  AbortExt,
   withAbort,
+  withMemo,
 } from '../'
-
+import type { FieldFocus, FieldValidation } from './reatomField'
 import {
   type FieldAtom,
-  isFieldAtom,
   fieldInitFocus,
   fieldInitValidation,
-  FieldFocus,
-  FieldValidation,
+  isFieldAtom,
 } from './reatomField'
-
-import {
-  FormInitState,
-  FormFields,
-  FormFieldElement,
-  FormState,
-  FormPartialState,
+import type {
   FormFieldArrayAtom,
+  FormFieldElement,
+  FormFields,
+  FormInitState,
+  FormPartialState,
+  FormState,
 } from './reatomForm'
 
 export interface FieldSet<T extends FormInitState> {
@@ -126,7 +120,7 @@ export const reatomFieldSet = <T extends FormInitState>(
 
   const reinitState = (initState: FormPartialState<T>, fields: FormFields) => {
     for (const [key, value] of Object.entries(initState as Rec)) {
-      let keyValue = fields[key] as unknown
+      const keyValue = fields[key] as unknown
       if (isLinkedListAtom(keyValue)) {
         // @ts-ignore TODO
         keyValue.initState(keyValue.initiateFromSnapshot(value.map((v) => [v])))

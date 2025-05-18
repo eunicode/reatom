@@ -1,6 +1,7 @@
-import { onEvent } from './onEvent'
+import type { Atom } from '../core'
+import { atom, withMiddleware } from '../core'
 import { withConnectHook } from '../mixins'
-import { atom, Atom, withMiddleware } from '../core'
+import { onEvent } from './onEvent'
 
 type OnlineAtom = Atom<boolean> & {
   /** Time stamp of transition to online mode. */

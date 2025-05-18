@@ -1,29 +1,20 @@
+import { type Plain, type Rec } from '../'
+import type { Action, Atom, AtomState, Computed } from '../core'
 import {
-  Action,
-  Atom,
-  AtomState,
-  Computed,
-  STACK,
+  _enqueue,
   action,
   atom,
   computed,
-  _enqueue,
   named,
+  STACK,
   top,
   withMiddleware,
   withParams,
 } from '../core'
 import { ifChanged, peek } from '../methods'
 import { _getPrevFrame } from '../methods/context'
-
-import {
-  AbortExt,
-  withAbort,
-  withChangeHook,
-  withComputed,
-  withInit,
-} from '../mixins'
-import { type Rec, type Plain } from '../'
+import type { AbortExt } from '../mixins'
+import { withAbort, withChangeHook, withComputed, withInit } from '../mixins'
 import { onEvent } from './onEvent'
 
 type _PathParams<Path extends string = string> =

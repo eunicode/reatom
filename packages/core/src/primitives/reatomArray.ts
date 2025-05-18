@@ -1,4 +1,5 @@
-import { Action, Atom, atom, named } from '../core'
+import type { Action, Atom } from '../core'
+import { atom, named } from '../core'
 
 export interface ArrayAtom<T> extends Atom<Array<T>> {
   push: Action<[...items: T[]], number>

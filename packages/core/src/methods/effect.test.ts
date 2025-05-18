@@ -1,10 +1,11 @@
-import { _read, atom } from '../core'
 import { expect, test, vi } from 'test'
-import { effect } from './effect'
+
+import { atom } from '../core'
 import { withAbort } from '../mixins'
-import { abortVar } from './abort'
-import { wrap } from './wrap'
 import { sleep } from '../utils'
+import { abortVar } from './abort'
+import { effect } from './effect'
+import { wrap } from './wrap'
 
 test('different types of abort', async () => {
   // TODO

@@ -1,11 +1,5 @@
-import {
-  AtomLike,
-  AtomState,
-  Ext,
-  _enqueue,
-  top,
-  withMiddleware,
-} from '../core'
+import type { AtomLike, AtomState, Ext } from '../core'
+import { _enqueue, top, withMiddleware } from '../core'
 
 export let withInit = <Target extends AtomLike>(
   init: AtomState<Target> | ((state: AtomState<Target>) => AtomState<Target>),

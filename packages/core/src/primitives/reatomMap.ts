@@ -1,5 +1,6 @@
-import { action, type Action, atom, AtomLike, computed, named } from '../core'
-import { Computed } from '../core'
+import type { Action, AtomLike } from '../core'
+import type { Computed } from '../core'
+import { action, atom, computed, named } from '../core'
 
 export interface MapAtom<Key, Value> extends AtomLike<Map<Key, Value>, []> {
   /**

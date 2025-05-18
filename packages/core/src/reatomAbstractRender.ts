@@ -1,7 +1,9 @@
-import { _read, atom, computed, type Frame, _enqueue, bind } from './core'
+import { _enqueue, atom, bind, computed, type Frame } from './core'
+import type { AbortAtom } from './methods'
+import { abortVar, peek, variable, wrap } from './methods'
 import { _getPrevFrame } from './methods/context'
-import { AbortAtom, abortVar, peek, variable, wrap } from './methods'
-import { toAbortError, Unsubscribe } from './utils'
+import type { Unsubscribe } from './utils'
+import { toAbortError } from './utils'
 
 /**
  * Interface representing an abstract renderer for connecting Reatom with other reactive systems.

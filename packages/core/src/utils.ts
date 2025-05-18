@@ -1,4 +1,4 @@
-import { SetTimeout } from './setTimeout'
+import type { SetTimeout } from './setTimeout'
 
 /**
  * Generic function type representing any function that takes any parameters and returns any value.
@@ -289,7 +289,7 @@ export const isShallowEqual = (a: any, b: any, is = Object.is) => {
       a instanceof Map ? (a, b) => is(a[0], b[0]) && is(a[1], b[1]) : is
     let aIter = a[Symbol.iterator]()
     let bIter = b[Symbol.iterator]()
-    while (1) {
+    while (true) {
       let aNext = aIter.next()
       let bNext = bIter.next()
       if (aNext.done || bNext.done || !equal(aNext.value, bNext.value)) {

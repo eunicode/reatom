@@ -1,6 +1,7 @@
 import { expect, expectTypeOf, test, vi } from 'test'
+
 import { action, atom, computed, notify } from '../core'
-import { withChangeHook, withCallHook } from './withChangeHook'
+import { withCallHook, withChangeHook } from './withChangeHook'
 
 test('atomChange', () => {
   const name = 'atomChange'

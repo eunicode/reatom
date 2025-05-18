@@ -1,14 +1,15 @@
+import { expect, subscribe, test, vi } from 'test'
+
 import {
-  notify,
-  withTap,
   _read,
   atom,
   computed,
+  context,
   createAtom,
   isConnected,
-  context,
+  notify,
+  withTap,
 } from './'
-import { expect, vi, test, subscribe } from 'test'
 
 test('linking', () => {
   const name = 'linking'
@@ -311,4 +312,3 @@ test('computed should not accept params', () => {
   expect(normalComputed()).toBe(1)
   expect(bComputed).toBeCalledTimes(2)
 })
-

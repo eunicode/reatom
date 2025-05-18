@@ -1,3 +1,7 @@
+import { describe, expect, test, vi } from 'vitest'
+import { z } from 'zod'
+
+import { noop, notify, reatomBoolean, sleep, withCallHook, wrap } from '../'
 import {
   experimental_fieldArray,
   reatomField,
@@ -5,9 +9,6 @@ import {
   reatomForm,
   withField,
 } from '.'
-import { test, expect, describe, vi } from 'vitest'
-import { noop, notify, reatomBoolean, sleep, withCallHook, wrap } from '../'
-import { z } from 'zod'
 
 test(`adding and removing fields`, async () => {
   const form = reatomForm({

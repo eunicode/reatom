@@ -4,22 +4,17 @@
   "publishConfig": {
     "tag": "alpha"
   },
+  "private": true,
   "description": "The ultimate state manager",
-  "exports": {
-    "types": "./build/index.d.ts",
-    "require": "./build/index.js",
-    "default": "./build/index.mjs"
-  },
-  "main": "build/index.js",
-  "module": "build/index.mjs",
-  "types": "build/index.d.ts",
-  "sideEffects": false,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "sideEffects": true,
   "browserslist": [
     "last 1 year"
   ],
   "scripts": {
-    "prepublishOnly": "npm run test && npm run test:browser && npm run build",
-    "build": "yoctobundle",
+    "prePublish": "npm run build && cd dist",
+    "build": "tsc -p ./tsconfig.bundle.json && eslint src --fix && prettier src -w && npm run test && npm run test:browser && smartbundle",
     "test": "vitest run",
     "test:browser": "vitest run --config=vitest.browser.config.ts",
     "test:watch": "vitest",
@@ -81,9 +76,10 @@
     "s-js": "latest",
     "solid-js": "latest",
     "spred": "latest",
+    "typescript": "^5.8.3",
     "usignal": "latest",
     "whatsup": "latest",
     "wonka": "latest",
-    "zod": "^3.24.3"
+    "zod": "^3.24.4"
   }
 }

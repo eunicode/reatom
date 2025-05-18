@@ -1,4 +1,4 @@
-import { atom, _enqueue } from '../core'
+import { _enqueue, atom } from '../core'
 import { wrap } from '../methods'
 
 export let rAF = /* @__PURE__ */ (() =>

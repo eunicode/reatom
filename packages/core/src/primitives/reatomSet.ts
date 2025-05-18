@@ -1,11 +1,5 @@
-import {
-  Action,
-  atom,
-  Atom,
-  computed,
-  Computed,
-  named,
-} from '../core'
+import type { Action, Atom, Computed } from '../core'
+import { atom, computed, named } from '../core'
 
 export interface SetAtom<T> extends Atom<Set<T>> {
   add: Action<[el: T], Set<T>>

@@ -1,9 +1,10 @@
 import { expect, silentQueuesErrors, test, vi } from 'test'
-import { variable } from './variable'
-import { action, atom, computed, top } from '../core'
+
 import { withAsyncData } from '../async'
+import { action, atom, computed } from '../core'
 import { wrap } from '../methods'
 import { sleep } from '../utils'
+import { variable } from './variable'
 
 test('unique scope', async () => {
   const countVar = variable((init: number) => atom(init))

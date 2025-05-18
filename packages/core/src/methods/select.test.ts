@@ -1,13 +1,7 @@
-import { describe, test, expect, subscribe, silentQueuesErrors } from 'test'
-import {
-  AtomLike,
-  atom,
-  computed,
-  Atom,
-  AtomState,
-  notify,
-  isConnected,
-} from '../core'
+import { describe, expect, silentQueuesErrors, subscribe, test } from 'test'
+
+import type { Atom, AtomLike, AtomState } from '../core'
+import { atom, computed, isConnected, notify } from '../core'
 import { select } from './select'
 
 test('should not recompute the end atom if the source atom changed', () => {
@@ -65,12 +59,7 @@ test('many selects should work', () => {
 test('prevent select memoization errors', () => {
   const list = atom(new Array<Atom<{ name: string; value: number }>>())
   const sum = computed(() => {
-    try {
-      return list().reduce((acc, el) => acc + select(() => el().value), 0)
-    } catch (error) {
-      debugger
-      throw error
-    }
+    return list().reduce((acc, el) => acc + select(() => el().value), 0)
   })
 
   const track = subscribe(sum)

@@ -1,4 +1,5 @@
-import { describe, test, expect } from 'test'
+import { describe, expect, test } from 'test'
+
 import { reatomString } from './reatomString'
 
 describe('reatomString', () => {

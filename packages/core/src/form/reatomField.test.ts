@@ -1,4 +1,5 @@
-import { test, expect, vi } from 'vitest'
+import { expect, test, vi } from 'vitest'
+
 import { addCallHook, notify, reatomEnum, sleep, wrap } from '../'
 import { fieldInitValidation, reatomField, withField } from '.'
 

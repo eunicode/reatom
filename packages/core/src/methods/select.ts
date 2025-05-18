@@ -1,10 +1,10 @@
 import {
   computed,
+  type Frame,
+  type FunctionSource,
   named,
   ReatomError,
   top,
-  type Frame,
-  type FunctionSource,
 } from '../core'
 
 const touchedMap = new WeakMap<Frame, Record<FunctionSource, true>>()

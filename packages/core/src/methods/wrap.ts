@@ -1,5 +1,7 @@
-import { assert, Fn, isAbort, noop, Overloads } from '../utils'
-import { top, STACK, ReatomError, Frame } from '../core'
+import type { Frame } from '../core'
+import { ReatomError, STACK, top } from '../core'
+import type { Fn, Overloads } from '../utils'
+import { assert, isAbort, noop } from '../utils'
 import { abortVar } from './abort'
 
 /**

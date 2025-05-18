@@ -1,4 +1,4 @@
-import { test, expect, describe } from 'test'
+import { describe, expect, test } from 'test'
 
 import { reatomMap } from './reatomMap'
 

@@ -1,34 +1,41 @@
-import { test, expect, vi } from 'test'
+import { expect, test, vi } from 'test'
+
 import { atom } from '../core/atom'
-import { searchParamsAtom, urlAtom, withSearchParamsPersist } from './url'
-import { sleep } from '../utils'
 import { wrap } from '../methods'
+import { sleep } from '../utils'
+import { searchParamsAtom, urlAtom, withSearchParamsPersist } from './url'
 
 test('syncFromSource', async () => {
   const syncMock = urlAtom.sync.set(() => vi.fn())
 
-  expect(urlAtom().search).toBe('')
+  // check playwright meta
+  expect(Object.keys(searchParamsAtom())).toEqual(['sessionId', 'iframeId'])
 
   expect(syncMock).toHaveBeenCalledTimes(0)
 
   searchParamsAtom.set('test', '1')
 
   expect(syncMock).toHaveBeenCalledTimes(1)
-  expect(urlAtom().search).toBe('?test=1')
+  expect(Object.keys(searchParamsAtom())).toEqual([
+    'sessionId',
+    'iframeId',
+    'test',
+  ])
+  expect(urlAtom().search).toContain('test=1')
 
   const url = new URL(urlAtom().href)
   url.searchParams.set('test', '2')
   urlAtom.syncFromSource(url)
 
   expect(syncMock).toHaveBeenCalledTimes(1)
-  expect(urlAtom().search).toBe('?test=2')
+  expect(urlAtom().search).toContain('test=2')
 
   searchParamsAtom.set('test', '3')
 
   await wrap(sleep())
 
   expect(syncMock).toHaveBeenCalledTimes(2)
-  expect(urlAtom().search).toBe('?test=3')
+  expect(urlAtom().search).toContain('test=3')
 })
 
 test('lens path', async () => {

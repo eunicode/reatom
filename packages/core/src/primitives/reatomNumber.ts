@@ -1,4 +1,5 @@
-import { Action, Atom, atom, named } from '../core'
+import type { Action, Atom } from '../core'
+import { atom, named } from '../core'
 import { random } from '../utils'
 
 export interface NumberAtom extends Atom<number> {

@@ -1,8 +1,9 @@
 import { expect, test, vi } from 'test'
+
 import { action, atom, computed } from '../core'
-import { withAbort } from './withAbort'
-import { sleep } from '../utils'
 import { wrap } from '../methods'
+import { sleep } from '../utils'
+import { withAbort } from './withAbort'
 
 test('abort propagation', async () => {
   const name = 'abortPropagation'

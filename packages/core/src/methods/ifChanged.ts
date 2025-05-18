@@ -1,15 +1,7 @@
-import {
-  Action,
-  top,
-  run,
-  ReatomError,
-  Frame,
-  AtomLike,
-  AtomState,
-  ActionState,
-} from '../core'
-import { _getPrevFrame } from './context'
+import type { Action, ActionState, AtomLike, AtomState, Frame } from '../core'
+import { ReatomError, run, top } from '../core'
 import { assert } from '../utils'
+import { _getPrevFrame } from './context'
 
 /**
  * Executes a callback when an atom's state changes

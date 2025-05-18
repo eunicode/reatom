@@ -1,6 +1,6 @@
-import { withTap, _read, atom, computed, isConnected, notify } from './'
-
 import { expect, subscribe, test } from 'test'
+
+import { _read, atom, computed, isConnected, notify, withTap } from './'
 
 test('diamonds', () => {
   const name = 'diamonds'

@@ -1,17 +1,18 @@
+import type { Atom, GenericAction } from '../core'
 import {
-  Atom,
+  action,
+  bind,
+  computed,
   createAtom,
+  isAtom,
+  named,
   top,
   withParams,
-  computed,
-  isAtom,
-  bind,
-  named,
-  action,
-  GenericAction,
 } from '../core'
-import { AbortError, Fn, noop, toAbortError, Unsubscribe } from '../utils'
-import { Variable, variable } from './variable'
+import type { AbortError, Fn, Unsubscribe } from '../utils'
+import { noop, toAbortError } from '../utils'
+import type { Variable } from './variable'
+import { variable } from './variable'
 
 /**
  * Interface containing methods for abort handling in Reatom

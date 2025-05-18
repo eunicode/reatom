@@ -1,9 +1,10 @@
 import { expect, test, vi } from 'test'
+
+import { withAsyncData } from '../async'
 import { action, atom, computed, notify } from '../core'
+import { identity, noop, sleep } from '../utils'
 import { take } from './take'
 import { wrap } from './wrap'
-import { identity, noop, sleep } from '../utils'
-import { withAsyncData } from '../async'
 
 test('take atom', async () => {
   const at = atom(0)

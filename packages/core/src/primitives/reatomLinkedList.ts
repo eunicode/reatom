@@ -1,16 +1,7 @@
-import {
-  type Atom,
-  type Action,
-  atom,
-  action,
-  ReatomError,
-  named,
-  isAtom,
-  computed,
-  Computed,
-} from '../core'
-
-import { isObject, Fn, Rec } from '../utils'
+import type { Action, Atom, Computed } from '../core'
+import { action, atom, computed, isAtom, named, ReatomError } from '../core'
+import type { Fn, Rec } from '../utils'
+import { isObject } from '../utils'
 
 type State<T> = T extends Atom<infer Value> ? Value : T
 
@@ -241,7 +232,7 @@ const toArray = <T extends Rec>(
   head: null | LLNode<T>,
   prev?: Array<LLNode<T>>,
 ): Array<LLNode<T>> => {
-  let arr: Array<LLNode<T>> = []
+  const arr: Array<LLNode<T>> = []
   let i = 0
   while (head) {
     if (prev !== undefined && prev[i] !== head) prev = undefined
@@ -422,8 +413,6 @@ export function reatomLinkedList<
 
     try {
       return cb()
-    } catch (e) {
-      throw e
     } finally {
       STATE = null
     }

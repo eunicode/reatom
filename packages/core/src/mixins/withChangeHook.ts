@@ -1,14 +1,6 @@
-import {
-  Action,
-  AtomLike,
-  AtomState,
-  ReatomError,
-  Ext,
-  _enqueue,
-  top,
-  withMiddleware,
-} from '../core'
-import { OverloadParameters, Unsubscribe } from '../utils'
+import type { Action, AtomLike, AtomState, Ext } from '../core'
+import { _enqueue, ReatomError, top, withMiddleware } from '../core'
+import type { OverloadParameters, Unsubscribe } from '../utils'
 
 export let withChangeHook = <Target extends AtomLike>(
   cb: (

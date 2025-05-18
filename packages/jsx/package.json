@@ -33,7 +33,7 @@
     "test:watch": "vitest --watch=true"
   },
   "peerDependencies": {
-    "@reatom/core": "alpha"
+    "@reatom/core": "1000.0.0-alpha.24"
   },
   "dependencies": {
     "csstype": "^3.1.2"

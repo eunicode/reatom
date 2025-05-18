@@ -1,5 +1,6 @@
-import { actions, type Actions, Ext, extend, type Extend, _enqueue } from './'
 import type { Fn, Unsubscribe } from '../utils'
+import type { Ext } from './'
+import { _enqueue, type Actions, actions, type Extend, extend } from './'
 
 let identity = <T>(value: T): T => value
 

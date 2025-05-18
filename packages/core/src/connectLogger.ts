@@ -1,16 +1,15 @@
+import type { ActionState, AtomLike, Frame } from './core'
 import {
-  AtomLike,
-  Frame,
-  isConnected,
+  _enqueue,
+  action,
+  bind,
   context,
+  isConnected,
   top,
   withMiddleware,
-  _enqueue,
-  ActionState,
-  bind,
-  action,
 } from './core'
-import { Fn, isBrowser } from './utils'
+import type { Fn } from './utils'
+import { isBrowser } from './utils'
 
 export let log = /* @__PURE__ */ (() =>
   action<[name: string, payload: any]>((_name, payload) => payload))()
