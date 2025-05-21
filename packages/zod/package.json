@@ -1,6 +1,6 @@
 {
   "name": "@reatom/zod",
-  "version": "1000.0.0-alpha.6",
+  "version": "1000.0.0-alpha.7",
   "publishConfig": {
     "tag": "alpha"
   },
@@ -31,7 +31,7 @@
     "test:watch": "vitest src/*"
   },
   "dependencies": {
-    "@reatom/core": "1000.0.0-alpha.25",
+    "@reatom/core": "alpha",
     "zod": "^3.25.0"
   },
   "author": "artalar",

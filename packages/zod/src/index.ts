@@ -97,7 +97,7 @@ export type ZodAtomization<T extends z.ZodFirstPartySchemaTypes, Union = never, 
                           : T extends z.ZodSymbol
                             ? Atom<(symbol & Intersection) | Union>
                             : T extends z.ZodDate
-                              ? Atom<(Date & Intersection) | Union, [Date | string | number]>
+                              ? Atom<(Date & Intersection) | Union, [Date | string | number | Union]>
                               : T extends z.ZodArray<infer T>
                                 ? LinkedListAtom<[void | Partial<z.infer<T>>], { value: ZodAtomization<T> }> // TODO Union and Intersection for LL
                                 : T extends z.ZodTuple<infer Tuple>
