@@ -1,8 +1,8 @@
 import { type Atom, isAtom, notify, type ParseAtoms, parseAtoms } from '@reatom/core'
 import { expect, expectTypeOf, test, vi } from 'vitest'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
-import { reatomZod } from './'
+import { reatomZod } from './v4'
 
 test('base API', async () => {
   const model = reatomZod(
@@ -44,7 +44,6 @@ test('array', () => {
   expect(model.objects.array().length).toBe(1);
   expect(model.objects.array()[0]!.value.name).toSatisfy(isAtom);
 })
-
 
 test('right values for effects', async () => {
   const schema = z.object({
@@ -239,4 +238,16 @@ test('date set overload', () => {
   model.date.set(dateString)
   expect(model.date()).toBeInstanceOf(Date)
   expect(model.date().toISOString()).toBe(dateString)
+})
+
+test('string template literal', () => {
+  const schema = z.object({
+    em: z.templateLiteral([z.number(), 'em']),
+    complex: z.templateLiteral([z.string(), '_1_', z.boolean(), '_2_', z.number(), '_3_', z.null()]),
+    test: z.bigint()
+  })
+  const model = reatomZod(schema)
+
+  expect(model.em()).toBe('0em');
+  expect(model.complex()).toBe('_1_false_2_0_3_null');
 })
