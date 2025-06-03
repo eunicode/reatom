@@ -1,6 +1,6 @@
 {
   "name": "@reatom/preact",
-  "version": "1000.0.0-alpha.3",
+  "version": "1000.0.0-alpha.30",
   "publishConfig": {
     "tag": "alpha"
   },
