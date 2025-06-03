@@ -1,5 +1,6 @@
-import { top, Constructor, reatomAbstractRender, AbstractRender, Unsubscribe, Frame } from '@reatom/core'
-import { LitElement, PropertyValues } from 'lit'
+import type { AbstractRender, Constructor, Frame,Unsubscribe } from '@reatom/core';
+import { reatomAbstractRender,top } from '@reatom/core'
+import type { LitElement, PropertyValues } from 'lit'
 
 const __inner_update = Symbol('Inner update')
 
