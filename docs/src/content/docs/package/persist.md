@@ -173,7 +173,7 @@ export const ssrHandler = async () => {
 }
 
 export const render = ({ snapshot }) => {
-  const ctx = createCtx()
+  export const ctx = createCtx()
   snapshotAtom(ctx, snapshot)
 
   runFeaturesAndRenderTheApp(ctx)

@@ -1085,7 +1085,6 @@ describe('concurrent pooling', () => {
       await sleep(5)
       const progress = (tasks.get(taskId) ?? -10) + 10
       tasks.set(taskId, progress)
-
       return progress
     },
   }
