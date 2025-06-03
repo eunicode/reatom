@@ -25,6 +25,7 @@
   },
   "peerDependencies": {
     "@reatom/core": "workspace:alpha",
+    "@vue/reactivity": "^3.5.16",
     "vue": "^3.5.0"
   },
   "author": {

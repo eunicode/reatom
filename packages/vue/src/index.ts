@@ -1,16 +1,15 @@
+import type { Atom, Computed, Frame } from '@reatom/core'
 import {
-  Atom,
-  Computed,
+  assert,
   computed,
   isAtom,
-  Frame,
   ReatomError,
-  assert,
-  wrap,
   STACK,
+  wrap,
 } from '@reatom/core'
-import { ref, Ref, onScopeDispose, App, inject } from 'vue'
 import { RefSymbol } from '@vue/reactivity'
+import type { App, Ref } from 'vue'
+import { inject, onScopeDispose, ref } from 'vue'
 
 const ReatomContextKey = 'ReatomContextKey'
 
@@ -64,6 +63,7 @@ export function reatomRef<T>(
       // @ts-expect-error
       target.set(next)
     },
+    // @ts-ignore TODO
     [RefSymbol]: true,
   }
 }
