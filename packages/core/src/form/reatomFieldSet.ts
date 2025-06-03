@@ -2,21 +2,17 @@ import type { AbortExt, Action, Computed, Rec } from '../'
 import {
   action,
   computed,
+  deatomize,
   entries,
   isAtom,
   isLinkedListAtom,
   isObject,
   named,
-  Deatomize,
   withAbort,
   withMemo,
 } from '../'
 import type { FieldError, FieldFocus } from './reatomField'
-import {
-  type FieldAtom,
-  fieldInitFocus,
-  isFieldAtom,
-} from './reatomField'
+import { type FieldAtom, fieldInitFocus, isFieldAtom } from './reatomField'
 import type {
   FormFieldArrayAtom,
   FormFieldElement,
@@ -54,13 +50,22 @@ export interface FieldSet<T extends FormInitState> {
   /** Computed list of all the field arrays from the fields tree */
   fieldArraysList: Computed<FormFieldArrayAtom[]>
 
-  /** Atom with the state of the fieldset, computed from all the fields in `fieldsList` */
+  /**
+   * Atom with the state of the fieldset, computed from all the fields in
+   * `fieldsList`
+   */
   fieldsState: Computed<FormState<T>>
 
-  /** Atom with focus state of the fieldset, computed from all the fields in `fieldsList` */
+  /**
+   * Atom with focus state of the fieldset, computed from all the fields in
+   * `fieldsList`
+   */
   focus: Computed<FieldFocus>
 
-  /** Atom with validation state of the fieldset, computed from all the fields in `fieldsList` */
+  /**
+   * Atom with validation state of the fieldset, computed from all the fields in
+   * `fieldsList`
+   */
   validation: Computed<FieldSetValidation> & {
     /** Action to trigger fieldset validation. */
     trigger: Action<[], FieldSetValidation> & AbortExt
@@ -105,12 +110,12 @@ export const reatomFieldSet = <T extends FormInitState>(
   const validation = computed(() => {
     const validationErrors: FieldSetFieldError[] = []
     const promises: Promise<{ errors: FieldSetFieldError[] }>[] = []
-    const validation: FieldSetValidation = { 
+    const validation: FieldSetValidation = {
       errors: validationErrors,
       validating: undefined,
       triggered: true,
-      meta: undefined
-    } 
+      meta: undefined,
+    }
 
     for (const field of fieldsList()) {
       if (field.disabled()) continue
@@ -118,13 +123,20 @@ export const reatomFieldSet = <T extends FormInitState>(
       const { triggered, validating, errors } = field.validation()
 
       validation.triggered &&= triggered
-      validationErrors.push(...errors.map(err => ({ ...err, field })))
+      validationErrors.push(...errors.map((err) => ({ ...err, field })))
 
-      if (validating) promises.push(validating.then(({ errors }) => ({ errors: errors.map(err => ({ ...err, field })) })))
+      if (validating)
+        promises.push(
+          validating.then(({ errors }) => ({
+            errors: errors.map((err) => ({ ...err, field })),
+          })),
+        )
     }
 
     validation.validating = promises.length
-      ? Promise.all(promises).then((results) => ({ errors: results.flatMap(e => e.errors) }))
+      ? Promise.all(promises).then((results) => ({
+          errors: results.flatMap((e) => e.errors),
+        }))
       : undefined
 
     return validation

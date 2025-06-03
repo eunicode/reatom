@@ -4,7 +4,7 @@ import { describe, expect, test } from 'vitest'
 import { atom, computed } from '../core'
 import { reatomEnum } from '../primitives/reatomEnum'
 import { reatomLinkedList } from '../primitives/reatomLinkedList'
-import { Deatomize } from './parseAtoms'
+import { deatomize } from './parseAtoms'
 
 describe('runtime', () => {
   test('should return value', () => {
@@ -169,9 +169,7 @@ describe('runtime', () => {
   test('should ignore constructor', () => {
     const constructObject = new AbortController()
 
-    expect(deatomize({ constructObject }).constructObject).toBe(
-      constructObject,
-    )
+    expect(deatomize({ constructObject }).constructObject).toBe(constructObject)
   })
 })
 
@@ -179,9 +177,7 @@ describe('types', () => {
   it('should return value', () => {
     expectTypeOf(deatomize('some bare value')).toEqualTypeOf<string>()
     expectTypeOf(deatomize(10)).toEqualTypeOf<number>()
-    expectTypeOf(
-      deatomize(Symbol.for('specialSymbol')),
-    ).toEqualTypeOf<symbol>()
+    expectTypeOf(deatomize(Symbol.for('specialSymbol'))).toEqualTypeOf<symbol>()
   })
 
   it('should parse deep atoms', () => {
