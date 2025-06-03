@@ -44,7 +44,9 @@ test(`keepErrorOnChange`, async () => {
   fieldWithoutKeep.validation.trigger()
   notify()
   expect(fieldWithKeep.validation().errors[0]?.message).toBe('validation error')
-  expect(fieldWithoutKeep.validation().errors[0]?.message).toBe('validation error')
+  expect(fieldWithoutKeep.validation().errors[0]?.message).toBe(
+    'validation error',
+  )
 
   fieldWithKeep.change('new value')
   fieldWithoutKeep.change('new value')
@@ -75,7 +77,9 @@ test(`keepErrorDuringValidating`, async () => {
   fieldWithoutKeep.validation.trigger()
   await wrap(sleep())
   expect(fieldWithKeep.validation().errors[0]?.message).toBe('validation error')
-  expect(fieldWithoutKeep.validation().errors[0]?.message).toBe('validation error')
+  expect(fieldWithoutKeep.validation().errors[0]?.message).toBe(
+    'validation error',
+  )
 
   fieldWithKeep.change('new value')
   fieldWithoutKeep.change('new value')
@@ -90,7 +94,8 @@ test(`keepErrorDuringValidating`, async () => {
 test(`disabled state`, async () => {
   const field = reatomField('', {
     validateOnChange: true,
-    validate: ({ state }) => state == 'errorValue' ? 'validation error' : undefined
+    validate: ({ state }) =>
+      state == 'errorValue' ? 'validation error' : undefined,
   })
 
   field.change('errorValue')

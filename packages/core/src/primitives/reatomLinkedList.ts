@@ -8,8 +8,10 @@ type State<T> = T extends Atom<infer Value> ? Value : T
 export const LL_PREV = /* @__PURE__ */ Symbol('Reatom linked list prev')
 export const LL_NEXT = /* @__PURE__ */ Symbol('Reatom linked list next')
 
-/** Linked List is reusing the model reference to simplify the reference sharing and using it as a key of LL methods.
- * Btw, symbols works fine with serialization and will not add a garbage to an output.
+/**
+ * Linked List is reusing the model reference to simplify the reference sharing
+ * and using it as a key of LL methods. Btw, symbols works fine with
+ * serialization and will not add a garbage to an output.
  */
 export type LLNode<T extends Rec = Rec> = T & {
   [LL_PREV]: null | LLNode<T>
@@ -53,8 +55,10 @@ export interface LinkedListAtom<
 
   find: (cb: (node: LLNode<Node>) => boolean) => null | LLNode<Node>
 
-  /** This lazy map is useful for working with serializable identifier,
-   * but it is not recommended to use it for large (thousands elements) lists */
+  /**
+   * This lazy map is useful for working with serializable identifier, but it is
+   * not recommended to use it for large (thousands elements) lists
+   */
   map: Key extends never ? never : Atom<Map<State<Node[Key]>, LLNode<Node>>>
 
   initiateFromState: (initState: Array<Node>) => LinkedList<LLNode<Node>>

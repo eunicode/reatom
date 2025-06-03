@@ -31,8 +31,8 @@ test(`adding and removing fields`, async () => {
 
 test('focus states', () => {
   const form = reatomForm({
-    field1: { initState: '', validate: () => { } },
-    field2: { initState: '', validate: () => { } },
+    field1: { initState: '', validate: () => {} },
+    field2: { initState: '', validate: () => {} },
     list: experimental_fieldArray({
       initState: ['initial'],
       create: (param) => reatomField(param, 'fieldAtom'),
@@ -81,7 +81,8 @@ test('focus states', () => {
 })
 
 test('validation states', async () => {
-  const contract = ({ value }: { value: string }) => value == 'errorValue' ? 'Contract error' : undefined
+  const contract = ({ value }: { value: string }) =>
+    value == 'errorValue' ? 'Contract error' : undefined
 
   const validate = async ({ value }: { value: string }) => {
     await sleep()
@@ -97,7 +98,7 @@ test('validation states', async () => {
     },
     {
       name: 'testForm',
-      onSubmit: () => { },
+      onSubmit: () => {},
       validate: () => {
         throw new Error('Form validation error')
       },
@@ -138,7 +139,7 @@ test('validation states', async () => {
 
   field2.reset()
 
-  await wrap(form.submit().catch(() => { }))
+  await wrap(form.submit().catch(() => {}))
   expect(form.submit.error()?.message).toBe('Form validation error')
 
   expect(form.validation()).toEqual({
@@ -238,7 +239,7 @@ test('validation states with disabled fields and defined schema', async () => {
 
 test('default options for fields', async () => {
   const form = reatomForm({
-    field: { initState: 'initial', validate: () => { } },
+    field: { initState: 'initial', validate: () => {} },
     array: experimental_fieldArray(['one', 'two', 'free']),
   })
 
@@ -349,11 +350,11 @@ describe('fieldArray and array literals as a fieldArray', () => {
 test('reset', () => {
   const form = reatomForm(
     {
-      field: { initState: 'initial', validate: () => { } },
+      field: { initState: 'initial', validate: () => {} },
     },
     {
       name: 'testForm',
-      onSubmit: () => { },
+      onSubmit: () => {},
     },
   )
 
@@ -517,48 +518,71 @@ test('triggering schema validation only for one field', async () => {
   form.fields.age.change(17)
   notify()
   expect(form.validation().errors[0]?.message).toBe('must be minimum 18')
-  expect(form.fields.age.validation().errors[0]?.message).toBe('must be minimum 18')
+  expect(form.fields.age.validation().errors[0]?.message).toBe(
+    'must be minimum 18',
+  )
 })
 
 test('correct handling of side errors from schema', async () => {
-  const INVARIANT_ERR_MSG = 'value "min" should be less than "max" value';
+  const INVARIANT_ERR_MSG = 'value "min" should be less than "max" value'
 
-  const form = reatomForm({
-    min: { initState: 0, validate: ({ value }) => value % 2 == 0 ? `shouldn't be even` : undefined },
-    max: 10
-  }, {
-    validateOnChange: true,
-    schema: z.object({
-      min: z.number().min(0, 'must be minimum 0').max(20, 'must be up to 20'),
-      max: z.number().min(0, 'must be minimum 0').max(20, 'must be up to 20'),
-    }).superRefine(({ min, max }, ctx) => {
-      if (min > max) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['min'],
-          message: INVARIANT_ERR_MSG,
+  const form = reatomForm(
+    {
+      min: {
+        initState: 0,
+        validate: ({ value }) =>
+          value % 2 == 0 ? `shouldn't be even` : undefined,
+      },
+      max: 10,
+    },
+    {
+      validateOnChange: true,
+      schema: z
+        .object({
+          min: z
+            .number()
+            .min(0, 'must be minimum 0')
+            .max(20, 'must be up to 20'),
+          max: z
+            .number()
+            .min(0, 'must be minimum 0')
+            .max(20, 'must be up to 20'),
         })
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['max'],
-          message: INVARIANT_ERR_MSG
-        })
-      }
-    }),
-  })
+        .superRefine(({ min, max }, ctx) => {
+          if (min > max) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['min'],
+              message: INVARIANT_ERR_MSG,
+            })
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['max'],
+              message: INVARIANT_ERR_MSG,
+            })
+          }
+        }),
+    },
+  )
 
   form.fields.min.change(15)
   notify()
 
-  expect(form.fields.max.validation().errors[0]?.message).toBe(INVARIANT_ERR_MSG)
-  expect(form.fields.min.validation().errors[0]?.message).toBe(INVARIANT_ERR_MSG)
+  expect(form.fields.max.validation().errors[0]?.message).toBe(
+    INVARIANT_ERR_MSG,
+  )
+  expect(form.fields.min.validation().errors[0]?.message).toBe(
+    INVARIANT_ERR_MSG,
+  )
 
   form.fields.min.change(10)
   notify()
 
   console.log(form.fields.max.validation().errors)
   expect(form.fields.max.validation().errors.length).toBeFalsy()
-  expect(form.fields.min.validation().errors[0]?.message).toBe(`shouldn't be even`)
+  expect(form.fields.min.validation().errors[0]?.message).toBe(
+    `shouldn't be even`,
+  )
 
   form.fields.min.change(9)
   notify()
@@ -589,10 +613,14 @@ test('concurrent field validation with schema', async () => {
   form.fields.age.change(10)
   notify()
 
-  expect(form.fields.age.validation().errors[0]?.message).toBe('must be minimum 18')
+  expect(form.fields.age.validation().errors[0]?.message).toBe(
+    'must be minimum 18',
+  )
   await wrap(sleep())
 
-  expect(form.fields.age.validation().errors[0]?.message).toBe('must be minimum 18')
+  expect(form.fields.age.validation().errors[0]?.message).toBe(
+    'must be minimum 18',
+  )
 })
 
 test('autofocus recipe', async () => {

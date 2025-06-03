@@ -20,25 +20,27 @@ export const silentQueuesErrors = () => {
 
 // TODO decorate chainable methods too
 /**
- * Enhanced version of Vitest's test function that automatically wraps test callbacks in Reatom's context
- * to ensure proper atom tracking and execution within Reatom's reactive system.
+ * Enhanced version of Vitest's test function that automatically wraps test
+ * callbacks in Reatom's context to ensure proper atom tracking and execution
+ * within Reatom's reactive system.
  *
- * This wrapper preserves all functionality from Vitest while adding Reatom-specific context handling,
- * which prevents "missed context" errors when testing Reatom atoms and actions.
+ * This wrapper preserves all functionality from Vitest while adding
+ * Reatom-specific context handling, which prevents "missed context" errors when
+ * testing Reatom atoms and actions.
+ *
+ * @example
+ *   import { test, expect } from '@reatom/core/test'
+ *   import { atom } from '@reatom/core'
+ *
+ *   test('atom updates correctly', () => {
+ *     const counter = atom(0, 'counter')
+ *     counter.set(5)
+ *     expect(counter()).toBe(5)
+ *   })
  *
  * @param name - The name of the test case
  * @param fn - The test function to execute within Reatom context
  * @returns The result of the Vitest test execution
- *
- * @example
- * import { test, expect } from '@reatom/core/test'
- * import { atom } from '@reatom/core'
- *
- * test('atom updates correctly', () => {
- *   const counter = atom(0, 'counter')
- *   counter.set(5)
- *   expect(counter()).toBe(5)
- * })
  */
 export const test = Object.assign(
   (name: string, fn: () => void | Promise<void>) =>
@@ -50,32 +52,34 @@ export const test = Object.assign(
 ) as typeof viTest
 
 /**
- * Creates a mock subscriber for an atom that tracks all atom updates using Vitest's mock functionality.
+ * Creates a mock subscriber for an atom that tracks all atom updates using
+ * Vitest's mock functionality.
  *
- * This utility combines Reatom's subscription mechanism with Vitest's mocking capabilities,
- * providing an easy way to verify atom updates during tests. The returned object is both
- * a Vitest mock function (with call tracking) and has an attached unsubscribe method.
+ * This utility combines Reatom's subscription mechanism with Vitest's mocking
+ * capabilities, providing an easy way to verify atom updates during tests. The
+ * returned object is both a Vitest mock function (with call tracking) and has
+ * an attached unsubscribe method.
+ *
+ * @example
+ *   import { test, expect, subscribe } from '@reatom/core/test'
+ *   import { atom } from '@reatom/core'
+ *
+ *   test('subscribe captures all updates', () => {
+ *     const counter = atom(0, 'counter')
+ *     const sub = subscribe(counter)
+ *
+ *     counter.set(1)
+ *     counter.set(2)
+ *
+ *     expect(sub).toHaveBeenCalledTimes(3) // Initial + 2 updates
+ *     expect(sub).toHaveBeenLastCalledWith(2)
+ *
+ *     sub.unsubscribe() // Stop listening to updates
+ *   })
  *
  * @param target - The Reatom atom or computed value to subscribe to
  * @param cb - Optional callback function to execute on each atom update
  * @returns A Vitest mock function with unsubscribe method attached
- *
- * @example
- * import { test, expect, subscribe } from '@reatom/core/test'
- * import { atom } from '@reatom/core'
- *
- * test('subscribe captures all updates', () => {
- *   const counter = atom(0, 'counter')
- *   const sub = subscribe(counter)
- *
- *   counter.set(1)
- *   counter.set(2)
- *
- *   expect(sub).toHaveBeenCalledTimes(3) // Initial + 2 updates
- *   expect(sub).toHaveBeenLastCalledWith(2)
- *
- *   sub.unsubscribe() // Stop listening to updates
- * })
  */
 export function subscribe<State, T extends (state: State) => any>(
   target: AtomLike<State>,
@@ -109,6 +113,7 @@ export {
 /**
  * Re-exports all type definitions from Vitest.
  *
- * This ensures that Vitest types are available when importing from '@reatom/core/test'.
+ * This ensures that Vitest types are available when importing from
+ * '@reatom/core/test'.
  */
 export type * from 'vitest'

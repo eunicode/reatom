@@ -6,8 +6,9 @@ import type { Unsubscribe } from './utils'
 import { toAbortError } from './utils'
 
 /**
- * Interface representing an abstract renderer for connecting Reatom with other reactive systems.
- * Provides methods to render content with given props and manage the lifecycle through mounting.
+ * Interface representing an abstract renderer for connecting Reatom with other
+ * reactive systems. Provides methods to render content with given props and
+ * manage the lifecycle through mounting.
  *
  * @template Props - The type of props/parameters that the renderer accepts
  * @template Result - The type of result produced by the render operation
@@ -30,40 +31,44 @@ export interface AbstractRender<Props, Result> {
 }
 
 /**
- * Creates a low-level renderer that connects Reatom with other reactive systems.
- * This function decorates computed rendering to prevent extra or outdated rerenders,
- * allowing a user render function to run only in the context of the adapted reactive system.
+ * Creates a low-level renderer that connects Reatom with other reactive
+ * systems. This function decorates computed rendering to prevent extra or
+ * outdated rerenders, allowing a user render function to run only in the
+ * context of the adapted reactive system.
  *
- * The renderer maintains proper reactivity by coordinating state updates between
- * Reatom's atom/computed system and the target rendering system.
+ * The renderer maintains proper reactivity by coordinating state updates
+ * between Reatom's atom/computed system and the target rendering system.
+ *
+ * @example
+ *   // Creating a React renderer
+ *   const reactRenderer = reatomAbstractRender({
+ *     frame: ctx,
+ *     render: (props) => React.createElement(Component, props),
+ *     rerender: ({ result }) => setElement(result),
+ *     name: 'ReactRenderer',
+ *   })
+ *
+ *   // Usage
+ *   const unmount = reactRenderer.mount()
+ *   reactRenderer.render({ prop1: 'value1' })
+ *
+ *   // Later cleanup
+ *   unmount()
  *
  * @template Props - The type of props/parameters that the renderer accepts
  * @template Result - The type of result produced by the render operation
- *
  * @param {Object} options - Configuration options for the abstract renderer
- * @param {Frame} options.frame - The Reatom frame/context in which the rendering occurs
- * @param {function} options.render - Function that renders content with the given props
- * @param {function} options.rerender - Function called when a rerender is needed
- * @param {function} [options.mount] - Optional function called when mounting the renderer
+ * @param {Frame} options.frame - The Reatom frame/context in which the
+ *   rendering occurs
+ * @param {function} options.render - Function that renders content with the
+ *   given props
+ * @param {function} options.rerender - Function called when a rerender is
+ *   needed
+ * @param {function} [options.mount] - Optional function called when mounting
+ *   the renderer
  * @param {string} options.name - Name identifier for debugging purposes
- *
- * @returns {AbstractRender<Props, Result>} An object with render and mount methods
- *
- * @example
- * // Creating a React renderer
- * const reactRenderer = reatomAbstractRender({
- *   frame: ctx,
- *   render: (props) => React.createElement(Component, props),
- *   rerender: ({ result }) => setElement(result),
- *   name: 'ReactRenderer'
- * });
- *
- * // Usage
- * const unmount = reactRenderer.mount();
- * reactRenderer.render({ prop1: 'value1' });
- *
- * // Later cleanup
- * unmount();
+ * @returns {AbstractRender<Props, Result>} An object with render and mount
+ *   methods
  */
 export let reatomAbstractRender = <Props, Result>({
   frame,

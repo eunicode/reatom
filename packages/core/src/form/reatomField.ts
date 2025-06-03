@@ -42,14 +42,20 @@ export interface FieldFocus {
 export interface FieldErrorBody<Meta = any> {
   /** The message of the error useful for a user. */
   message: string
-  /** The record with arbitrary information about the error like minimum chars, upper bound of a number, etc. */
+  /**
+   * The record with arbitrary information about the error like minimum chars,
+   * upper bound of a number, etc.
+   */
   meta?: Rec<Meta>
 }
 
 export type FieldErrorSource = 'validation' | (string & {})
 
 export interface FieldError<Meta = any> extends FieldErrorBody<Meta> {
-  /** The type of an error source. The value will be `validation` if the error occurred due to the `validate` function. */
+  /**
+   * The type of an error source. The value will be `validation` if the error
+   * occurred due to the `validate` function.
+   */
   source: FieldErrorSource
 }
 
@@ -96,7 +102,10 @@ export interface FieldLikeAtom<State = any> extends Atom<State> {
 
 export interface FieldAtom<State = any, Value = State>
   extends FieldLikeAtom<State> {
-  /** Action for handling field changes, accepts the "value" parameter and applies it to `toState` option. */
+  /**
+   * Action for handling field changes, accepts the "value" parameter and
+   * applies it to `toState` option.
+   */
   change: Action<[Value], Value>
 
   /** Atom of an object with all related focus statuses. */
@@ -122,7 +131,9 @@ export interface FieldAtom<State = any, Value = State>
 
   options: RecordAtom<{
     /**
-     * Defines the reset behavior of the validation state during async validation.
+     * Defines the reset behavior of the validation state during async
+     * validation.
+     *
      * @default false
      */
     keepErrorDuringValidating: boolean | undefined
@@ -130,18 +141,21 @@ export interface FieldAtom<State = any, Value = State>
     /**
      * Defines the reset behavior of the validation state on field change.
      * Useful if the validation is triggered on blur or submit only.
+     *
      * @default !validateOnChange
      */
     keepErrorOnChange: boolean | undefined
 
     /**
      * Defines if the validation should be triggered with every field change.
+     *
      * @default false
      */
     validateOnChange: boolean | undefined
 
     /**
      * Defines if the validation should be triggered on the field blur.
+     *
      * @default false
      */
     validateOnBlur: boolean | undefined
@@ -157,75 +171,82 @@ export type FieldValidateOption<State = any, Value = State> = (meta: {
   validation: FieldValidation
 }) => FieldValidateOptionResult | Promise<FieldValidateOptionResult>
 
-export type FieldValidateOptionResult = string | string[] | FieldErrorBody | FieldErrorBody[] | void | undefined
+export type FieldValidateOptionResult =
+  | string
+  | string[]
+  | FieldErrorBody
+  | FieldErrorBody[]
+  | void
+  | undefined
 
 export interface FieldOptions<State = any, Value = State> {
   /**
-   * The callback to filter "value" changes (from the 'change' action). It should return 'false' to skip the update.
-   * By default, it always returns `true`.
+   * The callback to filter "value" changes (from the 'change' action). It
+   * should return 'false' to skip the update. By default, it always returns
+   * `true`.
    */
   filter?: (newValue: Value, prevValue: Value) => boolean
 
   /**
-   * The callback to compute the "value" data from the "state" data.
-   * By default, it returns the "state" data without any transformations.
+   * The callback to compute the "value" data from the "state" data. By default,
+   * it returns the "state" data without any transformations.
    */
   fromState?: (state: State) => Value
 
   /**
-   * The callback used to determine whether the "value" has changed.
-   * By default, it utilizes `isDeepEqual` from reatom/utils.
+   * The callback used to determine whether the "value" has changed. By default,
+   * it utilizes `isDeepEqual` from reatom/utils.
    */
   isDirty?: (newValue: Value, prevValue: Value) => boolean
 
-  /**
-   * The name of the field and all related atoms and actions.
-   */
+  /** The name of the field and all related atoms and actions. */
   name?: string
 
   /**
-   * The callback to transform the "state" data from the "value" data from the `change` action.
-   * By default, it returns the "value" data without any transformations.
+   * The callback to transform the "state" data from the "value" data from the
+   * `change` action. By default, it returns the "value" data without any
+   * transformations.
    */
   toState?: (value: Value) => State
 
-  /**
-   * The callback to validate the field.
-   */
+  /** The callback to validate the field. */
   validate?: FieldValidateOption<State, Value> | StandardSchemaV1<State>
 
   /**
    * Defines if the field is disabled by default.
+   *
    * @default false
    */
   disabled?: boolean
 
-  /**
-   * Defines a default element reference accosiated with the field.
-   */
+  /** Defines a default element reference accosiated with the field. */
   elementRef?: FieldElementRef
 
   /**
    * Defines the reset behavior of the validation state during async validation.
+   *
    * @default false
    */
   keepErrorDuringValidating?: boolean
 
   /**
-   * Defines the reset behavior of the validation state on field change.
-   * Useful if the validation is triggered on blur or submit only.
+   * Defines the reset behavior of the validation state on field change. Useful
+   * if the validation is triggered on blur or submit only.
+   *
    * @default !validateOnChange
    */
   keepErrorOnChange?: boolean
 
   /**
    * Defines if the validation should be triggered with every field change.
+   *
    * @default false
    */
   validateOnChange?: boolean
 
   /**
    * Defines if the validation should be triggered on the field blur.
+   *
    * @default false
    */
   validateOnBlur?: boolean
@@ -267,7 +288,7 @@ export function reatomField<State, Value = State>(
   options: string | FieldOptions<State, Value> = {},
   stateAtom?: Atom<State>,
 ): FieldAtom<State, Value> {
-  interface This extends FieldAtom<State, Value> { }
+  interface This extends FieldAtom<State, Value> {}
 
   const {
     filter = () => true,
@@ -278,8 +299,8 @@ export function reatomField<State, Value = State>(
     validate: validateFn,
     ...restOptions
   } = typeof options === 'string'
-      ? ({ name: options } as FieldOptions<State, Value>)
-      : options
+    ? ({ name: options } as FieldOptions<State, Value>)
+    : options
 
   const fieldOptions = reatomRecord({
     validateOnChange: restOptions.validateOnChange,
@@ -398,14 +419,18 @@ export function reatomField<State, Value = State>(
           try {
             if (typeof validateFn == 'function') {
               const transformResult = (result: FieldValidateOptionResult) => {
-                if (!result)
-                  return [];
+                if (!result) return []
 
-                const toFieldError = (error: string | FieldErrorBody): FieldError => typeof error == 'string'
-                  ? ({ source: 'validation', message: error })
-                  : Object.assign({ source: 'validation' }, error);
+                const toFieldError = (
+                  error: string | FieldErrorBody,
+                ): FieldError =>
+                  typeof error == 'string'
+                    ? { source: 'validation', message: error }
+                    : Object.assign({ source: 'validation' }, error)
 
-                return Array.isArray(result) ? result.map(toFieldError) : [toFieldError(result)]
+                return Array.isArray(result)
+                  ? result.map(toFieldError)
+                  : [toFieldError(result)]
               }
 
               const task = validateFn({
@@ -415,25 +440,37 @@ export function reatomField<State, Value = State>(
                 validation: validationValue,
               })
 
-              promise = task instanceof Promise ? task.then(transformResult) : transformResult(task)
-            }
-            else {
+              promise =
+                task instanceof Promise
+                  ? task.then(transformResult)
+                  : transformResult(task)
+            } else {
               const task = validateFn?.['~standard'].validate(state)
-              const transformResult = (result: StandardSchemaV1.Result<State> | undefined) => {
-                if (!result?.issues?.length)
-                  return [];
+              const transformResult = (
+                result: StandardSchemaV1.Result<State> | undefined,
+              ) => {
+                if (!result?.issues?.length) return []
 
-                return result.issues.map(issue => ({ source: 'validation', message: issue.message, meta: undefined }))
+                return result.issues.map((issue) => ({
+                  source: 'validation',
+                  message: issue.message,
+                  meta: undefined,
+                }))
               }
 
-              promise = task instanceof Promise ? task.then(transformResult) : transformResult(task)
+              promise =
+                task instanceof Promise
+                  ? task.then(transformResult)
+                  : transformResult(task)
             }
           } catch (error) {
             promise = [{ source: 'validation', message: toError(error) }]
           }
 
-          const putValidationErrors = (to: FieldError[], ...errors: FieldError[]) =>
-            to.filter(e => e.source !== 'validation').concat(errors)
+          const putValidationErrors = (
+            to: FieldError[],
+            ...errors: FieldError[]
+          ) => to.filter((e) => e.source !== 'validation').concat(errors)
 
           if (promise instanceof Promise) {
             const validationPromise = (async () => {
@@ -449,7 +486,10 @@ export function reatomField<State, Value = State>(
               } catch (error) {
                 if (isAbort(error)) return { errors: target().errors }
                 const validation = target.merge({
-                  errors: putValidationErrors(target().errors, { source: 'validaton', message: toError(error) }),
+                  errors: putValidationErrors(target().errors, {
+                    source: 'validaton',
+                    message: toError(error),
+                  }),
                   meta: undefined,
                   triggered: true,
                   validating: undefined,
@@ -459,9 +499,7 @@ export function reatomField<State, Value = State>(
             })()
 
             return target.merge({
-              errors: keepErrorDuringValidating
-                ? validationValue.errors
-                : [],
+              errors: keepErrorDuringValidating ? validationValue.errors : [],
               meta: undefined,
               triggered: true,
               validating: validationPromise,
@@ -479,12 +517,14 @@ export function reatomField<State, Value = State>(
     )
     .actions((target) => ({
       prependErrors: (...errors: FieldError[]) => {
-        if(!errors.length) return target()
+        if (!errors.length) return target()
         return target.merge({ errors: [...errors, ...target().errors] })
       },
       clearErrors: (...sources: FieldErrorSource[]) => {
-        if(!sources.length) return target.merge({ errors: [] })
-        return target.merge({ errors: target().errors.filter(e => !sources.includes(e.source)) })
+        if (!sources.length) return target.merge({ errors: [] })
+        return target.merge({
+          errors: target().errors.filter((e) => !sources.includes(e.source)),
+        })
       },
     }))
 

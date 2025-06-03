@@ -11,10 +11,15 @@ import { _getPrevFrame } from '../methods/context'
 /**
  * A middleware extension that enhances an atom with computed capabilities.
  *
- * @template Target - The target atom or action type to be extended with computed functionality.
- * @param {function} computed - A function that computes the new state based on the current state.
- * @param {boolean} [tail=true] - Determines the order of the passed computed calling. ATTENTION: use `false` only for computed with fixed size of dependencies
- * @returns {Ext<Target>} The extended atom or action with computed functionality.
+ * @template Target - The target atom or action type to be extended with
+ *   computed functionality.
+ * @param {function} computed - A function that computes the new state based on
+ *   the current state.
+ * @param {boolean} [tail=true] - Determines the order of the passed computed
+ *   calling. ATTENTION: use `false` only for computed with fixed size of
+ *   dependencies. Default is `true`
+ * @returns {Ext<Target>} The extended atom or action with computed
+ *   functionality.
  */
 export let withComputed = <Target extends AtomLike>(
   computed: (state: AtomState<Target>) => AtomState<Target>,

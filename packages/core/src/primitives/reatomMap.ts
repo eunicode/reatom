@@ -11,7 +11,9 @@ const createMap = <Key, Value>(init: StateInit<Key, Value>) =>
 export interface MapAtom<Key, Value> extends AtomLike<Map<Key, Value>, []> {
   /**
    * Update the atom's state using a function that receives the previous state
-   * @param update - Function that takes the current state and returns a new state
+   *
+   * @param update - Function that takes the current state and returns a new
+   *   state
    * @returns The new state value
    */
   setState(
@@ -20,6 +22,7 @@ export interface MapAtom<Key, Value> extends AtomLike<Map<Key, Value>, []> {
 
   /**
    * Set the atom's state to a new value
+   *
    * @param newState - The new state value
    * @returns The new state value
    */

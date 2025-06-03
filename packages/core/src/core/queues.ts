@@ -3,15 +3,17 @@ import type { Queue } from './'
 import { bind, context } from './'
 
 /**
- * Schedules a function to be executed in a specific queue of the current context.
+ * Schedules a function to be executed in a specific queue of the current
+ * context.
  *
- * This is the core mechanism for scheduling reactive updates in Reatom. When an atom's
- * state changes, tasks are queued to be executed afterwards in the appropriate order.
- * If this is the first task being scheduled, a microtask is created to process the
- * queues asynchronously.
+ * This is the core mechanism for scheduling reactive updates in Reatom. When an
+ * atom's state changes, tasks are queued to be executed afterwards in the
+ * appropriate order. If this is the first task being scheduled, a microtask is
+ * created to process the queues asynchronously.
  *
  * @param fn - The function to schedule for execution
- * @param queue - The queue to add the function to ('hook', 'compute', 'cleanup', or 'effect')
+ * @param queue - The queue to add the function to ('hook', 'compute',
+ *   'cleanup', or 'effect')
  */
 export let _enqueue = (
   fn: Fn,
@@ -44,7 +46,8 @@ export let _enqueue = (
  *
  * @param queue - The queue to iterate over
  * @param i - The starting index
- * @returns A function that returns the next item in the queue or undefined when empty
+ * @returns A function that returns the next item in the queue or undefined when
+ *   empty
  */
 let QueueIterator = (queue: Queue, i: number) => () =>
   i < queue.length ? queue[i++] : undefined
@@ -52,15 +55,17 @@ let QueueIterator = (queue: Queue, i: number) => () =>
 /**
  * Processes all scheduled tasks in the current context's queues.
  *
- * This function is called automatically after tasks have been scheduled via `enqueue`.
- * It processes tasks in the following priority order:
- * 1. hook tasks
- * 2. compute tasks
- * 3. cleanup tasks
- * 4. effect tasks
+ * This function is called automatically after tasks have been scheduled via
+ * `enqueue`. It processes tasks in the following priority order:
  *
- * The function resets priority after each task execution to ensure higher priority
- * tasks (which may have been added during execution) are processed first.
+ * 1. Hook tasks
+ * 2. Compute tasks
+ * 3. Cleanup tasks
+ * 4. Effect tasks
+ *
+ * The function resets priority after each task execution to ensure higher
+ * priority tasks (which may have been added during execution) are processed
+ * first.
  */
 export let notify = () => {
   let { state } = context()

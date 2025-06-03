@@ -71,18 +71,20 @@ let prepareFrameStack = (frame: Frame): Node => {
 /**
  * Concatenates a tree structure representation into a string format.
  *
- * This function recursively builds a formatted ASCII/Unicode tree representation
- * of a Node structure with proper branch indentation and connections.
+ * This function recursively builds a formatted ASCII/Unicode tree
+ * representation of a Node structure with proper branch indentation and
+ * connections.
  *
- * @param {string} acc - The accumulator string that holds the current tree representation
+ * @example
+ *   // For a node with children, might produce something like:
+ *   // myNode ┬─ child1 ─ grandChild
+ *   //        └─ child2
+ *
+ * @param {string} acc - The accumulator string that holds the current tree
+ *   representation
  * @param {string} steps - Indentation padding string for proper alignment
  * @param {Node} node - The current node to process and display in the tree
  * @returns {string} A formatted string representation of the tree structure
- *
- * @example
- * // For a node with children, might produce something like:
- * // myNode ┬─ child1 ─ grandChild
- * //        └─ child2
  */
 export let concatTree = (acc: string, steps: string, node: Node): string => {
   // if (steps.length > 200) return acc + ' [...]'
@@ -107,20 +109,25 @@ export let concatTree = (acc: string, steps: string, node: Node): string => {
 }
 
 /**
- * Generates a formatted stack trace string based on the current execution context.
+ * Generates a formatted stack trace string based on the current execution
+ * context.
  *
  * Creates a visual representation of the dependency tree from the current frame
- * up through its publishers, using ASCII/Unicode characters to show relationships.
- *
- * @param {string} [acc='─ '] - Initial accumulator string for the result
- * @param {string} [steps=''] - Initial indentation padding for proper alignment
- * @param {Frame} [frame=top()] - The starting frame to trace from (defaults to current top frame)
- * @returns {string} A formatted string representation of the stack trace
+ * up through its publishers, using ASCII/Unicode characters to show
+ * relationships.
  *
  * @example
- * // Might produce output like:
- * // ─ counter ┬─ doubleCounter
- * //           └─ displayValue
+ *   // Might produce output like:
+ *   // ─ counter ┬─ doubleCounter
+ *   //           └─ displayValue
+ *
+ * @param {string} [acc='─ '] - Initial accumulator string for the result.
+ *   Default is `'─ '`
+ * @param {string} [steps=''] - Initial indentation padding for proper
+ *   alignment. Default is `''`
+ * @param {Frame} [frame=top()] - The starting frame to trace from (defaults to
+ *   current top frame). Default is `top()`
+ * @returns {string} A formatted string representation of the stack trace
  */
 export let getStackTrace = (acc = '─ ', steps = '', frame = top()): string => {
   return concatTree(acc, steps, prepareFrameStack(frame))
@@ -129,24 +136,26 @@ export let getStackTrace = (acc = '─ ', steps = '', frame = top()): string => 
 /**
  * Sets up and connects a logger to the Reatom system for debugging and tracing.
  *
- * This function enhances all non-private atoms and actions with logging capabilities.
- * When an atom's value changes or an action is called, it logs the event with relevant
- * information to the console including:
+ * This function enhances all non-private atoms and actions with logging
+ * capabilities. When an atom's value changes or an action is called, it logs
+ * the event with relevant information to the console including:
+ *
  * - Previous and current state for atoms
  * - Parameters and return values for actions
  * - Complete dependency stack traces
  * - Error information when exceptions occur
  *
- * The logger adapts to the environment, using different formatting for browser and Node.js.
- * Private atoms (those with names starting with '_' or containing '._') are not logged.
- *
- * @returns {void}
+ * The logger adapts to the environment, using different formatting for browser
+ * and Node.js. Private atoms (those with names starting with '_' or containing
+ * '._') are not logged.
  *
  * @example
- * // Connect the logger at application startup
- * import { connectLogger } from '@reatom/core'
+ *   // Connect the logger at application startup
+ *   import { connectLogger } from '@reatom/core'
  *
- * connectLogger()
+ *   connectLogger()
+ *
+ * @returns {void}
  */
 export let connectLogger = () => {
   let isNodeEnv = !isBrowser()

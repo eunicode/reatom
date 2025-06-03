@@ -26,8 +26,8 @@ let actionMiddleware = (next: Fn, ...params: any[]) => {
 /**
  * Type guard to check if a value is a Reatom action.
  *
- * This function determines whether the given value is an action by checking
- * if it's an atom with non-reactive behavior (actions are non-reactive atoms).
+ * This function determines whether the given value is an action by checking if
+ * it's an atom with non-reactive behavior (actions are non-reactive atoms).
  *
  * @param target - The value to check
  * @returns `true` if the value is a Reatom action, `false` otherwise
@@ -38,33 +38,34 @@ export let isAction = (target: unknown): target is Action =>
 /**
  * Creates a logic and side effect container.
  *
- * Actions are used to encapsulate complex logic, perform side effects (like API calls),
- * and orchestrate multiple state updates. Unlike atoms, actions are meant to be called
- * with parameters and can return values.
+ * Actions are used to encapsulate complex logic, perform side effects (like API
+ * calls), and orchestrate multiple state updates. Unlike atoms, actions are
+ * meant to be called with parameters and can return values.
  *
- * Actions also have atom-like features (subscribe, extend) and track their call history.
+ * Actions also have atom-like features (subscribe, extend) and track their call
+ * history.
+ *
+ * @example
+ *   // Create an action that fetches data and updates state
+ *   const fetchUserData = action(async (userId: string) => {
+ *     const response = await wrap(fetch(`/api/users/${userId}`))
+ *     const data = await wrap(response.json())
+ *
+ *     // Update state atoms with the fetched data
+ *     userName(data.name)
+ *     userEmail(data.email)
+ *
+ *     return data // Actions can return values
+ *   }, 'fetchUserData')
+ *
+ *   // Call the action
+ *   fetchUserData('user123')
  *
  * @template Params - The parameter types the action accepts
  * @template Payload - The return type of the action
  * @param cb - The function containing the action's logic
  * @param name - Optional name for debugging purposes
  * @returns An action instance that can be called with the specified parameters
- *
- * @example
- * // Create an action that fetches data and updates state
- * const fetchUserData = action(async (userId: string) => {
- *   const response = await wrap(fetch(`/api/users/${userId}`))
- *   const data = await wrap(response.json())
- *
- *   // Update state atoms with the fetched data
- *   userName(data.name)
- *   userEmail(data.email)
- *
- *   return data // Actions can return values
- * }, 'fetchUserData')
- *
- * // Call the action
- * fetchUserData('user123')
  */
 export let action: {
   <Params extends any[] = any[], Payload = any>(

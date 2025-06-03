@@ -5,24 +5,23 @@ import { _enqueue, type Actions, actions, type Extend, extend } from './'
 let identity = <T>(value: T): T => value
 
 /**
- * Metadata associated with an atom instance that controls its behavior and lifecycle.
- * This interface is used internally by the Reatom framework and should not be
- * accessed directly in application code.
+ * Metadata associated with an atom instance that controls its behavior and
+ * lifecycle. This interface is used internally by the Reatom framework and
+ * should not be accessed directly in application code.
  */
 export interface AtomMeta {
   /**
-   * Indicates whether the atom is reactive.
-   * Set to false for actions or the context atom.
+   * Indicates whether the atom is reactive. Set to false for actions or the
+   * context atom.
    */
   readonly reactive: boolean
 
-  /**
-   * The initial state of the atom.
-   */
+  /** The initial state of the atom. */
   readonly initState: any
 
   /**
-   * Array of middleware functions that intercept and potentially transform atom operations.
+   * Array of middleware functions that intercept and potentially transform atom
+   * operations.
    */
   readonly middlewares: Array<(next: Fn, ...params: any[]) => any>
 
@@ -40,21 +39,17 @@ export interface AtomMeta {
    */
   linking: boolean
 
-  /**
-   * Function called when the atom gains its first subscriber.
-   */
+  /** Function called when the atom gains its first subscriber. */
   onConnect: undefined | Fn
 
-  /**
-   * Function called when the atom loses its last subscriber.
-   */
+  /** Function called when the atom loses its last subscriber. */
   onDisconnect: undefined | Fn
 }
 
 /**
- * Base atom interface for other userspace implementations.
- * This is the core interface that all atom-like objects implement,
- * providing the foundation for Reatom's reactivity system.
+ * Base atom interface for other userspace implementations. This is the core
+ * interface that all atom-like objects implement, providing the foundation for
+ * Reatom's reactivity system.
  *
  * @template State - The type of state stored in the atom
  * @template Payload - The return type when the atom is called
@@ -74,30 +69,27 @@ export interface AtomLike<
 
   set: unknown
 
-  /**
-   * Bind methods to the atom to extend its functionality.
-   */
+  /** Bind methods to the atom to extend its functionality. */
   actions: Actions<this>
 
   /**
-   * Extension system to add capabilities to atoms.
-   * Allows adding middleware, methods, or other functionality to modify atom behavior.
+   * Extension system to add capabilities to atoms. Allows adding middleware,
+   * methods, or other functionality to modify atom behavior.
    */
   extend: Extend<this>
 
   /**
-   * Subscribe to state changes, with the first call happening immediately.
-   * When a subscriber is added, the callback is immediately invoked with the current state.
-   * After that, it's called whenever the atom's state changes.
+   * Subscribe to state changes, with the first call happening immediately. When
+   * a subscriber is added, the callback is immediately invoked with the current
+   * state. After that, it's called whenever the atom's state changes.
    *
-   * @param cb - Callback function that receives the atom's state when it changes
+   * @param cb - Callback function that receives the atom's state when it
+   *   changes
    * @returns An unsubscribe function that removes the subscription when called
    */
   subscribe: (cb?: (state: State) => any) => Unsubscribe
 
-  /**
-   * Reference to the atom's internal metadata.
-   */
+  /** Reference to the atom's internal metadata. */
   __reatom: AtomMeta
 }
 
@@ -114,13 +106,16 @@ export interface Atom<State = any, Params extends any[] = [newState: State]>
   extends AtomLike<State, []> {
   /**
    * Update the atom's state using a function that receives the previous state
-   * @param update - Function that takes the current state and returns a new state
+   *
+   * @param update - Function that takes the current state and returns a new
+   *   state
    * @returns The new state value
    */
   set(update: (state: State) => State): State
 
   /**
    * Set the atom's state to a new value
+   *
    * @param newState - The new state value
    * @returns The new state value
    */
@@ -141,8 +136,8 @@ export interface Computed<State = any> extends AtomLike<State, []> {}
 /**
  * Call stack snapshot for an atom or action execution.
  *
- * Frames represent the execution context of an atom at a specific point in a call stack,
- * tracking its current state, error status, and dependencies.
+ * Frames represent the execution context of an atom at a specific point in a
+ * call stack, tracking its current state, error status, and dependencies.
  *
  * @template State - The state type of the atom
  * @template Params - The parameter types the atom accepts
@@ -153,36 +148,28 @@ export interface Frame<
   Params extends any[] = any[],
   Payload = State,
 > {
-  /**
-   * Error that occurred during atom evaluation, or null if successful
-   */
+  /** Error that occurred during atom evaluation, or null if successful */
   error: null | NonNullable<unknown>
 
-  /**
-   * Current state of the atom
-   */
+  /** Current state of the atom */
   state: State
 
-  /**
-   * Reference to the atom itself
-   */
+  /** Reference to the atom itself */
   readonly atom: AtomLike<State, Params, Payload>
 
   /**
-   * Immutable list of dependencies.
-   * The first element is actualization flag and an imperative write cause.
-   * Subsequent elements are the atom's dependencies.
+   * Immutable list of dependencies. The first element is actualization flag and
+   * an imperative write cause. Subsequent elements are the atom's
+   * dependencies.
    */
   pubs: [actualization: null | Frame, ...dependencies: Array<Frame>]
 
-  /**
-   * Array of atoms that depend on this atom (subscribers).
-   */
+  /** Array of atoms that depend on this atom (subscribers). */
   readonly subs: Array<AtomLike>
 
   /**
-   * Run the callback in this context.
-   * DO NOT USE directly, use `wrap` instead to preserve context correctly.
+   * Run the callback in this context. DO NOT USE directly, use `wrap` instead
+   * to preserve context correctly.
    *
    * @param fn - Function to execute in this context
    * @param params - Parameters to pass to the function
@@ -202,16 +189,14 @@ export interface Frame<
 export type AtomState<T> =
   T extends AtomLike<infer State, any, any> ? State : never
 
-/**
- * Task queue for scheduled operations.
- */
+/** Task queue for scheduled operations. */
 export interface Queue extends Array<Fn> {}
 
 /**
  * Atom's state mappings for context.
  *
- * The Store maps atoms to their frames in the current context,
- * allowing atoms to retrieve their state and dependencies.
+ * The Store maps atoms to their frames in the current context, allowing atoms
+ * to retrieve their state and dependencies.
  */
 export interface Store extends WeakMap<AtomLike, Frame> {
   /**
@@ -238,61 +223,43 @@ export interface Store extends WeakMap<AtomLike, Frame> {
 }
 
 /**
- * Type representing the source of a function as a string.
- * Used for caching and identification purposes.
+ * Type representing the source of a function as a string. Used for caching and
+ * identification purposes.
  */
 export type FunctionSource = string
 
 /**
  * Reatom's execution context that manages reactive state.
  *
- * The context handles tracking relationships between atoms, scheduling operations,
- * and maintaining the execution stack during Reatom operations.
+ * The context handles tracking relationships between atoms, scheduling
+ * operations, and maintaining the execution stack during Reatom operations.
  */
 export interface RootState {
-  /**
-   * Store that maps atoms to their frames in this context.
-   */
+  /** Store that maps atoms to their frames in this context. */
   store: Store
 
-  /**
-   * Frame history.
-   */
+  /** Frame history. */
   frames: WeakMap<AtomLike, { prev: null | Frame; next: Frame }>
 
-  /**
-   * Initialization flags for init hooks.
-   */
+  /** Initialization flags for init hooks. */
   inits: WeakMap<WeakKey, any>
 
-  /**
-   * Cache for memoized selectors, keyed by source function.
-   */
+  /** Cache for memoized selectors, keyed by source function. */
   selects: WeakMap<AtomLike, Record<FunctionSource, AtomLike>>
 
-  /**
-   * Async variables maps.
-   */
+  /** Async variables maps. */
   variables: WeakMap<Frame, WeakMap<WeakKey, any>>
 
-  /**
-   * Queue for hook callbacks to be executed.
-   */
+  /** Queue for hook callbacks to be executed. */
   hook: Queue
 
-  /**
-   * Queue for computation callbacks to be executed.
-   */
+  /** Queue for computation callbacks to be executed. */
   compute: Queue
 
-  /**
-   * Queue for cleanup callbacks to be executed.
-   */
+  /** Queue for cleanup callbacks to be executed. */
   cleanup: Queue
 
-  /**
-   * Queue for effect callbacks to be executed.
-   */
+  /** Queue for effect callbacks to be executed. */
   effect: Queue
 
   /**
@@ -307,14 +274,12 @@ export interface RootState {
   frame: RootFrame
 }
 
-/**
- * Special frame type for the context atom.
- */
+/** Special frame type for the context atom. */
 export interface RootFrame extends Frame<RootState, []> {}
 
 /**
- * Atom interface for the context atom.
- * Provides methods to start new isolated contexts.
+ * Atom interface for the context atom. Provides methods to start new isolated
+ * contexts.
  */
 export interface ContextAtom extends AtomLike<RootState, [], RootFrame> {
   /**
@@ -468,10 +433,10 @@ let relink = (frame: Frame, oldPubs: Frame['pubs']) => {
 /**
  * Checks if an atom has active subscriptions.
  *
- * This function determines if an atom is currently connected to any subscribers,
- * which indicates that the atom is being actively used somewhere in the application.
- * This is useful for optimizations or conditional logic based on whether an atom's
- * changes are being observed.
+ * This function determines if an atom is currently connected to any
+ * subscribers, which indicates that the atom is being actively used somewhere
+ * in the application. This is useful for optimizations or conditional logic
+ * based on whether an atom's changes are being observed.
  *
  * @param anAtom - The atom to check for subscriptions
  * @returns `true` if the atom has subscribers, `false` otherwise
@@ -586,7 +551,7 @@ export function _isPubsChanged(
   return false
 }
 
-/** The hurt of atom internal logic*/
+/** The hurt of atom internal logic */
 function atomMiddleware(next: Fn) {
   let frame = STACK[STACK.length - 1]!
 
@@ -845,26 +810,28 @@ export let createAtom: {
 /**
  * Creates a mutable state container.
  *
- * The atom is the core primitive for storing and updating mutable state in Reatom.
- * Atoms can be called as functions to read their current value or to update the value.
- *
- * @template T - The type of state stored in the atom
- * @param createState - A function that returns the initial state, or the initial state value directly
- * @param name - Optional name for the atom (useful for debugging)
- * @returns An atom instance containing the state
+ * The atom is the core primitive for storing and updating mutable state in
+ * Reatom. Atoms can be called as functions to read their current value or to
+ * update the value.
  *
  * @example
- * // Create with initial value
- * const counter = atom(0, 'counter')
+ *   // Create with initial value
+ *   const counter = atom(0, 'counter')
  *
- * // Read current value
- * const value = counter() // -> 0
+ *   // Read current value
+ *   const value = counter() // -> 0
  *
- * // Update with new value
- * counter(5) // Sets value to 5
+ *   // Update with new value
+ *   counter(5) // Sets value to 5
  *
- * // Update with a function
- * counter(prev => prev + 1) // Sets value to 6
+ *   // Update with a function
+ *   counter((prev) => prev + 1) // Sets value to 6
+ *
+ * @template T - The type of state stored in the atom
+ * @param createState - A function that returns the initial state, or the
+ *   initial state value directly
+ * @param name - Optional name for the atom (useful for debugging)
+ * @returns An atom instance containing the state
  */
 export let atom: {
   <T>(createState: () => T, name?: string): Atom<T>
@@ -881,21 +848,22 @@ export function computedParams(next: Fn) {
 /**
  * Creates a derived state container that lazily recalculates only when read.
  *
- * Computed atoms automatically track their dependencies (other atoms or computed values
- * that are called during computation) and only recalculate when those dependencies change.
- * The computation is lazy - it only runs when the computed value is read AND subscribed to.
+ * Computed atoms automatically track their dependencies (other atoms or
+ * computed values that are called during computation) and only recalculate when
+ * those dependencies change. The computation is lazy - it only runs when the
+ * computed value is read AND subscribed to.
+ *
+ * @example
+ *   const counter = atom(5, 'counter')
+ *   const doubled = computed(() => counter() * 2, 'doubledCounter')
+ *
+ *   // Reading triggers computation only if subscribed
+ *   const value = doubled() // -> 10
  *
  * @template State - The type of state derived by the computation
  * @param computed - A function that computes the derived state
  * @param name - Optional name for debugging purposes
  * @returns A computed atom instance
- *
- * @example
- * const counter = atom(5, 'counter')
- * const doubled = computed(() => counter() * 2, 'doubledCounter')
- *
- * // Reading triggers computation only if subscribed
- * const value = doubled() // -> 10
  */
 export let computed = <State>(
   computed: (() => State) | ((state?: State) => State),
@@ -913,8 +881,9 @@ export let computed = <State>(
 
 /**
  * Checks if the provided target is a READONLY computed atom
+ *
  * @param target - The atom to check
- * @returns boolean
+ * @returns Boolean
  */
 export let isComputed = (target: AtomLike): boolean =>
   target.__reatom.middlewares.includes(computedParams)
@@ -923,19 +892,23 @@ export let isComputed = (target: AtomLike): boolean =>
  * Core context object that manages the reactive state context in Reatom.
  *
  * The context is responsible for tracking dependencies between atoms, managing
- * computation stacks, and ensuring proper reactivity. It serves as the foundation
- * for Reatom's reactivity system and provides access to the current context frame.
+ * computation stacks, and ensuring proper reactivity. It serves as the
+ * foundation for Reatom's reactivity system and provides access to the current
+ * context frame.
  *
  * @returns The current context frame
  * @throws {ReatomError} If called outside a valid context (broken async stack)
  */
-export let context = castAtom<ContextAtom>(function context() {
-  return top().root.frame
-}, {
-  reactive: false,
-  initState: undefined,
-  middlewares: [],
-})
+export let context = castAtom<ContextAtom>(
+  function context() {
+    return top().root.frame
+  },
+  {
+    reactive: false,
+    initState: undefined,
+    middlewares: [],
+  },
+)
 
 context.start = (cb = top) => {
   let frame: RootFrame = {
@@ -978,14 +951,15 @@ context.start = (cb = top) => {
  * Reads the current frame for an atom from the context store.
  *
  * This internal utility function retrieves the frame associated with an atom
- * from the current context. It's used to access an atom's state and dependencies
- * without triggering reactivity or creating new dependencies.
+ * from the current context. It's used to access an atom's state and
+ * dependencies without triggering reactivity or creating new dependencies.
  *
  * @template State - The state type of the atom
  * @template Params - The parameter types the atom accepts
  * @template Payload - The return type when the atom is called
  * @param target - The atom to read the frame for
- * @returns The frame for the atom if it exists in the current context, or undefined otherwise
+ * @returns The frame for the atom if it exists in the current context, or
+ *   undefined otherwise
  */
 export let _read = <State = any, Params extends any[] = [], Payload = State>(
   target: AtomLike<State, Params, Payload>,
@@ -994,8 +968,8 @@ export let _read = <State = any, Params extends any[] = [], Payload = State>(
 /**
  * Gets the current top frame in the Reatom context stack.
  *
- * Returns the currently active frame in the execution stack, which contains
- * the current atom being processed and its state.
+ * Returns the currently active frame in the execution stack, which contains the
+ * current atom being processed and its state.
  *
  * @returns The current top frame from the context stack
  * @throws {ReatomError} If the context stack is empty (missing async stack)
@@ -1016,18 +990,21 @@ STACK.push(context.start())
  *
  * This is primarily used to force explicit context preservation via `wrap()`.
  * By clearing the stack, any atom operations outside of a properly wrapped
- * function will throw "missing async stack" errors, ensuring proper context handling.
+ * function will throw "missing async stack" errors, ensuring proper context
+ * handling.
  */
 export let clearStack = () => {
   STACK = []
 }
 
 /**
- * Light version of `wrap` that binds a function to the current reactive context.
+ * Light version of `wrap` that binds a function to the current reactive
+ * context.
  *
- * Unlike the full `wrap` function, `bind` does not follow abort context, making it
- * more lightweight but less safe for certain async operations. Use this when you
- * need to preserve context but don't need the abort handling capabilities of `wrap`.
+ * Unlike the full `wrap` function, `bind` does not follow abort context, making
+ * it more lightweight but less safe for certain async operations. Use this when
+ * you need to preserve context but don't need the abort handling capabilities
+ * of `wrap`.
  *
  * @template Params - The parameter types of the target function
  * @template Payload - The return type of the target function
@@ -1044,17 +1021,18 @@ export let bind = <Params extends any[], Payload>(
 /**
  * Mocks an atom or action for testing purposes.
  *
- * This function replaces the original behavior of an atom or action with a custom
- * callback function for the duration of the mock. This is useful for isolating
- * units of code during testing and controlling their behavior.
+ * This function replaces the original behavior of an atom or action with a
+ * custom callback function for the duration of the mock. This is useful for
+ * isolating units of code during testing and controlling their behavior.
  *
  * @template Params - The parameter types of the target atom/action
  * @template Payload - The return type of the target atom/action
  * @param target - The atom or action to mock
- * @param cb - The callback function to use as the mock implementation. It receives
- *             the parameters passed to the mocked atom/action and should return
- *             the desired payload.
- * @returns A function that, when called, removes the mock and restores the original behavior.
+ * @param cb - The callback function to use as the mock implementation. It
+ *   receives the parameters passed to the mocked atom/action and should return
+ *   the desired payload.
+ * @returns A function that, when called, removes the mock and restores the
+ *   original behavior.
  */
 // TODO move to testing file / section
 export let mock = <Params extends any[], Payload>(

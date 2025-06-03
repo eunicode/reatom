@@ -11,40 +11,43 @@ let i = 0
  * Awaits the next update of an atom or call of an action.
  *
  * This function returns a Promise that resolves when the specified atom's state
- * changes or when the specified action is called. This is valuable for orchestrating
- * workflows that depend on future state changes or action calls.
+ * changes or when the specified action is called. This is valuable for
+ * orchestrating workflows that depend on future state changes or action calls.
  *
- * Note: Must be used with `wrap()` when used in an async context to preserve reactive context.
+ * Note: Must be used with `wrap()` when used in an async context to preserve
+ * reactive context.
+ *
+ * @example
+ *   // Wait for form validation before proceeding
+ *   const submitWhenValid = action(async () => {
+ *     while (true) {
+ *       const currentData = formData()
+ *       const error = validate(currentData)
+ *       if (!error) break // Exit loop if valid
+ *
+ *       formData({ ...currentData, error }) // Show error
+ *
+ *       // Wait for the next change in formData - need wrap() to preserve context
+ *       await wrap(take(formData))
+ *     }
+ *     // Now formData is valid, proceed with submission...
+ *   })
  *
  * @template T - The type of value expected when the promise resolves
  * @param target - The atom or action to wait for
  * @param name - Optional name for debugging purposes
- * @returns A promise that resolves with the next value of the atom or action result
- *
- * @example
- * // Wait for form validation before proceeding
- * const submitWhenValid = action(async () => {
- *   while (true) {
- *     const currentData = formData()
- *     const error = validate(currentData)
- *     if (!error) break // Exit loop if valid
- *
- *     formData({ ...currentData, error }) // Show error
- *
- *     // Wait for the next change in formData - need wrap() to preserve context
- *     await wrap(take(formData))
- *   }
- *   // Now formData is valid, proceed with submission...
- * })
+ * @returns A promise that resolves with the next value of the atom or action
+ *   result
  */
 export function take<Return>(
   target: AtomLike<any, any, Return>,
   name?: string,
 ): Promise<Awaited<Return>>
 /**
- * Awaits the next update of the target AtomLike and maps the result.
- * If the map function executes synchronously without throwing, its result is returned directly.
- * Otherwise, a promise is returned.
+ * Awaits the next update of the target AtomLike and maps the result. If the map
+ * function executes synchronously without throwing, its result is returned
+ * directly. Otherwise, a promise is returned.
+ *
  * @template Return The type of the awaited value from the target.
  * @template Result The type of the mapped result.
  * @param target The AtomLike to await.
