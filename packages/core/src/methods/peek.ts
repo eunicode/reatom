@@ -1,21 +1,24 @@
-import type { Frame } from '../core'
-import { context } from '../core'
+import { top } from '../core'
 
 /**
- * Executes a callback in the current context without tracking dependencies
- *
- * The peek function allows you to access the current context and execute code within it
- * without establishing reactive dependencies. This is useful for read operations that
- * should not cause subscriptions or reactivity.
- *
- * @type {Frame['run']} - Function signature matching the context frame's run method
- * @param {Function} cb - The callback function to execute in the current context
- * @param {...any} params - Parameters to pass to the callback function
- * @returns {any} The result of the callback function
+ * Executes a callback in the current context without reactive bindings
+ * (dependencies tracking)
  *
  * @example
- * // Read an atom's value without establishing a dependency
- * const currentCount = peek(() => counter());
- * console.log(`Current count is ${currentCount} (without subscribing)`);
+ *   // Read an atom's value without establishing a dependency
+ *   const currentCount = peek(() => counter())
+ *   console.log(`Current count is ${currentCount} (without subscribing)`)
  */
-export let peek: Frame['run'] = (cb, ...params) => context().run(cb, ...params)
+export let peek = <Params extends any[], Result>(
+  cb: (...params: Params) => Result,
+  ...params: Params
+): Result => {
+  let frame = top()
+  let { linking } = frame.atom.__reatom
+  try {
+    frame.atom.__reatom.linking = false
+    return cb(...params)
+  } finally {
+    frame.atom.__reatom.linking = linking
+  }
+}

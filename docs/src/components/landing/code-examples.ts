@@ -3,7 +3,7 @@ export const CODE_EXAMPLES = [
     id: 'counter',
     title: 'Base API',
     description: 'Base building blocks example',
-    code: `import { atom, computed } from '@reatom/core'
+    code: `import { atom, computed, effect } from '@reatom/core'
 
 const counter = atom(0).actions((target) => ({
   increment: (amount = 1) => target.set((prev) => prev + amount),
@@ -13,14 +13,14 @@ const counter = atom(0).actions((target) => ({
 
 const isEven = computed(() => counter() % 2 === 0)
 
-isEven.subscribe((state) => console.log(state))
+effect(() => console.log(isEven()))
 // log: false
 
 counter.increment()
 // log: true
 
 counter.decrement(2)
-// log nothing`,
+// log nothing (memoized)`,
     annotations: [
       {
         pattern: 'atom(0)',
@@ -32,7 +32,7 @@ counter.decrement(2)
       },
       {
         pattern: 'computed(',
-        note: 'Create a derived state',
+        note: 'Create a derived memoized state',
       },
       {
         pattern: 'subscribe(',
@@ -49,19 +49,19 @@ import { reatomComponent } from "@reatom/react"
 
 const data = atom([])
   .extend(() => ({
-    loading: atom(false),
+    isLoading: atom(false),
   }))
   .actions((target) => ({
     async load() {
-      target.loading.set(true)
+      target.isLoading.set(true)
       const payload = await api.getData()
       target.set(payload)
-      target.loading.set(false)
+      target.isLoading.set(false)
     },
   }))
 
 const UserPage = reatomComponent(() => {
-  if (data.loading()) return <div>Loading...</div>
+  if (data.isLoading()) return <div>Loading...</div>
 
   return (
     <ul>

@@ -33,7 +33,7 @@ export const loginForm = reatomForm({
 }, {
   name: 'form',
   async onSubmit(state) {
-    //           ^? ParseAtoms<typeof loginForm.fields>
+    //           ^? toJS<typeof loginForm.fields>
     const user = await api.login({
       name: state.username,
       password: state.password,

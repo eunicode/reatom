@@ -2,7 +2,8 @@ import type { Computed } from '../core'
 import { computed, context, named, top } from '../core'
 import type { Unsubscribe } from '../utils'
 import { isAbort } from '../utils'
-import { abortVar } from './abort'
+import { type AbortAtom, abortVar } from './abort'
+import { _getPrevFrame } from './context'
 
 export interface Effect<State> extends Computed<State> {
   unsubscribe: Unsubscribe
@@ -30,33 +31,25 @@ export interface Effect<State> extends Computed<State> {
  *     if (!isActive()) return // Depends on isActive
  *
  *     console.log('Polling started...')
- *     try {
- *       while (true) {
- *         const fetchedData = await wrap(fetch('/api/poll'))
- *         const jsonData = await wrap(fetchedData.json())
- *         data(jsonData.value)
- *         await wrap(sleep(5000)) // Abortable sleep
- *       }
- *     } catch (error) {
- *       if (isAbort(error)) {
- *         console.log('Polling aborted cleanly.')
- *       } else {
- *         console.error('Polling error:', error)
- *       }
+ *     while (true) {
+ *       const fetchedData = await wrap(fetch('/api/poll'))
+ *       const jsonData = await wrap(fetchedData.json())
+ *       data(jsonData.value)
+ *       await wrap(sleep(5000)) // Abortable sleep == debounce
  *     }
  *   }, 'pollingEffect')
  *
  *   // To manually stop:
- *   // polling()
+ *   // polling.unsubscribe()
  *
  * @param cb The function to run as a side effect. It can be async. Any atoms
  *   read inside `cb` will become dependencies.
  * @param name Optional name for debugging purposes. Auto-generated if not
  *   provided.
- * @returns A function to manually unsubscribe and clean up the effect. Calling
- *   this function is usually not necessary when `effect` is used within managed
- *   contexts like `reatomFactoryComponent` or `withConnectHook`, as cleanup
- *   happens automatically.
+ * @returns The new computed atom with `unsubscribe` method to manually clean up
+ *   the effect. Calling this function is usually not necessary when `effect` is
+ *   used within managed contexts like `reatomFactoryComponent` or
+ *   `withConnectHook`, as cleanup happens automatically.
  */
 export let effect = <T>(cb: () => T, name?: string): Effect<T> => {
   let parentFrame = top()
@@ -65,15 +58,17 @@ export let effect = <T>(cb: () => T, name?: string): Effect<T> => {
     name = named(frame.atom === context ? '' : `${frame.atom.name}.` + 'effect')
   }
 
-  // TODO optimize! It would be nice to remove extra atom
-  let parentMemo = computed(
-    () => void top().pubs.push(parentFrame),
-    `${name}._parentMemo`,
-  )
+  let abort: AbortAtom
 
   let target = computed(() => {
     // put the relative context to this frame without subscribing to it
-    parentMemo()
+    top().pubs[0] = parentFrame
+
+    let prevFrame = _getPrevFrame()
+    let prevAbort =
+      prevFrame && abortVar.find((maybeAbort) => maybeAbort ?? null, prevFrame)
+
+    abort = abortVar.set(prevAbort || name)
 
     let res = cb()
     if (res instanceof Promise) {
@@ -91,6 +86,7 @@ export let effect = <T>(cb: () => T, name?: string): Effect<T> => {
   function unsubscribe() {
     uncomputed()
     unabort?.()
+    abort!.set('disconnect')
   }
 
   return target.extend(() => ({ unsubscribe }))

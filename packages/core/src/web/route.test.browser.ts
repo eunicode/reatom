@@ -3,6 +3,7 @@ import z from 'zod'
 
 import { computed } from '../core'
 import { effect, wrap } from '../methods'
+import { withChangeHook } from '../mixins'
 import { sleep } from '../utils'
 import { route } from './route'
 import { urlAtom } from './url'
@@ -15,8 +16,8 @@ beforeEach(() => {
 
 test('route basic functionality', async () => {
   const rootRoute = route('')
-  const usersRoute = route('users')
-  const userRoute = route('users/:userId')
+  const profilesRoute = route('profiles')
+  const profileRoute = route('profiles/:profileId')
   const postRoute = route('posts/:postId?')
   const postCommentsRoute = postRoute.route({
     path: 'comments/:commentId',
@@ -29,35 +30,35 @@ test('route basic functionality', async () => {
   expect(urlAtom().pathname).toBe('/')
   expect(rootRoute()).toEqual({})
   expect(rootRoute.exact()).toBe(true)
-  expect(usersRoute()).toBe(null)
-  expect(usersRoute.exact()).toBe(false)
-  expect(userRoute()).toBe(null)
-  expect(userRoute.exact()).toBe(false)
+  expect(profilesRoute()).toBe(null)
+  expect(profilesRoute.exact()).toBe(false)
+  expect(profileRoute()).toBe(null)
+  expect(profileRoute.exact()).toBe(false)
   expect(postRoute()).toBe(null)
   expect(postRoute.exact()).toBe(false)
   expect(postCommentsRoute()).toBe(null)
   expect(postCommentsRoute.exact()).toBe(false)
 
-  urlAtom.go('/users')
+  urlAtom.go('/profiles')
   await wrap(sleep())
-  expect(urlAtom().pathname).toBe('/users')
+  expect(urlAtom().pathname).toBe('/profiles')
   expect(rootRoute()).toEqual({})
   expect(rootRoute.exact()).toBe(false)
-  expect(usersRoute()).toEqual({})
-  expect(usersRoute.exact()).toBe(true)
-  expect(userRoute()).toBe(null)
-  expect(userRoute.exact()).toBe(false)
+  expect(profilesRoute()).toEqual({})
+  expect(profilesRoute.exact()).toBe(true)
+  expect(profileRoute()).toBe(null)
+  expect(profileRoute.exact()).toBe(false)
   expect(postRoute()).toBe(null)
   expect(postRoute.exact()).toBe(false)
 
-  userRoute.go({ userId: '123' })
+  profileRoute.go({ profileId: '123' })
   await wrap(sleep())
-  expect(urlAtom().pathname).toBe('/users/123')
+  expect(urlAtom().pathname).toBe('/profiles/123')
   expect(rootRoute()).toEqual({})
-  expect(usersRoute()).toEqual({})
-  expect(usersRoute.exact()).toBe(false)
-  expect(userRoute()).toEqual({ userId: '123' })
-  expect(userRoute.exact()).toBe(true)
+  expect(profilesRoute()).toEqual({})
+  expect(profilesRoute.exact()).toBe(false)
+  expect(profileRoute()).toEqual({ profileId: '123' })
+  expect(profileRoute.exact()).toBe(true)
   expect(postRoute()).toBe(null)
   expect(postRoute.exact()).toBe(false)
 
@@ -65,8 +66,8 @@ test('route basic functionality', async () => {
   await wrap(sleep())
   expect(urlAtom().pathname).toBe('/posts')
   expect(rootRoute()).toEqual({})
-  expect(usersRoute()).toBe(null)
-  expect(userRoute()).toBe(null)
+  expect(profilesRoute()).toBe(null)
+  expect(profileRoute()).toBe(null)
   expect(postRoute()).toEqual({})
   expect(postRoute.exact()).toBe(true)
 
@@ -98,8 +99,8 @@ test('route basic functionality', async () => {
   expect(postCommentsRoute.exact()).toBe(true)
 
   expect(rootRoute.path()).toBe('/')
-  expect(usersRoute.path()).toBe('/users')
-  expect(userRoute.path({ userId: 'xyz' })).toBe('/users/xyz')
+  expect(profilesRoute.path()).toBe('/profiles')
+  expect(profileRoute.path({ profileId: 'xyz' })).toBe('/profiles/xyz')
   expect(postRoute.path()).toBe('/posts')
   expect(postRoute.path({ postId: 'def' })).toBe('/posts/def')
   expect(
@@ -111,94 +112,98 @@ test('route basic functionality', async () => {
   expect(urlAtom().pathname).toBe('/')
   expect(rootRoute()).toEqual({})
   expect(rootRoute.exact()).toBe(true)
-  expect(userRoute()).toBe(null)
+  expect(profileRoute()).toBe(null)
   expect(postCommentsRoute()).toBe(null)
 })
 
 test('route chainable functionality', async () => {
   const apiRoute = route('api')
-  const usersRoute = apiRoute.route('users')
-  const userDetailsRoute = usersRoute.route(':userId')
-  const userSettingsRoute = userDetailsRoute.route('settings')
-  const userPostsRoute = userDetailsRoute.route('posts/:postId?')
+  const productsRoute = apiRoute.route('products')
+  const productDetailsRoute = productsRoute.route(':productId')
+  const productSettingsRoute = productDetailsRoute.route('settings')
+  const productItemsRoute = productDetailsRoute.route('items/:itemId?')
 
   urlAtom.go('/')
   await wrap(sleep())
   expect(urlAtom().pathname).toBe('/')
   expect(apiRoute()).toBe(null)
-  expect(usersRoute()).toBe(null)
-  expect(userDetailsRoute()).toBe(null)
-  expect(userSettingsRoute()).toBe(null)
-  expect(userPostsRoute()).toBe(null)
+  expect(productsRoute()).toBe(null)
+  expect(productDetailsRoute()).toBe(null)
+  expect(productSettingsRoute()).toBe(null)
+  expect(productItemsRoute()).toBe(null)
 
-  userDetailsRoute.go({ userId: 'abc' })
+  productDetailsRoute.go({ productId: 'abc' })
   await wrap(sleep())
-  expect(urlAtom().pathname).toBe('/api/users/abc')
+  expect(urlAtom().pathname).toBe('/api/products/abc')
   expect(apiRoute()).toEqual({})
   expect(apiRoute.exact()).toBe(false)
-  expect(usersRoute()).toEqual({})
-  expect(usersRoute.exact()).toBe(false)
-  expect(userDetailsRoute()).toEqual({ userId: 'abc' })
-  expect(userDetailsRoute.exact()).toBe(true)
-  expect(userSettingsRoute()).toBe(null)
-  expect(userPostsRoute()).toEqual(null)
+  expect(productsRoute()).toEqual({})
+  expect(productsRoute.exact()).toBe(false)
+  expect(productDetailsRoute()).toEqual({ productId: 'abc' })
+  expect(productDetailsRoute.exact()).toBe(true)
+  expect(productSettingsRoute()).toBe(null)
+  expect(productItemsRoute()).toEqual(null)
 
-  userSettingsRoute.go({ userId: 'abc' })
+  productSettingsRoute.go({ productId: 'abc' })
   await wrap(sleep())
-  expect(urlAtom().pathname).toBe('/api/users/abc/settings')
+  expect(urlAtom().pathname).toBe('/api/products/abc/settings')
   expect(apiRoute()).toEqual({})
-  expect(usersRoute()).toEqual({})
-  expect(userDetailsRoute()).toEqual({ userId: 'abc' })
-  expect(userDetailsRoute.exact()).toBe(false)
-  expect(userSettingsRoute()).toEqual({ userId: 'abc' })
-  expect(userSettingsRoute.exact()).toBe(true)
-  expect(userPostsRoute()).toBe(null)
+  expect(productsRoute()).toEqual({})
+  expect(productDetailsRoute()).toEqual({ productId: 'abc' })
+  expect(productDetailsRoute.exact()).toBe(false)
+  expect(productSettingsRoute()).toEqual({ productId: 'abc' })
+  expect(productSettingsRoute.exact()).toBe(true)
+  expect(productItemsRoute()).toBe(null)
 
-  userPostsRoute.go({ userId: 'abc' })
+  productItemsRoute.go({ productId: 'abc' })
   await wrap(sleep())
-  expect(urlAtom().pathname).toBe('/api/users/abc/posts')
-  expect(userDetailsRoute()).toEqual({ userId: 'abc' })
-  expect(userDetailsRoute.exact()).toBe(false)
-  expect(userSettingsRoute()).toBe(null)
-  expect(userPostsRoute()).toEqual({ userId: 'abc' })
-  expect(userPostsRoute.exact()).toBe(true)
+  expect(urlAtom().pathname).toBe('/api/products/abc/items')
+  expect(productDetailsRoute()).toEqual({ productId: 'abc' })
+  expect(productDetailsRoute.exact()).toBe(false)
+  expect(productSettingsRoute()).toBe(null)
+  expect(productItemsRoute()).toEqual({ productId: 'abc' })
+  expect(productItemsRoute.exact()).toBe(true)
 
-  userPostsRoute.go({ userId: 'abc', postId: 'p123' })
+  productItemsRoute.go({ productId: 'abc', itemId: 'p123' })
   await wrap(sleep())
-  expect(urlAtom().pathname).toBe('/api/users/abc/posts/p123')
-  expect(userPostsRoute()).toEqual({ userId: 'abc', postId: 'p123' })
-  expect(userPostsRoute.exact()).toBe(true)
+  expect(urlAtom().pathname).toBe('/api/products/abc/items/p123')
+  expect(productItemsRoute()).toEqual({ productId: 'abc', itemId: 'p123' })
+  expect(productItemsRoute.exact()).toBe(true)
 
   expect(apiRoute.path()).toBe('/api')
-  expect(usersRoute.path()).toBe('/api/users')
-  expect(userDetailsRoute.path({ userId: 'xyz' })).toBe('/api/users/xyz')
-  expect(userSettingsRoute.path({ userId: 'xyz' })).toBe(
-    '/api/users/xyz/settings',
+  expect(productsRoute.path()).toBe('/api/products')
+  expect(productDetailsRoute.path({ productId: 'xyz' })).toBe(
+    '/api/products/xyz',
   )
-  expect(userPostsRoute.path({ userId: 'xyz' })).toBe('/api/users/xyz/posts')
-  expect(userPostsRoute.path({ userId: 'xyz', postId: 'p456' })).toBe(
-    '/api/users/xyz/posts/p456',
+  expect(productSettingsRoute.path({ productId: 'xyz' })).toBe(
+    '/api/products/xyz/settings',
+  )
+  expect(productItemsRoute.path({ productId: 'xyz' })).toBe(
+    '/api/products/xyz/items',
+  )
+  expect(productItemsRoute.path({ productId: 'xyz', itemId: 'p456' })).toBe(
+    '/api/products/xyz/items/p456',
   )
 })
 
 test('route typed params', () => {
   {
     // @ts-expect-error - test
-    const userRoute = route({
-      path: 'user/:id',
+    const catalogRoute = route({
+      path: 'catalog/:id',
       params: z.object({ /* mistake -> */ ib: z.number() }),
     })
   }
 
-  const userRoute = route({
-    path: 'user/:id',
+  const catalogRoute = route({
+    path: 'catalog/:id',
     params: z.object({ id: z.number() }),
   })
 
   // @ts-expect-error - test
-  expect(() => userRoute.go({ id: '42' })).toThrow()
+  expect(() => catalogRoute.go({ id: '42' })).toThrow()
 
-  expect(userRoute.go({ id: 42 }).pathname).toBe('/user/42')
+  expect(catalogRoute.go({ id: 42 }).pathname).toBe('/catalog/42')
 })
 
 test('route default loader', async () => {
@@ -274,4 +279,59 @@ test('route loader', async () => {
   await wrap(sleep())
   expect(track).toBeCalledTimes(1)
   expect(track).toBeCalledWith([{ id: `/api/goods/tech/apple?sort=asc` }])
+})
+
+test('route loader lazyness (abortable)', async () => {
+  let runs = 0
+  let ticks = 0
+
+  const lazyRoute = route({
+    path: 'lazy',
+    async loader() {
+      runs++
+      effect(async () => {
+        while (true) {
+          ticks++
+          await wrap(sleep())
+        }
+      })
+    },
+  })
+
+  let calls = 0
+  lazyRoute.loader.extend(withChangeHook(() => calls++))
+
+  lazyRoute.go()
+
+  await wrap(Promise.resolve())
+
+  expect(calls).toBe(1)
+  expect(runs).toBe(1)
+  expect(ticks).toBe(1)
+
+  await wrap(sleep())
+  expect(calls).toBe(1)
+  expect(runs).toBe(1)
+  expect(ticks).toBe(2)
+
+  await wrap(sleep())
+  expect(calls).toBe(1)
+  expect(runs).toBe(1)
+  expect(ticks).toBe(3)
+
+  urlAtom.go('/lazy/123')
+  await wrap(sleep())
+  expect(calls).toBe(1)
+  expect(runs).toBe(1)
+  expect(ticks).toBe(4)
+
+  expect(lazyRoute()).toEqual({})
+  urlAtom.go('/')
+  await wrap(sleep())
+  await wrap(sleep())
+  await wrap(sleep())
+  expect(calls).toBe(2)
+  expect(runs).toBe(1)
+  expect(ticks).toBe(4)
+  expect(lazyRoute()).toBe(null)
 })

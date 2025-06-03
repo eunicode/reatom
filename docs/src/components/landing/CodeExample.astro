@@ -24,7 +24,7 @@ import { CODE_EXAMPLES } from './code-examples'
                 code={example.code}
                 annotations={example.annotations}
                 filename={`${example.id}.tsx`}
-                playgroundUrl="https://stackblitz.com/fork/reatom"
+                playgroundUrl="https://stackblitz.com/github/artalar/reatom/tree/v1000/examples/react-search"
               />
             </div>
           ))
@@ -60,8 +60,9 @@ import { CODE_EXAMPLES } from './code-examples'
   /* Main Section */
   .code-section {
     padding: 4rem 2rem;
-    background: #151134;
+    background: var(--bg-primary);
     position: relative;
+    transition: background 0.3s ease;
   }
 
   .container {
@@ -79,18 +80,25 @@ import { CODE_EXAMPLES } from './code-examples'
     display: block;
     font-size: clamp(2rem, 5vw, 3rem);
     font-weight: 700;
-    background: linear-gradient(135deg, #4a90e2 0%, #ffd700 50%, #4a90e2 100%);
+    background: linear-gradient(
+      135deg,
+      var(--signal-color) 0%,
+      var(--accent-primary) 50%,
+      var(--signal-color) 100%
+    );
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 0.5rem;
+    transition: background 0.3s ease;
   }
 
   .title-sub {
     display: block;
     font-size: clamp(0.9rem, 2vw, 1.2rem);
-    color: #bbbbbb;
+    color: var(--text-muted);
     font-weight: 400;
+    transition: color 0.3s ease;
   }
 
   .tabs-container {
@@ -100,17 +108,14 @@ import { CODE_EXAMPLES } from './code-examples'
 
   /* Tab Content */
   .tab-content {
-    background: #1a1640;
-    border-radius: 0.5rem;
-    border: 1px solid #2a2660;
     min-height: 500px;
     position: relative;
     margin-bottom: 2rem;
+    transition: all 0.3s ease;
   }
 
   .tab-panel {
     display: none;
-    padding: 1.5rem;
   }
   .tab-panel:target {
     display: block;
@@ -130,25 +135,26 @@ import { CODE_EXAMPLES } from './code-examples'
 
   .tab-btn {
     display: inline-block;
-    background: #1a1640;
-    border: 2px solid #2a2660;
+    background: var(--card-bg);
+    border: 2px solid var(--card-border);
     padding: 1rem 1.5rem;
     border-radius: 0.5rem;
     cursor: pointer;
     transition: all 0.2s ease;
-    color: #ffffff;
+    color: var(--text-primary);
     min-width: 200px;
     text-align: center;
     text-decoration: none;
+    backdrop-filter: blur(10px);
   }
 
   .tab-btn:hover {
-    border-color: #ffd700;
-    background: #1f1a4a;
+    border-color: var(--accent-primary);
+    background: var(--bg-secondary);
   }
 
   .tab-btn:focus {
-    outline: 2px solid #ffd700;
+    outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
   }
 
@@ -157,43 +163,44 @@ import { CODE_EXAMPLES } from './code-examples'
     font-size: 1.1rem;
     font-weight: 600;
     margin-bottom: 0.25rem;
+    transition: color 0.3s ease;
   }
 
   .tab-desc {
     display: block;
     font-size: 0.85rem;
-    color: #bbbbbb;
+    color: var(--text-muted);
     line-height: 1.3;
+    transition: color 0.3s ease;
   }
 
   /* Highlight the active tab link */
   .tab-content:has(#core:target) ~ .tab-nav .tab-btn[href='#core'],
   .tab-content:has(#forms:target) ~ .tab-nav .tab-btn[href='#forms'],
   .tab-content:has(#router:target) ~ .tab-nav .tab-btn[href='#router'] {
-    border-color: #ffd700;
-    background: #2a2660;
-    box-shadow: 0 0 0 1px #ffd700;
-
     .tab-title {
-      color: #ffd700;
+      color: var(--accent-primary);
     }
     .tab-desc {
-      color: #e6e6e6;
+      color: var(--text-secondary);
     }
   }
 
   /* Highlight the first tab when no target */
   .tab-content:not(:has(:target)) ~ .tab-nav .tab-btn[href='#core'] {
-    border-color: #ffd700;
-    background: #2a2660;
-    box-shadow: 0 0 0 1px #ffd700;
+    .tab-title {
+      color: var(--accent-primary);
+    }
+    .tab-desc {
+      color: var(--text-secondary);
+    }
   }
 
   /* Tooltip */
   .code-tooltip {
     position: absolute;
-    background: rgba(0, 0, 0, 0.9);
-    color: white;
+    background: var(--overlay-bg);
+    color: var(--text-primary);
     padding: 0.75rem 1rem;
     border-radius: 8px;
     font-size: 0.85rem;
@@ -201,8 +208,10 @@ import { CODE_EXAMPLES } from './code-examples'
     z-index: 9999;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
-    border: 1px solid rgba(74, 144, 226, 0.3);
+    transition:
+      opacity 0.2s ease,
+      visibility 0.2s ease;
+    border: 1px solid var(--border-color);
     backdrop-filter: blur(10px);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     pointer-events: none;
@@ -234,6 +243,23 @@ import { CODE_EXAMPLES } from './code-examples'
 
   .code-tooltip[data-popper-placement^='right'] > .tooltip-arrow {
     left: -4px;
+  }
+
+  /* Light theme specific adjustments */
+  html[data-theme='light'] .title-main {
+    background: linear-gradient(
+      135deg,
+      #1e3a8a 0%,
+      var(--accent-primary) 50%,
+      #1e3a8a 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  html[data-theme='light'] .code-tooltip {
+    box-shadow: 0 8px 32px rgba(21, 17, 52, 0.15);
   }
 
   /* Responsive */

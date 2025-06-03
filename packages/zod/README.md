@@ -11,7 +11,7 @@ npm i @reatom/npm-zod
 You can find an example here: https://github.com/reatom/reatom/tree/v3/examples/react-table-atomization
 
 ```ts
-import { parseAtoms } from '@reatom/framework'
+import { deatomize } from '@reatom/framework'
 import { reatomZod } from '@reatom/npm-zod'
 import * as z from 'zod'
 
@@ -25,7 +25,7 @@ export const User = z.object({
 const KEY = 'user-data'
 export const model = reatomZod(User, {
   sync() {
-    localStorage.setItem(KEY, JSON.stringify(parseAtoms(model)))
+    localStorage.setItem(KEY, JSON.stringify(deatomize(model)))
   },
   initState: JSON.parse(localStorage.getItem(KEY) || '{}'),
 })

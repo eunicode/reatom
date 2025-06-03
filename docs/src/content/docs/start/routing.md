@@ -1,286 +1,96 @@
 ---
-title: Routing with Reatom
-description: A beginner's guide to managing routes and route-specific data in Reatom applications.
+title: Routing
+description: Dead simple and powerful Reatom router for your application state.
 ---
 
-Managing what users see and what data is loaded based on the URL is a fundamental part of web applications. Reatom provides elegant tools to handle routing and associated state, building on the principles of atomization and reactive computations. This guide will walk you through the basics, focusing on simplicity and a powerful pattern called the "Computed Factory".
+Reatom provides a powerful yet simple way to manage your application's routes and the state associated with them. This guide will introduce you to the basics, focusing on how routing can help manage data lifecycles, such as for forms.
 
-## 1. Defining Your Routes
+## Defining a Route
 
-The first step is to define the routes your application will recognize. Reatom provides a `urlAtom` that can be used to create specific route atoms. These route atoms will hold the parameters of the route if it's active, or `null` otherwise. Routes can also be chained to define nested paths.
+You create routes using the `route` function, a route becomes active when the URL matches its path.
 
-Let's create a file, say `src/routes.ts`:
+Let's imagine a login page:
 
-```typescript
+```ts
 // src/routes.ts
-import { urlAtom } from '@reatom/core';
+import { route } from '@reatom/core'
 
-export const baseRoute = urlAtom.route('/');
-
-export const userProfileRoute = baseRoute.route('users/:userId');
-
-export const postsRoute = baseRoute.route('posts');
-
-export const searchPageRoute = baseRoute.route('search');
+export const loginRoute = route({
+  path: '/login',
+})
 ```
 
-- `baseRoute()` will be an empty object `{}` if the URL starts with `/`.
-- `userProfileRoute()` will be `{ userId: 'someId' }` if the URL is `/users/someId`.
-- `postsRoute()` will be `{}` if the URL is `/posts`.
-- `searchPageRoute()` will collect search parameters, e.g., for `/search?q=term`, it would be `{ q: 'term' }`.
+When the user navigates to `/login`, `loginRoute()` will return an empty object `{}` (as there are no parameters in the pattern). If the URL is different, it will return `null`.
 
-**Note on Non-Root Applications:** If your application is served from a sub-path (e.g., `/my-app`), you would define your initial base route as `urlAtom.route('/my-app');`. Subsequent routes would chain from this.
+## Route Loaders for State Management
 
-### Optional: Validating Route and Search Parameters
+A powerful feature is the `loader` option in a route definition. This function executes when the route becomes active and can be used to load data, it uses async data extension, which we was introduced in the [Extensions guide](/start/extensions). The more more cool feature is that you can create state that should only exist while the route is active. We call it a "computed factory" pattern.
 
-For type safety and transformation (e.g., ensuring an ID is a number), you can use schema validation with libraries like `zod`.
+This is perfect for managing forms, for example. By creating a form inside a route's loader, you ensure it's fresh every time the user visits the route and is automatically cleaned up when they navigate away, preventing issues like old data appearing after logout. But still, the state is global, so you can access them from any component.
 
-```typescript
-// src/routes.ts (with zod validation)
-import { urlAtom } from '@reatom/core';
-import { z } from 'zod';
+Let's adapt our `loginForm` example from the Forms guide:
 
-export const baseRoute = urlAtom.route('/');
+```ts
+// src/routes.ts
+import { route, reatomForm } from '@reatom/core'
+// import * as api from './api' // Assuming you have an API module
 
-export const userProfileRoute = baseRoute.route({
-  path: 'users/:userId',
-  params: z.object({
-    userId: z.string().regex(/^\d+$/).transform(Number),
-  }),
-});
-// If URL is /users/123, userProfileRoute() is { userId: 123 } (number).
-// If validation fails (e.g., /users/abc), userProfileRoute() is null.
+export const loginRoute = route({
+  path: '/login',
+  async loader() {
+    // This form is created ONLY when /login is active
+    // and destroyed when navigating away.
+    const loginForm = reatomForm(
+      {
+        username: '',
+        password: '',
+        passwordDouble: '',
+      },
+      {
+        validate({ password, passwordDouble }) {
+          if (password !== passwordDouble) {
+            return 'Passwords do not match'
+          }
+        },
+        onSubmit: async (values) => {
+          // return await api.login(values)
+          console.log('Submitting login form:', values)
+          await new Promise((r) => setTimeout(r, 1000))
+          return { success: true }
+        },
+        validateOnBlur: true,
+        name: 'loginForm', // for debugging
+      },
+    )
 
-export const searchPageRoute = baseRoute.route({
-  path: 'search',
-  search: z.object({
-    query: z.string().optional(),
-    page: z.string().regex(/^\d+$/).transform(Number).optional().default(1),
-  }),
-});
-// For /search?page=2, searchPageRoute() is { page: 2 }.
-// If validation fails, it's null.
+    return { loginForm }
+  },
+})
 ```
-If `params` or `search` validation fails, the entire route match becomes `null`.
 
-## 2. Creating Page Components
+Now, `loginRoute.loader.data()` will contain `{ loginForm }` when the `/login` route is active and the loader has completed.
 
-**Note:** The following examples manually check if a route is active. A later section on Suspense shows a more streamlined approach.
+## Using the Route and Form in a Component
 
-Page components use these route atoms to determine if they should render.
+Your React component can then access the form through the route's loader.
 
 ```tsx
-// src/components/HomePage.tsx
-import { reatomComponent } from '@reatom/react';
-import { baseRoute } from '../routes';
+// src/components/LoginPage.tsx
+import { reatomComponent, bindField } from '@reatom/react'
+import { Button, TextInput, PasswordInput, Stack, Alert } from '@mantine/core'
+import { loginRoute } from '../routes' // Assuming routes.ts
 
-export const HomePage = reatomComponent(() => {
-  if (!baseRoute.exact()) return null;
-  return <h1>Welcome Home!</h1>;
-}, 'HomePage');
+export const LoginPage = reatomComponent(() => {
+  if (!loginRoute.loader.ready()) return <div>Loading login page...</div>
+
+  const { submit, fields } = loginRoute.loader.data().loginForm
+
+  return // your form here
+}, 'LoginPage')
 ```
 
-```tsx
-// src/components/UserProfilePage.tsx
-import { reatomComponent } from '@reatom/react';
-import { userProfileRoute } from '../routes';
+When the user navigates away from `/login`, the `loginForm` instance created by the loader is automatically garbage-collected. If they navigate back, a new, fresh instance is created. This elegant pattern is called "Computed Factory" and solves many state lifecycle problems.
 
-export const UserProfilePage = reatomComponent(() => {
-  const params = userProfileRoute();
-  if (!params) return null;
-  return <h1>User Profile: {params.userId}</h1>;
-}, 'UserProfilePage');
-```
+This approach ensures that your form state is always clean and tied to the relevant view, enhancing predictability and reducing bugs.
 
-```tsx
-// src/components/PostsPage.tsx
-import { reatomComponent } from '@reatom/react';
-import { postsRoute } from '../routes';
-
-export const PostsPage = reatomComponent(() => {
-  if (!postsRoute()) return null;
-  return <h1>All Posts</h1>;
-}, 'PostsPage');
-```
-
-Your main `App` component assembles these pages.
-
-```tsx
-// src/App.tsx
-import React, { Suspense as ReactSuspense } from 'react';
-import { reatomComponent } from '@reatom/react';
-import { HomePage } from './components/HomePage';
-import { UserProfilePage } from './components/UserProfilePage'; // Assuming this is the non-Suspense version for now
-import { PostsPage } from './components/PostsPage';
-import { baseRoute, userProfileRoute, postsRoute } from './routes';
-
-// A basic ErrorBoundary
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode; fallback: React.ReactNode },
-  { hasError: boolean }
-> {
-  constructor(props: any) { super(props); this.state = { hasError: false }; }
-  static getDerivedStateFromError() { return { hasError: true }; }
-  componentDidCatch(error: any, errorInfo: any) { console.error("ErrorBoundary:", error, errorInfo); }
-  render() {
-    if (this.state.hasError) return this.props.fallback;
-    return this.props.children;
-  }
-}
-
-const Nav = reatomComponent(() => (
-  <nav>
-    <button onClick={() => baseRoute.go({})}>Home</button>
-    <button onClick={() => userProfileRoute.go({ userId: '1' })}>User 1 Profile</button>
-    <button onClick={() => userProfileRoute.go({ userId: '2' })}>User 2 Profile</button>
-    <button onClick={() => postsRoute.go({})}>Posts</button>
-  </nav>
-), 'Nav');
-
-export const App = reatomComponent(() => (
-  <div>
-    <Nav />
-    <ErrorBoundary fallback={<div>An error occurred.</div>}>
-      <ReactSuspense fallback={<div>Loading page...</div>}>
-        <HomePage />
-        <UserProfilePage /> {/* Later, this might be UserProfilePageSuspense */}
-        <PostsPage />
-      </ReactSuspense>
-    </ErrorBoundary>
-  </div>
-), 'App');
-```
-
-## 3. Fetching Data for Routes
-
-For pages needing data (e.g., a user profile), you can use `computed` atoms with `withAsyncData` if not primarily using Suspense for data display.
-
-```tsx
-// src/components/UserProfilePage.tsx (withAsyncData version)
-// (Ensure this is a separate export or file from the Suspense version shown later)
-import { reatomComponent } from '@reatom/react';
-import { computed } from '@reatom/core';
-import { withAsyncData } from '@reatom/async';
-import { userProfileRoute } from '../routes';
-
-const currentUserProfileDataNonSuspense = computed(async () => {
-  const params = userProfileRoute();
-  if (!params) return null;
-
-  console.log(`Fetching profile for user ${params.userId} (withAsyncData)...`);
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 700));
-  // Example: API might throw an error for certain IDs
-  if (String(params.userId) === 'error') {
-      throw new Error(`Profile for user ID '${params.userId}' not found.`);
-  }
-  return { 
-    id: params.userId, 
-    name: `User Name (ID: ${params.userId})`, 
-    bio: `This is the bio for user ${params.userId}.` 
-  };
-}, 'currentUserProfileDataNonSuspense').extend(withAsyncData());
-
-export const UserProfilePage = reatomComponent(() => {
-  const params = userProfileRoute();
-  if (!params) return null;
-
-  const profileLoader = currentUserProfileDataNonSuspense;
-  const isLoading = profileLoader.pending() > 0;
-  const error = profileLoader.error();
-  const userData = profileLoader.data();
-
-  if (isLoading) return <div>Loading profile for user {params.userId}...</div>;
-  if (error()) return <div>Error: {(error() as Error).message} <button onClick={() => profileLoader.reset()}>Retry</button></div>;
-  if (!userData()) return <div>No profile data for user {params.userId}.</div>;
-
-  return (
-    <div>
-      <h1>{userData()!.name}</h1>
-      <p>Bio: {userData()!.bio}</p>
-      <button onClick={() => userProfileRoute.go({ userId: String(params.userId) === '1' ? '2' : '1' })}>View Another Profile</button>
-    </div>
-  );
-}, 'UserProfilePage');
-```
-
-## 4. The "Computed Factory" Pattern in Action
-
-These data-loading `computed` atoms (like `currentUserProfileDataNonSuspense`) exemplify the "Computed Factory" pattern: they produce feature-specific state (user profile data) only when the relevant route is active.
-
--   **Gateway:** `userProfileRoute` controls activation.
--   **Conditional Fetching:** Data fetching is tied to the route's active state.
--   **Automatic Lifecycle:** Data is fetched on demand, and `withAsyncData` can manage cancellations if the route changes during a fetch.
-
-This keeps data logic clean and tied to the route's lifecycle.
-
-## 5. The Elegant Way: Routing with Suspense
-
-React Suspense, with Reatom's `route.promise()` and `suspense()` helper, offers a more streamlined approach.
-
-```tsx
-// src/components/UserProfilePageSuspense.tsx 
-// (This would be a separate file or replace the previous UserProfilePage)
-import { reatomComponent } from '@reatom/react';
-import { computed, suspense } from '@reatom/core';
-import { userProfileRoute, baseRoute } from '../routes';
-
-const currentUserProfileDataSuspense = computed(async () => {
-  const params = await userProfileRoute.promise(); // Suspends if route isn't active with params
-
-  console.log(`Fetching profile for user ${params.userId} (Suspense)...`);
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 700)); 
-  if (String(params.userId) === 'error') {
-      throw new Error(`Failed to load profile for user ID '${params.userId}' (Suspense).`);
-  }
-  return { 
-    id: params.userId, 
-    name: `User Name (ID: ${params.userId}) (Suspense)`, 
-    bio: `Bio for user ${params.userId} via Suspense.` 
-  };
-}, 'currentUserProfileDataSuspense');
-
-const UserProfileDataView = reatomComponent(() => {
-  const profileData = suspense(currentUserProfileDataSuspense);
-  // profileData is guaranteed to be the fetched data here.
-
-  return (
-    <div>
-      <h1>{profileData.name}</h1>
-      <p>Bio: {profileData.bio}</p>
-    </div>
-  );
-}, 'UserProfileDataView');
-
-export const UserProfilePageSuspense = reatomComponent(() => {
-  // This check ensures the component doesn't suspend if the basic path structure isn't met.
-  // `userProfileRoute.promise()` handles suspension for pending params on a matched path.
-  if (!userProfileRoute()) return null; 
-
-  return (
-    <div>
-      <UserProfileDataView />
-      <button onClick={() => userProfileRoute.go({ userId: String(userProfileRoute()?.userId) === '1' ? '2' : '1' })}>View Another Profile (Suspense)</button>
-      <button onClick={() => userProfileRoute.go({ userId: 'error' })}>Load Profile that Errors (Suspense)</button>
-      <button onClick={() => baseRoute.go({})}>Home</button>
-    </div>
-  );
-}, 'UserProfilePageSuspense');
-
-/* 
-  To use this in App.tsx:
-  Replace <UserProfilePage /> with <UserProfilePageSuspense />
-  Ensure App.tsx has <ReactSuspense> and <ErrorBoundary> wrappers as shown previously.
-*/
-```
-
-**Key Suspense Advantages:**
--   **Simplified Components:** No manual loading/error/null checks in the display component; React Suspense and Error Boundaries handle these.
--   **Robust & Type-Safe:** Data is guaranteed if `suspense()` returns.
--   **Less Boilerplate.**
--   **Cancellation Handled:** `route.promise()` integrates with Reatom's cancellation.
-
-## Conclusion
-
-Reatom's routing, `computed` atoms, and Suspense integration enable clean, dynamic, and scalable applications. The "Computed Factory" pattern automates the lifecycle of route-specific data, reducing boilerplate and enhancing maintainability.
+For more advanced routing scenarios, including nested routes, parameter validation, and global loading states, refer to the [handbook routing section](/handbook/routing).

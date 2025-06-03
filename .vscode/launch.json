@@ -28,8 +28,6 @@
       "skipFiles": [
         "<node_internals>/**",
         "${workspaceFolder}/node_modules/**",
-        "${workspaceFolder}/packages/core/**",
-        "${workspaceFolder}/packages/testing/**"
       ]
     },
     {

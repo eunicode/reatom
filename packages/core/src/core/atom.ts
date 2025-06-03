@@ -929,7 +929,9 @@ export let isComputed = (target: AtomLike): boolean =>
  * @returns The current context frame
  * @throws {ReatomError} If called outside a valid context (broken async stack)
  */
-export let context = castAtom<ContextAtom>(() => top().root.frame, {
+export let context = castAtom<ContextAtom>(function context() {
+  return top().root.frame
+}, {
   reactive: false,
   initState: undefined,
   middlewares: [],

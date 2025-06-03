@@ -7,7 +7,7 @@ import {
   isLinkedListAtom,
   isObject,
   named,
-  parseAtoms,
+  Deatomize,
   withAbort,
   withMemo,
 } from '../'
@@ -85,7 +85,7 @@ export const reatomFieldSet = <T extends FormInitState>(
     () => computeFieldArraysList(fields),
     `${name}.fieldArraysList`,
   )
-  const fieldsState = computed(() => parseAtoms(fields), `${name}.fieldsState`)
+  const fieldsState = computed(() => deatomize(fields), `${name}.fieldsState`)
 
   const focus = computed(() => {
     const focus = { ...fieldInitFocus }

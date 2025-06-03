@@ -15,9 +15,9 @@ interface Props {
 
 const { code, annotations, filename = 'code.tsx', playgroundUrl } = Astro.props
 
-// Create highlighter at build time
+// Create highlighter at build time with both themes
 const highlighter = await createHighlighter({
-  themes: ['dracula'],
+  themes: ['dracula', 'github-light'],
   langs: ['tsx'],
 })
 
@@ -45,10 +45,16 @@ const decorations = annotations
       decoration !== null,
   )
 
-// Highlight the code with decorations
-const highlightedCode = highlighter.codeToHtml(code, {
+// Highlight the code with decorations for both themes
+const darkHighlightedCode = highlighter.codeToHtml(code, {
   lang: 'tsx',
   theme: 'dracula',
+  decorations,
+})
+
+const lightHighlightedCode = highlighter.codeToHtml(code, {
+  lang: 'tsx',
+  theme: 'github-light',
   decorations,
 })
 ---
@@ -93,7 +99,8 @@ const highlightedCode = highlighter.codeToHtml(code, {
         }
       </div>
     </div>
-    <div class="shiki-code-content" set:html={highlightedCode} />
+    <div class="shiki-code-content shiki-dark" set:html={darkHighlightedCode} />
+    <div class="shiki-code-content shiki-light" set:html={lightHighlightedCode} />
   </div>
 </div>
 
@@ -104,22 +111,16 @@ const highlightedCode = highlighter.codeToHtml(code, {
   }
 
   .shiki-editor {
-    background: rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(74, 144, 226, 0.3);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: 16px;
     overflow: hidden;
-    backdrop-filter: blur(20px);
-    box-shadow:
-      0 20px 60px rgba(0, 0, 0, 0.4),
-      0 8px 32px rgba(74, 144, 226, 0.1);
+    backdrop-filter: blur(10px);
     transition: all 0.3s ease;
   }
 
   .shiki-editor:hover {
-    border-color: rgba(74, 144, 226, 0.5);
-    box-shadow:
-      0 24px 80px rgba(0, 0, 0, 0.5),
-      0 12px 40px rgba(74, 144, 226, 0.2);
+    border-color: var(--border-color);
   }
 
   /* Editor Header */
@@ -128,8 +129,9 @@ const highlightedCode = highlighter.codeToHtml(code, {
     align-items: center;
     justify-content: space-between;
     padding: 1rem 1.5rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-bottom: 1px solid rgba(74, 144, 226, 0.2);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--card-border);
+    transition: all 0.3s ease;
   }
 
   .editor-controls {
@@ -155,8 +157,9 @@ const highlightedCode = highlighter.codeToHtml(code, {
 
   .editor-title {
     font-size: 0.9rem;
-    color: #cccccc;
+    color: var(--text-primary);
     font-weight: 500;
+    transition: color 0.3s ease;
   }
 
   .playground-link {
@@ -164,7 +167,7 @@ const highlightedCode = highlighter.codeToHtml(code, {
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background: linear-gradient(135deg, #4a90e2, #7bb3f0);
+    background: linear-gradient(135deg, var(--signal-color), var(--signal-secondary));
     color: white;
     text-decoration: none;
     border-radius: 8px;
@@ -174,7 +177,7 @@ const highlightedCode = highlighter.codeToHtml(code, {
   }
 
   .playground-link:hover {
-    box-shadow: 0 4px 16px rgba(74, 144, 226, 0.4);
+    box-shadow: 0 4px 16px var(--shadow-color);
     transform: translateY(-1px);
   }
 
@@ -189,6 +192,23 @@ const highlightedCode = highlighter.codeToHtml(code, {
     overflow-x: auto;
     font-size: 0.9rem;
     line-height: 1.6;
+  }
+
+  /* Theme-specific visibility */
+  .shiki-dark {
+    display: block;
+  }
+
+  .shiki-light {
+    display: none;
+  }
+
+  html[data-theme="light"] .shiki-dark {
+    display: none;
+  }
+
+  html[data-theme="light"] .shiki-light {
+    display: block;
   }
 
   /* Override Shiki styles for better readability */

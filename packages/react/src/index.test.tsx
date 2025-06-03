@@ -1,19 +1,8 @@
-import { test, expect, describe, vi, beforeEach, afterEach } from 'vitest'
+import { clearStack, context, rAF, take, top, wrap } from '@reatom/core'
 import ReactDOM from 'react-dom/client'
-import {
-  clearStack,
-  context,
-  top,
-  wrap,
-  rAF,
-  take,
-} from '@reatom/core'
-import {
-  reatomComponent,
-  reatomContext,
-  isSuspense,
-  useFrame,
-} from './index'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+
+import { isSuspense, reatomComponent, reatomContext, useFrame } from './index'
 
 clearStack()
 

@@ -3,7 +3,7 @@ import { expect, test, vi } from 'test'
 import { atom } from '../core/atom'
 import { wrap } from '../methods'
 import { sleep } from '../utils'
-import { searchParamsAtom, urlAtom, withSearchParamsPersist } from './url'
+import { searchParamsAtom, urlAtom, withSearchParams } from './url'
 
 test('syncFromSource', async () => {
   const syncMock = urlAtom.sync.set(() => vi.fn())
@@ -82,7 +82,7 @@ test('lens path', async () => {
 
 test('lens path wildcard', async () => {
   const testAtom = atom(1).extend(
-    withSearchParamsPersist('test', {
+    withSearchParams('test', {
       parse: (value = '1') => Number(value),
       path: '/results/*',
     }),
@@ -137,7 +137,7 @@ test('lens path wildcard', async () => {
 
 test('search reset', async () => {
   const testAtom = atom<number | undefined>(undefined).extend(
-    withSearchParamsPersist('test', {
+    withSearchParams('test', {
       parse: (value) => (value === undefined ? undefined : Number(value)),
       serialize: (value) =>
         value === undefined ? undefined : value.toString(),
@@ -164,7 +164,7 @@ test('inactive subpath should not affect mutated atoms', async () => {
   urlAtom.go('/some?test=10')
 
   const testAtom = atom(1).extend(
-    withSearchParamsPersist('test', {
+    withSearchParams('test', {
       parse: (value = '1') => Number(value),
       path: '/some',
     }),

@@ -6,22 +6,12 @@ import { adapters } from './adapters.config'
 export const sidebar = [
   group('Start', {
     items: [
-      group('Essentials', {
-        items: [
-          'start/setup',
-          'start/atoms',
-          'start/actions',
-          'start/async',
-        ],
-      }),
-      group('Advanced', {
-        items: [
-          'start/forms',
-          'start/persist',
-          'start/routing',
-          'start/tooling',
-        ],
-      }),
+      'start/base',
+      'start/actions',
+      'start/extensions',
+      'start/forms',
+      'start/routing',
+      'start/tooling',
     ],
   }),
 
@@ -31,9 +21,10 @@ export const sidebar = [
       'handbook/atomization',
       'handbook/extensions',
       'handbook/lifecycle',
+      'handbook/forms',
+      'handbook/routing',
       'handbook/async-context',
       'handbook/sampling',
-      'handbook/forms',
     ],
   }),
 

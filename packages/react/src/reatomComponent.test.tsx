@@ -1,16 +1,17 @@
-import { test, expect, describe, vi, beforeEach, afterEach } from 'vitest'
-import ReactDOM from 'react-dom/client'
-import React from 'react'
 import {
   atom,
   clearStack,
-  context,
-  top,
   computed,
-  wrap,
+  context,
   rAF,
   take,
+  top,
+  wrap,
 } from '@reatom/core'
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
+
 import { reatomComponent, reatomContext } from './index'
 
 clearStack()
@@ -228,4 +229,4 @@ describe('reatomComponent', () => {
         document.querySelector('[data-testid="parent-message"]')?.textContent,
       ).toBe('Initial message') // Ensure atom value in parent is unchanged
     }))
-}) 
+})

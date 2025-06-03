@@ -3,6 +3,7 @@ import {
   action,
   bind,
   computed,
+  context,
   createAtom,
   isAtom,
   named,
@@ -197,6 +198,28 @@ export let abortVar: AbortVar = /* @__PURE__ */ (() =>
       )
     }),
     {
+      find<T>(
+        cb: (payload: undefined | unknown) => undefined | T = (payload) =>
+          payload as undefined | T,
+        frame = top(),
+        meta = frame.root.variables,
+        // TODO think well about all of this
+        isComputed = false,
+      ): undefined | T {
+        let result = cb(meta.get(frame)?.get(this))
+        if (result !== undefined && !isComputed) return result
+
+        for (let i = isComputed ? 1 : 0; i < frame.pubs.length; i++) {
+          let pub = frame.pubs[i]
+          if (pub !== null && pub!.atom !== context) {
+            let result = this.find(cb, pub, meta, i > 0)
+            if (result !== undefined) return result
+          }
+        }
+
+        return undefined
+      },
+
       abort(reason?: any) {
         abortVar.find()?.set(reason)
       },

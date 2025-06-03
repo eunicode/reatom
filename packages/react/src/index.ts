@@ -1,16 +1,18 @@
-import React from 'react'
 import {
+  action,
   assert,
   type Frame,
   named,
-  ReatomError,
   reatomAbstractRender,
+  ReatomError,
   type Rec,
   STACK,
-  wrap,
-  action,
   top,
+  wrap,
 } from '@reatom/core'
+import React from 'react'
+
+export { bindField } from './bindField'
 
 // https://github.com/webpack/webpack/issues/12960#issuecomment-1086272918
 let {

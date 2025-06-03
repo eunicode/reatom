@@ -2,24 +2,26 @@ import type { Action, ActionState, AtomLike, AtomState, Frame } from '../core'
 import { ReatomError, run, top } from '../core'
 import { assert } from '../utils'
 import { _getPrevFrame } from './context'
+import { peek } from './peek'
 
 /**
  * Executes a callback when an atom's state changes
  *
  * This utility evaluates if an atom's state has changed during the current
- * frame execution and calls the provided callback with the new state (and optionally
- * the previous state if available).
+ * frame execution and calls the provided callback with the new state (and
+ * optionally the previous state if available).
+ *
+ * @example
+ *   // Log when the user's name changes
+ *   ifChanged(userName, (newName, oldName) => {
+ *     console.log(`Name changed from ${oldName} to ${newName}`)
+ *   })
  *
  * @template T - Type extending AtomLike
  * @param {T} target - The atom to monitor for changes
- * @param {(newState: AtomState<T>, oldState?: AtomState<T>) => void} cb - Callback to execute when the atom changes
+ * @param {(newState: AtomState<T>, oldState?: AtomState<T>) => void} cb -
+ *   Callback to execute when the atom changes
  * @throws {ReatomError} If target is not a reactive atom
- *
- * @example
- * // Log when the user's name changes
- * ifChanged(userName, (newName, oldName) => {
- *   console.log(`Name changed from ${oldName} to ${newName}`);
- * });
  */
 export const ifChanged = <T extends AtomLike>(
   target: T,
@@ -38,30 +40,32 @@ export const ifChanged = <T extends AtomLike>(
   let targetFrame = frame.root.store.get(target)!
 
   if (targetFrame.atom !== prevTargetFrame?.atom) {
-    cb(targetFrame.state)
+    peek(cb, targetFrame.state)
   } else if (!Object.is(targetFrame.state, prevTargetFrame.state)) {
-    cb(targetFrame.state, prevTargetFrame.state)
+    peek(cb, targetFrame.state, prevTargetFrame.state)
   }
 }
 
 /**
  * Executes a callback when an action is called
  *
- * This utility detects when an action is called during the current frame execution
- * and executes the provided callback with the action's payload and parameters.
- * Only works within a reactive (atom) context.
+ * This utility detects when an action is called during the current frame
+ * execution and executes the provided callback with the action's payload and
+ * parameters. Only works within a reactive (atom) context.
+ *
+ * @example
+ *   // Log when a user is created
+ *   ifCalled(createUser, (user, params) => {
+ *     console.log(`User created: ${user.name} with ID ${user.id}`)
+ *   })
  *
  * @template Params - Array type of action parameters
  * @template Payload - Return type of the action
  * @param {Action<Params, Payload>} target - The action to monitor for calls
- * @param {(payload: Payload, params: Params) => void} cb - Callback function to execute when the action is called
- * @throws {ReatomError} If target is not an action or if not used in a reactive context
- *
- * @example
- * // Log when a user is created
- * ifCalled(createUser, (user, params) => {
- *   console.log(`User created: ${user.name} with ID ${user.id}`);
- * });
+ * @param {(payload: Payload, params: Params) => void} cb - Callback function to
+ *   execute when the action is called
+ * @throws {ReatomError} If target is not an action or if not used in a reactive
+ *   context
  */
 export const ifCalled = <Params extends any[], Payload>(
   target: Action<Params, Payload>,
@@ -95,7 +99,9 @@ export const ifCalled = <Params extends any[], Payload>(
   frame.pubs.push(targetFrame)
 
   if (targetFrame.atom !== prevTargetFrame?.atom) {
-    targetFrame.state.forEach(({ params, payload }) => cb(payload, params))
+    targetFrame.state.forEach(({ params, payload }) =>
+      peek(cb, payload, params),
+    )
   } else if (!Object.is(targetFrame.state, prevTargetFrame.state)) {
     for (
       let i = prevTargetFrame.state.length;
@@ -103,7 +109,7 @@ export const ifCalled = <Params extends any[], Payload>(
       i++
     ) {
       const { params, payload } = targetFrame.state[i]!
-      cb(payload, params)
+      peek(cb, payload, params)
     }
   }
 }

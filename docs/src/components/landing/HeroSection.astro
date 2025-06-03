@@ -6,35 +6,31 @@
 <main class="hero-section" role="main">
   <!-- Animated Background Elements -->
   <div class="background-container">
-    <div class="texture-overlay"></div>
-    <div class="particles-container" id="particles"></div>
-    <div class="geometric-shapes">
-      <div class="logo-shape logo-1">
-        <svg
-          viewBox="0 0 400 400"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="#151134"
-          stroke="#fff"
-          stroke-width="15px"
-        >
-          <circle cx="200" cy="200" r="200" fill="#fff" stroke-width="0"
-          ></circle>
-          <circle cx="200" cy="200" r="175" stroke-width="0"></circle>
-          <circle cx="180" cy="180" r="130"></circle>
-          <circle cx="215" cy="180" r="70"></circle>
-          <circle cx="150" cy="94" r="38"></circle>
-          <circle cx="100" cy="195" r="40"></circle>
-          <circle cx="165" cy="275" r="30"></circle>
-          <circle cx="250" cy="265" r="20"></circle>
-          <circle cx="57" cy="270" r="20"></circle>
-          <circle cx="215" cy="345" r="36"></circle>
-          <circle cx="310" cy="290" r="36"></circle>
-          <circle cx="345" cy="195" r="30"></circle>
-          <circle cx="321" cy="107" r="25"></circle>
-          <circle cx="260" cy="50" r="20"></circle>
-          <circle cx="120" cy="330" r="25"></circle>
-        </svg>
-      </div>
+    <div class="logo-shape">
+      <svg
+        viewBox="0 0 400 400"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="#151134"
+        stroke="#fff"
+        stroke-width="15px"
+      >
+        <circle cx="200" cy="200" r="200" fill="#fff" stroke-width="0"
+        ></circle>
+        <circle cx="200" cy="200" r="175" stroke-width="0"></circle>
+        <circle cx="180" cy="180" r="130"></circle>
+        <circle cx="215" cy="180" r="70"></circle>
+        <circle cx="150" cy="94" r="38"></circle>
+        <circle cx="100" cy="195" r="40"></circle>
+        <circle cx="165" cy="275" r="30"></circle>
+        <circle cx="250" cy="265" r="20"></circle>
+        <circle cx="57" cy="270" r="20"></circle>
+        <circle cx="215" cy="345" r="36"></circle>
+        <circle cx="310" cy="290" r="36"></circle>
+        <circle cx="345" cy="195" r="30"></circle>
+        <circle cx="321" cy="107" r="25"></circle>
+        <circle cx="260" cy="50" r="20"></circle>
+        <circle cx="120" cy="330" r="25"></circle>
+      </svg>
     </div>
   </div>
 
@@ -53,7 +49,7 @@
       <!-- Call-to-Action Buttons -->
       <div class="cta-container">
         <a
-          href="/start/setup"
+          href="/start/base"
           class="cta-button cta-primary"
           aria-label="Get started with Reatom documentation"
         >
@@ -76,7 +72,7 @@
         </a>
 
         <a
-          href="https://stackblitz.com/fork/reatom"
+          href="https://stackblitz.com/github/artalar/reatom/tree/v1000/examples/react-search"
           target="_blank"
           rel="noopener noreferrer"
           class="cta-button cta-secondary"
@@ -130,31 +126,16 @@
     z-index: 1;
   }
 
-  /* Texture Overlay */
-  .texture-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    filter: url(#filter);
-    opacity: 0.3;
-    mix-blend-mode: overlay;
-  }
-
-  /* Geometric Shapes */
-  .geometric-shapes {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-  }
-
+  /* Logo Shape */
   .logo-shape {
     position: absolute;
-    opacity: 0.3;
+    top: -50%;
+    left: -10%;
+    width: 80%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0.01;
+    animation: rotate 30s linear infinite;
     transition: opacity 0.3s ease;
   }
 
@@ -163,12 +144,15 @@
     height: 100%;
   }
 
-  .logo-1 {
-    width: 80%;
-    top: -50%;
-    left: -10%;
-    animation: rotate 30s linear infinite;
-    opacity: 0.01;
+  .logo-shape svg circle {
+    fill: var(--bg-primary);
+    stroke: var(--text-primary);
+    transition: fill 0.3s ease, stroke 0.3s ease;
+  }
+
+  .logo-shape svg circle:first-child {
+    fill: var(--text-primary);
+    transition: fill 0.3s ease;
   }
 
   @keyframes rotate {
@@ -204,8 +188,8 @@
       #4a90e2 0%,
       #7bb3f0 25%,
       #a8d5ff 50%,
-      #ffd700 75%,
-      #ffa500 100%
+      var(--accent-primary) 75%,
+      var(--accent-secondary) 100%
     );
     background-size: 200% 200%;
     -webkit-background-clip: text;
@@ -213,6 +197,7 @@
     -webkit-text-fill-color: transparent;
     animation: gradientText 8s ease infinite;
     filter: url(#glow);
+    transition: background 0.3s ease;
   }
 
   .title-line {
@@ -245,12 +230,18 @@
     max-width: 600px;
     margin-left: auto;
     margin-right: auto;
-    background: linear-gradient(135deg, #cccccc 0%, #e0e0e0 50%, #ffd700 100%);
+    background: linear-gradient(
+      135deg,
+      var(--text-primary) 0%,
+      var(--text-secondary) 50%,
+      var(--accent-primary) 100%
+    );
     background-size: 200% 200%;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: gradientText 10s ease infinite;
+    transition: background 0.3s ease;
   }
 
   /* CTA Container */
@@ -301,28 +292,36 @@
   }
 
   .cta-primary {
-    background: linear-gradient(135deg, #ffd700, #ffa500);
-    color: #151134;
-    box-shadow: 0 8px 32px rgba(255, 215, 0, 0.3);
+    background: var(--accent-gradient);
+    color: var(--bg-primary);
+    box-shadow: 0 8px 32px var(--shadow-color);
+    transition:
+      all 0.3s ease,
+      background 0.3s ease;
   }
 
   .cta-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(255, 215, 0, 0.4);
+    box-shadow: 0 12px 40px var(--shadow-color);
   }
 
   .cta-secondary {
-    background: rgba(255, 255, 255, 0.1);
-    color: #cccccc;
-    border-color: rgba(255, 215, 0, 0.3);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
     backdrop-filter: blur(10px);
+    transition:
+      all 0.3s ease,
+      background 0.3s ease,
+      border-color 0.3s ease,
+      color 0.3s ease;
   }
 
   .cta-secondary:hover {
-    background: rgba(255, 215, 0, 0.1);
-    border-color: rgba(255, 215, 0, 0.6);
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
     transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(255, 215, 0, 0.2);
+    box-shadow: 0 8px 32px var(--shadow-color);
   }
 
   .cta-icon {
@@ -345,11 +344,12 @@
   .scroll-arrow {
     width: 24px;
     height: 24px;
-    border: 2px solid #ffd700;
+    border: 2px solid var(--accent-primary);
     border-top: none;
     border-left: none;
     transform: rotate(45deg);
     animation: bounce 2s infinite;
+    transition: border-color 0.3s ease;
   }
 
   @keyframes bounce {
@@ -366,6 +366,44 @@
     60% {
       transform: translateY(-5px) rotate(45deg);
     }
+  }
+
+  /* Light theme specific adjustments */
+  html[data-theme='light'] .cta-primary {
+    color: #fdfdff;
+    font-weight: 700;
+  }
+
+  html[data-theme='light'] .logo-shape {
+    opacity: 0.1;
+  }
+
+  html[data-theme='light'] .hero-title {
+    background: linear-gradient(
+      135deg,
+      #1e3a8a 0%,
+      #2563eb 25%,
+      #3b82f6 50%,
+      var(--accent-primary) 75%,
+      var(--accent-secondary) 100%
+    );
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  html[data-theme='light'] .hero-description {
+    background: linear-gradient(
+      135deg,
+      var(--text-primary) 0%,
+      var(--text-secondary) 50%,
+      var(--accent-primary) 100%
+    );
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   /* Responsive Design */
@@ -391,8 +429,9 @@
       display: none;
     }
 
-    .logo-1 {
+    .logo-shape {
       top: 10%;
+      left: -43%;
       width: 120%;
     }
   }
@@ -418,7 +457,7 @@
 
   /* Focus styles for accessibility */
   .cta-button:focus {
-    outline: 2px solid #ffd700;
+    outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
   }
 
@@ -426,19 +465,19 @@
   @media (prefers-contrast: high) {
     .hero-title,
     .hero-description {
-      -webkit-text-fill-color: #ffffff;
+      -webkit-text-fill-color: var(--text-primary);
       background: none;
     }
 
     .cta-primary {
-      background: #ffd700;
-      color: #000000;
+      background: var(--accent-primary);
+      color: var(--bg-primary);
     }
 
     .cta-secondary {
       background: transparent;
-      color: #ffffff;
-      border-color: #ffffff;
+      color: var(--text-primary);
+      border-color: var(--text-primary);
     }
   }
 </style>

@@ -29,12 +29,30 @@ import FeedbackSection from '../components/landing/FeedbackSection.astro'
     />
   </head>
   <body>
+    <!-- Theme Toggle Button -->
+    <button 
+      id="theme-toggle" 
+      class="theme-toggle"
+      aria-label="Toggle light/dark theme"
+      title="Toggle theme"
+    >
+      <div class="toggle-icon">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </div>
+    </button>
+
     <!-- SVG Filter Definition for Paper Night Sky Effect -->
     <svg width="0" height="0" style="position: absolute;">
       <defs>
         <filter id="filter">
           <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="5" stitchTiles="stitch" result="NOISE"></feTurbulence>
-          <feDiffuseLighting lighting-color="#1B1B2A" surfaceScale="4" in="NOISE" result="DIFFUSE">
+          <feDiffuseLighting lighting-color="var(--texture-filter-color)" surfaceScale="4" in="NOISE" result="DIFFUSE">
             <feDistantLight azimuth="150" elevation="140"></feDistantLight>
           </feDiffuseLighting>
         </filter>
@@ -52,6 +70,140 @@ import FeedbackSection from '../components/landing/FeedbackSection.astro'
     <FooterSection />
 
     <style>
+      /* CSS Custom Properties for Theming */
+      :root {
+        /* Dark theme (default) */
+        --bg-primary: #151134;
+        --bg-secondary: rgba(255, 255, 255, 0.05);
+        --bg-tertiary: rgba(255, 255, 255, 0.1);
+        --text-primary: #cccccc;
+        --text-secondary: #e0e0e0;
+        --text-muted: #999999;
+        --accent-primary: #ffd700;
+        --accent-secondary: #ffa500;
+        --accent-gradient: linear-gradient(135deg, #ffd700, #ffa500);
+        --border-color: rgba(255, 215, 0, 0.3);
+        --shadow-color: rgba(255, 215, 0, 0.3);
+        --texture-filter-color: #1B1B2A;
+        --card-bg: rgba(255, 255, 255, 0.05);
+        --card-border: rgba(255, 255, 255, 0.1);
+        --overlay-bg: rgba(21, 17, 52, 0.8);
+        
+        /* Feature colors */
+        --signal-color: #4A90E2;
+        --signal-secondary: #7BB3F0;
+        --performance-color: #FFD700;
+        --performance-secondary: #FFA500;
+        --forms-color: #9B59B6;
+        --forms-secondary: #C39BD3;
+        --router-color: #E74C3C;
+        --router-secondary: #F1948A;
+        --framework-color: #2ECC71;
+        --framework-secondary: #58D68D;
+        --debug-color: #F39C12;
+        --debug-secondary: #F7DC6F;
+        --ecosystem-gradient: linear-gradient(45deg, #8E44AD, #3498DB, #E74C3C);
+      }
+
+      /* Light theme */
+      html[data-theme="light"] {
+        --bg-primary: #fdfdff;
+        --bg-secondary: rgba(21, 17, 52, 0.03);
+        --bg-tertiary: rgba(21, 17, 52, 0.05);
+        --text-primary: #2c2c2c;
+        --text-secondary: #1a1a1a;
+        --text-muted: #666666;
+        --accent-primary: #e6a500;
+        --accent-secondary: #d19a00;
+        --accent-gradient: linear-gradient(135deg, #e6a500, #d19a00);
+        --border-color: rgba(21, 17, 52, 0.2);
+        --shadow-color: rgba(21, 17, 52, 0.15);
+        --texture-filter-color: #f8f9fa;
+        --card-bg: rgba(236, 234, 255, 0.1);
+        --card-border: rgba(21, 17, 52, 0.08);
+        --overlay-bg: rgba(255, 255, 255, 0.95);
+        
+        /* Adjusted feature colors for light theme - darker blues */
+        --signal-color: #1d4ed8;
+        --signal-secondary: #2563eb;
+        --performance-color: #e6a500;
+        --performance-secondary: #d19a00;
+        --forms-color: #7c3aed;
+        --forms-secondary: #8b5cf6;
+        --router-color: #dc2626;
+        --router-secondary: #ef4444;
+        --framework-color: #059669;
+        --framework-secondary: #10b981;
+        --debug-color: #ea580c;
+        --debug-secondary: #f97316;
+        --ecosystem-gradient: linear-gradient(45deg, #7c3aed, #2563eb, #dc2626);
+      }
+
+      /* Theme Toggle Button */
+      .theme-toggle {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        z-index: 1000;
+        width: 3rem;
+        height: 3rem;
+        border: none;
+        border-radius: 50%;
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--card-border);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .theme-toggle:hover {
+        background: var(--bg-tertiary);
+        border-color: var(--border-color);
+        transform: scale(1.05);
+      }
+
+      .toggle-icon {
+        position: relative;
+        width: 1.5rem;
+        height: 1.5rem;
+      }
+
+      .sun-icon,
+      .moon-icon {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        color: var(--text-primary);
+        transition: all 0.3s ease;
+      }
+
+      /* Default state (dark theme) - show sun icon */
+      .sun-icon {
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+      }
+
+      .moon-icon {
+        opacity: 0;
+        transform: rotate(180deg) scale(0.8);
+      }
+
+      /* Light theme - show moon icon */
+      html[data-theme="light"] .sun-icon {
+        opacity: 0;
+        transform: rotate(-180deg) scale(0.8);
+      }
+
+      html[data-theme="light"] .moon-icon {
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+      }
+
       /* Reset and Base Styles */
       * {
         margin: 0;
@@ -72,10 +224,11 @@ import FeedbackSection from '../components/landing/FeedbackSection.astro'
           Roboto,
           sans-serif;
         line-height: 1.6;
-        color: #cccccc;
-        background: #151134;
+        color: var(--text-primary);
+        background: var(--bg-primary);
         overflow-x: hidden;
         position: relative;
+        transition: background-color 0.3s ease, color 0.3s ease;
       }
 
       .background-texture {
@@ -84,14 +237,54 @@ import FeedbackSection from '../components/landing/FeedbackSection.astro'
         left: 0;
         width: 100%;
         height: 100%;
-        background: #151134;
+        background: var(--bg-primary);
         filter: url(#filter);
         z-index: -1;
         pointer-events: none;
+        transition: background-color 0.3s ease;
+      }
+
+      /* Mobile responsive theme toggle */
+      @media (max-width: 768px) {
+        .theme-toggle {
+          top: 1rem;
+          right: 1rem;
+          width: 2.5rem;
+          height: 2.5rem;
+        }
+
+        .toggle-icon {
+          width: 1.25rem;
+          height: 1.25rem;
+        }
       }
     </style>
 
     <script>
+      // Theme management
+      function initTheme() {
+        const themeToggle = document.getElementById('theme-toggle')
+        const html = document.documentElement
+        
+        // Get saved theme or default to dark
+        const savedTheme = localStorage.getItem('theme') || 'dark'
+        html.setAttribute('data-theme', savedTheme)
+        
+        // Theme toggle handler
+        themeToggle?.addEventListener('click', () => {
+          const currentTheme = html.getAttribute('data-theme')
+          const newTheme = currentTheme === 'light' ? 'dark' : 'light'
+          
+          html.setAttribute('data-theme', newTheme)
+          localStorage.setItem('theme', newTheme)
+          
+          // Dispatch custom event for components that need to update
+          window.dispatchEvent(new CustomEvent('themeChanged', { 
+            detail: { theme: newTheme } 
+          }))
+        })
+      }
+
       // Smooth scroll for anchor links
       function initSmoothScroll() {
         // document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
@@ -108,8 +301,9 @@ import FeedbackSection from '../components/landing/FeedbackSection.astro'
         // })
       }
 
-      // Initialize smooth scroll
+      // Initialize everything
       document.addEventListener('DOMContentLoaded', () => {
+        initTheme()
         initSmoothScroll()
       })
     </script>

@@ -3,6 +3,7 @@ import type { StandardSchemaV1 } from '@standard-schema/spec'
 import {
   type AsyncDataExt,
   identity,
+  isDeepEqual,
   noop,
   type Plain,
   type Rec,
@@ -10,7 +11,6 @@ import {
 } from '../'
 import type { Action, Computed } from '../core'
 import { action, computed } from '../core'
-import { peek } from '../methods'
 import { urlAtom } from './url'
 
 type MaybeVoid<T> = {} extends T ? T | void : T
@@ -293,23 +293,23 @@ const createRouteFactory = (
       return urlAtom.set((url) => new URL(newPath, url), replace)
     }, `${name}.go`)
 
-    const routeAtom = computed((): null | Rec => {
+    const routeAtom = computed((state?: null | Rec): null | Rec => {
       if (parent() === null) return null
 
-      const url = peek(urlAtom)
+      const url = urlAtom()
       const pathname = url.pathname
       const params: Rec = {}
 
-      const paths = pathname.split('/').filter(Boolean)
+      const parts = pathname.split('/').filter(Boolean)
 
       for (let i = 0; i < patternParts.length; i++) {
-        const part = patternParts[i]!
-        const name = getPatternName(part)
-        const pathPart = paths[i]
-
-        if (i > paths.length || (i === paths.length && !hasOptionalPart)) {
+        if (i > parts.length || (i === parts.length && !hasOptionalPart)) {
           return null
         }
+
+        const part = patternParts[i]!
+        const name = getPatternName(part)
+        const pathPart = parts[i]
 
         if (part.startsWith(':')) {
           params[name] = pathPart
@@ -334,7 +334,7 @@ const createRouteFactory = (
         return null
       }
 
-      return result
+      return isDeepEqual(state, result) ? state! : result
     }, name).extend((target) => ({
       go,
       loader,
@@ -343,6 +343,8 @@ const createRouteFactory = (
       path: getPath,
       route: createRouteFactory(target as RouteAtom),
     })) as RouteAtom
+
+    urlAtom.routes[pattern] = routeAtom
 
     return routeAtom
   }

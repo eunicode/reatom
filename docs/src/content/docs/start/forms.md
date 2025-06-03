@@ -3,95 +3,144 @@ title: Forms
 description: Getting started with forms in Reatom
 ---
 
-Forms are one of the most complex aspects of frontend application development, for which dozens of libraries and different patterns have already been built to solve their problems. Having a flexible and powerful reactive system at hand, we provide a native solution for managing your forms of any complexity through a configuration and, to a greater extent, compositional API.
+Reatom has a very advanced form management system to handle complex cases in a type-safe and performant way. You can read more about it in the [form handbook section](/handbook/forms). But in this guide, we'll introduce only the basics.
 
-Any form consists of a set of inputs of various kinds, which can often be interconnected and, moreover, can be dynamically added or removed from the form. Along with each input, there are always related states such as `touched`, `dirty`, `errors` and others - which, like the input itself, are reactive. We provide at least 2 APIs for this at different levels of abstraction:
-* `reatomField` - a reactive form field object that describes not only the input state, but also the aforementioned related states such as `touched`, `dirty`, `errors`, `validating` and others, as well as options for validation and their triggers
-* `reatomForm` - a reactive aggregate of all `reatomField` belonging to it, which tracks all field states and provides the ability to validate them in the context of the entire form, including through validation schemas. This model also allows implementing asynchronous form submission, default options for fields nested in the form, and more.
+## Creating a form with Routing Integration
 
-Between these abstractions there is another reactive primitive, but the goal of this guide is to show how to make a fairly simple form in Reatom, diving as little as possible into the implementation details of forms and everything related to them. Therefore, here we will focus only on `reatomForm`:
+A common and highly effective pattern is to create forms within a route's `loader`. This ties the form's lifecycle to the route, ensuring it's fresh when the route is active and automatically cleaned up when navigating away. This prevents issues like old data persisting after a user logs out and then logs back in.
 
-```ts {17}
-import { reatomForm, wrap } from '@reatom/core'
+Let's look at how you would define a login form inside a `loginRoute` loader. The `reatomForm` call is the same as before, but its instantiation is now managed by the routing system.
 
-const loginForm = reatomForm({
-    username: '',
-    password: '',
-    confirmPassword: { 
-        initState: '',
-        validate: ({ value }) => {
-            if (loginForm.fields.password.value() != value)
-                return 'Passwords do not match'
-        }
-    }
-}, {
-    name: 'loginForm',
-    validateOnBlur: true,
-    onSubmit: async (values) => {
-        //           ^? { username: string, password: string, confirmPassword: string }
-        return wrap(api.login(values))
-    }
+```ts
+// src/routes.ts (Illustrative)
+import { route, reatomForm } from '@reatom/core'
+// import * as api from './api' // Your API utilities
+
+export const loginRoute = route({
+  path: '/login',
+  async loader() {
+    // This form is created ONLY when /login is active
+    // and destroyed when navigating away.
+    const loginForm = reatomForm(
+      // init state
+      {
+        username: '',
+        password: '',
+        passwordDouble: '',
+      },
+      // options
+      {
+        validate({ password, passwordDouble }) {
+          if (password !== passwordDouble) {
+            return 'Passwords do not match'
+          }
+        },
+        onSubmit: async (
+          values /*: { username: string, password: string, passwordDouble: string }*/,
+        ) => {
+          // return await api.login(values)
+          console.log('Submitting login form:', values)
+          await new Promise(r => setTimeout(r, 1000))
+          return { success: true }
+        },
+        validateOnBlur: true,
+        name: 'loginForm', // for debugging
+      },
+    )
+    return { loginForm }
+  },
 })
 ```
 
-With the first argument of `reatomForm` (this is `initState`) we defined the structure of our form fields: it doesn't have to be flat, it can also be nested (divided into logical groups through objects). As the value of each key, we define the default value for the field, and it's also possible to derive the field type from the primitive value type. For `confirmPassword` we already passed not a primitive value, but a `reatomField` options object - literally what can be passed to a field to initialize it. We used such a declaration to set a custom validation function `validate`. Since `password` and `confirmPassword` are related to each other and must match, this way we create an invariant for validation.
+The first argument to `reatomForm` defines your form structure (`initState`). It doesn't have to be flat - you can nest fields in logical groups using objects. For each key, define the default value, and Reatom will derive the field type from the primitive value.
 
-This way we create a form, access to whose reactive fields we can get like this:
-```ts /fields/ {2-7}
-loginForm.fields
-//        ^? {
-//            username: FieldAtom<string, string>,
-//            password: FieldAtom<string, string>,
-//            confirmPassword: FieldAtom<string, string>
-//        }
+Each field value can be configured by passing a `reatomField` factory with various options (including individual validation) instead of a primitive value. But for primitive values, Reatom creates a field atom automatically. This is called "atomization" and it gives us many advantages.
+
+## Form structure
+
+The form instance (`loginForm`) created within the loader will have a `submit` action, and computed validation and focus states. It computes from the individual field atoms, which you can find in `loginForm.fields`.
+
+```ts
+// loginForm.fields (available via loginRoute.loader.data().loginForm.fields):
+username: FieldAtom<string, string>,
+password: FieldAtom<string, string>,
+passwordDouble: FieldAtom<string, string>
 ```
 
-As a result, the form's `initState` object was [atomized](/handbook/atomization/) and we got automatically generated `reatomField` that are ready to be bound to the UI:
+Each field atom includes meta atoms like `validation`, `focus`, and others, which you can use for precise control over the form and each field.
 
-```ts /validation|focus/ {3-11} {14-21}
-const { username } = loginForm.fields;
-username.validation
-//       ^? Atom<{
-//           errors: FieldError[],
-//           triggered: boolean,
-//           validating: undefined | Promise<{ errors: FieldError[] }>
-//       }> & {
-//           trigger: Action<[], FieldValidation> & AbortExt
-//           prependErrors: Action<[...error: FieldError[]], FieldValidation>
-//           clearErrors: Action<[...sources: FieldErrorSource[]], FieldValidation>
-//       }
+## Framework bindings
 
-username.focus
-//       ^? Atom<{
-//           active: boolean,
-//           dirty: boolean,
-//           touched: boolean
-//       }> & {
-//           in: Action<[], FieldFocus>
-//           out: Action<[], FieldFocus>
-//       }
+To use this form in your component, you'll first check if the route is active and then access the form from the route's loader data.
+
+```tsx
+// src/components/LoginPage.tsx (Illustrative)
+import { reatomComponent, bindField } from '@reatom/react'
+import { Button, TextInput, PasswordInput, Stack, Alert } from '@mantine/core'
+import { loginRoute } from '../routes' // Your route definition
+
+export const LoginPage = reatomComponent(() => {
+  // Ensure the route is active
+  const routeIsActive = loginRoute()
+  if (!routeIsActive) return null
+
+  // Access data from the loader
+  const isLoading = !loginRoute.loader.ready()
+  const data = loginRoute.loader.data()
+  const error = loginRoute.loader.error()
+
+  if (isLoading) return <div>Loading login page...</div>
+  if (error) return <div>Error: {error.message}</div>
+  // Ensure data and loginForm are present
+  if (!data || !data.loginForm) return <div>Form not available.</div>
+
+  const { loginForm } = data
+  const { submit, fields } = loginForm
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        loginForm.submit()
+      }}
+    >
+      <Stack>
+        <TextInput
+          label="Username"
+          placeholder="Enter your username"
+          {...bindField(fields.username)}
+        />
+
+        <PasswordInput
+          label="Password"
+          placeholder="Enter your password"
+          {...bindField(fields.password)}
+        />
+
+        <PasswordInput
+          label="Confirm Password"
+          placeholder="Confirm your password"
+          {...bindField(fields.passwordDouble)}
+        />
+        
+        {/* Display form-level validation error */}
+        {loginForm.error() && (
+          <Alert color="red" title="Validation Error">
+            {loginForm.error().message}
+          </Alert>
+        )}
+
+        <Button type="submit" loading={!submit.ready()}>
+          Login
+        </Button>
+      </Stack>
+    </form>
+  )
+}, 'LoginPage')
 ```
 
-As a result, for each field we can:
-* subscribe to its errors, validation activation status and asynchronous validation promise;
-* trigger the validation function programmatically
-* add and remove errors from different sources (from field validation, from schema validation)
-* subscribe to `active` (i.e. currently focused), `dirty` and `touched` statuses
-* dispatch `focus` and `blur` events through `focus.in` and `focus.out` actions
+This is a simple example, but note that since we have each field as separate atoms, we can create a separate component for each of them and it would be highly optimized and flexible. You can check out a live example in [StackBlitz](https://stackblitz.com/github/artalar/reatom/tree/v1000/examples/react-search).
 
-But what about the form? The form is an aggregate of all field states, so it has its own computed `validation` and `focus` states just like the fields (*`validation` types are intentionally simplified, as they are actually much more complex*)
-```ts /validation|focus/ {2} {5}
-loginForm.validation
-//        ^? Computed<FieldSetValidation> & { trigger: Action }
+By integrating form creation with routing, you leverage Reatom's "Computed Factory" pattern. This provides excellent memory management, ensuring form state is automatically cleaned up and re-initialized as needed.
 
-loginForm.focus
-//        ^? Computed<FieldFocus>
-```
-
-And indeed, the submit function, being asynchronous, cannot but be accompanied by related states: we use the Reatom ecosystem and enrich it with the `withAsync` extension to get `loginForm.submit.ready`, `loginForm.submit.error` and concurrency support to cover any UI requirements
-```ts /submit/ {2}
-loginForm.submit
-//        ^? Action<[], Promise<void>> & AsyncExt & AbortExt
-```
-
-After calling `loginForm.submit`, parallel validation of all fields belonging to the form occurs first, then schema validation if it is defined, and finally validation through the form's `validate` function. Only then will the `onSubmit` callback passed in the form options be called, which will receive the parsed field values in a structure either by the schema if it is defined, or through the `parseAtoms` function
+Learn how this routing system works in more detail on the [next page](/start/routing) ;)

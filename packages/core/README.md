@@ -377,7 +377,7 @@ Let's see Atomization and other concepts in action with a classic TodoMVC implem
 // FILE: model.ts
 import {
   atom, computed, action, reatomEnum, wrap,
-  withChangeHook, withInit, Atom, Action, Computed, parseAtoms
+  withChangeHook, withInit, Atom, Action, Computed, deatomize
 } from '@reatom/core'
 import { reatomRecord, reatomBoolean } from '@reatom/primitives' // Example using primitives
 
@@ -445,7 +445,7 @@ export const todos = reatomRecord<Todo>({}, 'todos')
 
       const startEditAction = action(() => {
         // Ensure only one item is edited at a time (optional logic)
-        Object.values(parseAtoms(target)).forEach(t => t.isEditing.set(false))
+        Object.values(deatomize(target)).forEach(t => t.isEditing.set(false))
         isEditingAtom.set(true)
       }, `${name}.startEdit`)
 
@@ -478,7 +478,7 @@ export const todos = reatomRecord<Todo>({}, 'todos')
 
     // Action to clear completed todos
     clearCompleted() {
-      const currentTodos = parseAtoms(target) // Get plain object of todos
+      const currentTodos = deatomize(target) // Get plain object of todos
       for (const id in currentTodos) {
         if (currentTodos[id].completed()) {
           target.delete(id)
@@ -488,7 +488,7 @@ export const todos = reatomRecord<Todo>({}, 'todos')
 
     // Action to toggle all todos
     toggleAll(forceState?: boolean) {
-        const currentTodos = Object.values(parseAtoms(target))
+        const currentTodos = Object.values(deatomize(target))
         const shouldComplete = forceState ?? !currentTodos.every(t => t.completed())
         currentTodos.forEach(t => t.completed.set(shouldComplete))
     }
@@ -497,15 +497,15 @@ export const todos = reatomRecord<Todo>({}, 'todos')
   .extend((target) => ({
     isEmpty: computed(() => target.size() === 0, `${target.name}.isEmpty`),
     activeCount: computed(
-      () => Object.values(parseAtoms(target)).filter((todo) => !todo.completed()).length,
+      () => Object.values(deatomize(target)).filter((todo) => !todo.completed()).length,
       `${target.name}.activeCount`,
     ),
     completedCount: computed(
-      () => Object.values(parseAtoms(target)).filter((todo) => todo.completed()).length,
+      () => Object.values(deatomize(target)).filter((todo) => todo.completed()).length,
       `${target.name}.completedCount`,
     ),
     allCompleted: computed(
-        () => target.size() > 0 && Object.values(parseAtoms(target)).every(t => t.completed()),
+        () => target.size() > 0 && Object.values(deatomize(target)).every(t => t.completed()),
         `${target.name}.allCompleted`
     )
   }))
@@ -543,7 +543,7 @@ export const TodoApp = reatomComponent(() => {
 })
 
 const TodoList = reatomComponent(() => {
-  const todoList = Object.values(parseAtoms(todos)) // Get array of Todo objects
+  const todoList = Object.values(deatomize(todos)) // Get array of Todo objects
   const allCompleted = todos.allCompleted()
 
   if (todos.isEmpty()) return null

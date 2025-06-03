@@ -23,25 +23,25 @@ type Builtin = Date | RegExp | Function
  * @template T - The type to unwrap
  * @returns Unwrapped version of the type with atoms replaced by their state types
  */
-export type ParseAtoms<T> = T extends Action
+export type Deatomize<T> = T extends Action
   ? T
   : T extends LinkedListLikeAtom<infer T>
     ? T extends LinkedList<LLNode<infer T>>
-      ? Array<ParseAtoms<T>>
+      ? Array<Deatomize<T>>
       : never
     : T extends AtomLike<infer T, any, any>
-      ? ParseAtoms<T>
+      ? Deatomize<T>
       : T extends Map<infer K, infer T>
-        ? Map<K, ParseAtoms<T>>
+        ? Map<K, Deatomize<T>>
         : T extends Set<infer T>
-          ? Set<ParseAtoms<T>>
+          ? Set<Deatomize<T>>
           : T extends Array<infer T>
-            ? Array<ParseAtoms<T>>
+            ? Array<Deatomize<T>>
             : T extends Primitive | Builtin
               ? T
               : T extends object
                 ? {
-                    [K in keyof T]: ParseAtoms<T[K]>
+                    [K in keyof T]: Deatomize<T[K]>
                   }
                 : T
 
@@ -54,7 +54,7 @@ export type ParseAtoms<T> = T extends Action
  *
  * @template Value - The type of value to parse
  * @param {Value} value - The value containing atoms to unwrap
- * @returns {ParseAtoms<Value>} A new value with all atoms replaced by their current states
+ * @returns {Deatomize<Value>} A new value with all atoms replaced by their current states
  *
  * @example
  * const user = {
@@ -67,10 +67,10 @@ export type ParseAtoms<T> = T extends Action
  * };
  *
  * // Results in: { id: 42, name: 'John', stats: { score: 100, badges: ['gold', 'silver'] }}
- * const plainUser = parseAtoms(user);
+ * const plainUser = deatomize(user);
  */
-export const parseAtoms = <Value>(value: Value): ParseAtoms<Value> => {
-  if (isAction(value)) return value as ParseAtoms<Value>
+export const deatomize = <Value>(value: Value): Deatomize<Value> => {
+  if (isAction(value)) return value as Deatomize<Value>
 
   if (isLinkedListAtom(value)) value = value.array as any
 
@@ -80,25 +80,25 @@ export const parseAtoms = <Value>(value: Value): ParseAtoms<Value> => {
 
   if (isRec(value)) {
     const res = {} as Rec
-    for (const k in value) res[k] = parseAtoms(value[k])
+    for (const k in value) res[k] = deatomize(value[k])
     return res as any
   }
 
   if (Array.isArray(value)) {
     const res = []
-    for (const v of value) res.push(parseAtoms(v))
+    for (const v of value) res.push(deatomize(v))
     return res as any
   }
 
   if (value instanceof Map) {
     const res = new Map()
-    for (const [k, v] of value) res.set(k, parseAtoms(v))
+    for (const [k, v] of value) res.set(k, deatomize(v))
     return res as any
   }
 
   if (value instanceof Set) {
     const res = new Set()
-    for (const v of value) res.add(parseAtoms(v))
+    for (const v of value) res.add(deatomize(v))
     return res as any
   }
 

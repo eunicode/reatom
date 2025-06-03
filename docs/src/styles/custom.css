@@ -3,7 +3,7 @@
   --sl-color-accent-low: #222234;
   --sl-color-accent: #6361a1;
   --sl-color-accent-high: #c5c6de;
-  --sl-color-white: #ffffff;
+  --sl-color-white: #fdfdff;
   --sl-color-gray-1: #ecedf8;
   --sl-color-gray-2: #c0c1cf;
   --sl-color-gray-3: #8889a4;
@@ -29,7 +29,7 @@
   --sl-color-gray-5: #c0c1cf;
   --sl-color-gray-6: #ecedf8;
   --sl-color-gray-7: #f5f6fc;
-  --sl-color-black: #ffffff;
+  --sl-color-black: #fdfdff;
 }
 
 html[data-theme='light'] img[data-theme='dark'] {

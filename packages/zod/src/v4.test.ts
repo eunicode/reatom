@@ -1,4 +1,4 @@
-import { type Atom, isAtom, notify, type ParseAtoms, parseAtoms } from '@reatom/core'
+import { type Atom, isAtom, notify, type deatomize, deatomize } from '@reatom/core'
 import { expect, expectTypeOf, test, vi } from 'vitest'
 import { z } from 'zod/v4'
 
@@ -13,12 +13,12 @@ test('base API', async () => {
     }),
     {
       sync: () => {
-        track(parseAtoms(model))
+        track(deatomize(model))
       },
       initState: { n: 42, readonly: 'foo' },
     },
   )
-  const track = vi.fn<(parsed: ParseAtoms<typeof model>) => void>()
+  const track = vi.fn<(parsed: deatomize<typeof model>) => void>()
 
   expect(model.readonly).toBe('foo')
   expect(model.n()).toBe(42)

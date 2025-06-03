@@ -112,7 +112,6 @@ export let variable: {
   }
   let [set, name = named('var')] = options as [Fn, string?]
 
-  let key = {}
 
   let find = <T>(
     cb: (payload: undefined | unknown) => undefined | T = (payload) =>
@@ -120,7 +119,7 @@ export let variable: {
     frame = top(),
     meta = frame.root.variables,
   ): undefined | T => {
-    let result = cb(meta.get(frame)?.get(key))
+    let result = cb(meta.get(frame)?.get(variable))
     if (result !== undefined) return result
 
     for (let i = 0; i < frame.pubs.length; i++) {
@@ -140,7 +139,7 @@ export let variable: {
     }
     let recs = frame.root.variables.get(frame)
     if (!recs) frame.root.variables.set(frame, (recs = new WeakMap()))
-    recs.set(key, value)
+    recs.set(variable, value)
   }
 
   let run = action((value, cb: Fn) => {
@@ -149,9 +148,9 @@ export let variable: {
     return cb()
   }, name)
 
-  return {
+  let variable = {
     get(frame?: Frame) {
-      let value = find(identity, frame)
+      let value = this.find(identity, frame)
 
       assert(value !== undefined, 'Variable not found')
 
@@ -165,9 +164,11 @@ export let variable: {
       return value
     },
     has(frame?: Frame) {
-      return find(identity, frame) !== undefined
+      return this.find(identity, frame) !== undefined
     },
     find,
     run,
   }
+
+  return variable
 }

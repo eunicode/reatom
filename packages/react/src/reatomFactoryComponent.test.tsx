@@ -1,19 +1,20 @@
-import { test, expect, describe, beforeEach, afterEach, vi } from 'vitest'
-import ReactDOM from 'react-dom/client'
-import React from 'react'
 import {
+  action,
   atom,
   clearStack,
   context,
+  effect,
+  ifCalled,
+  rAF,
+  sleep,
+  take,
   top,
   wrap,
-  rAF,
-  take,
-  effect,
-  sleep,
-  action,
 } from '@reatom/core'
-import { reatomContext, reatomFactoryComponent, reatomComponent } from './index'
+import ReactDOM from 'react-dom/client'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+
+import { reatomComponent, reatomContext, reatomFactoryComponent } from './index'
 
 clearStack()
 
@@ -126,7 +127,9 @@ describe('reatomFactoryComponent', () => {
       expect(initTracker).toHaveBeenCalledTimes(1)
       expect(renderTracker).toHaveBeenCalledTimes(1)
       expect(
-        document.querySelector('[data-testid="factory-output"]')?.textContent?.trim(),
+        document
+          .querySelector('[data-testid="factory-output"]')
+          ?.textContent?.trim(),
       ).toBe('External: 0')
 
       externalAtom.set(1) // Change the external atom
@@ -138,7 +141,9 @@ describe('reatomFactoryComponent', () => {
       expect(renderTracker).toHaveBeenCalledTimes(1)
       // The component's output should NOT change
       expect(
-        document.querySelector('[data-testid="factory-output"]')?.textContent?.trim(),
+        document
+          .querySelector('[data-testid="factory-output"]')
+          ?.textContent?.trim(),
       ).toBe('External: 0')
 
       externalAtom.set(2)
@@ -146,14 +151,17 @@ describe('reatomFactoryComponent', () => {
       expect(initTracker).toHaveBeenCalledTimes(1)
       expect(renderTracker).toHaveBeenCalledTimes(1)
       expect(
-        document.querySelector('[data-testid="factory-output"]')?.textContent?.trim(),
+        document
+          .querySelector('[data-testid="factory-output"]')
+          ?.textContent?.trim(),
       ).toBe('External: 0')
     }))
 
   test('effects autocancel', () =>
     context.start(async () => {
       let event = action(() => {})
-      let pooling = 0
+      let poolingLoop = 0
+      let poolingTrack = 0
 
       const Counter = reatomFactoryComponent(() => {
         const count = atom(0, 'count')
@@ -161,8 +169,14 @@ describe('reatomFactoryComponent', () => {
         effect(async () => {
           while (true) {
             await wrap(take(event))
-            count.set(++pooling)
+            count.set(++poolingLoop)
           }
+        })
+
+        effect(() => {
+          ifCalled(event, () => {
+            ++poolingTrack
+          })
         })
 
         return () => <div data-testid="count">{count()}</div>
@@ -190,7 +204,8 @@ describe('reatomFactoryComponent', () => {
       await wrap(tick())
       await wrap(tickEvent())
       await wrap(tickEvent())
-      expect(pooling).toBe(2)
+      expect(poolingLoop).toBe(2)
+      expect(poolingTrack).toBe(2)
       expect(document.querySelector('[data-testid="count"]')?.textContent).toBe(
         '2',
       )
@@ -199,6 +214,7 @@ describe('reatomFactoryComponent', () => {
       await wrap(tick())
       await wrap(tickEvent())
       await wrap(tickEvent())
-      expect(pooling).toBe(2)
+      expect(poolingLoop).toBe(2)
+      expect(poolingTrack).toBe(2)
     }))
-}) 
+})

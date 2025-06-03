@@ -204,11 +204,11 @@
     font-weight: 700;
     background: linear-gradient(
       135deg,
-      #4a90e2 0%,
-      #7bb3f0 25%,
+      var(--signal-color) 0%,
+      var(--signal-secondary) 25%,
       #a8d5ff 50%,
-      #ffd700 75%,
-      #ffa500 100%
+      var(--accent-primary) 75%,
+      var(--accent-secondary) 100%
     );
     background-size: 200% 200%;
     -webkit-background-clip: text;
@@ -216,14 +216,16 @@
     -webkit-text-fill-color: transparent;
     animation: gradientText 8s ease infinite;
     margin-bottom: 0.5rem;
+    transition: background 0.3s ease;
   }
 
   .history-title-sub {
     display: block;
     font-size: clamp(1rem, 2.5vw, 1.4rem);
     font-weight: 400;
-    color: #bbbbbb;
+    color: var(--text-muted);
     opacity: 0.9;
+    transition: color 0.3s ease;
   }
 
   @keyframes gradientText {
@@ -241,11 +243,12 @@
     display: grid;
     grid-template-columns: 300px 200px 1fr;
     gap: 0;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 215, 0, 0.15);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: 20px;
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(10px);
     overflow: hidden;
+    transition: background 0.3s ease, border-color 0.3s ease;
   }
 
   /* Table Header */
@@ -255,12 +258,13 @@
 
   .header-cell {
     padding: 2rem 1.5rem;
-    background: rgba(255, 215, 0, 0.1);
-    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
     font-size: 1.3rem;
     font-weight: 600;
-    color: #ffd700;
+    color: var(--accent-primary);
     text-align: center;
+    transition: all 0.3s ease;
   }
 
   .timeline-header {
@@ -276,12 +280,13 @@
     height: calc(100vh);
     background: linear-gradient(
       180deg,
-      #4a90e2 0%,
-      #ffd700 50%,
-      rgba(255, 215, 0, 0.3) 100%
+      var(--signal-color) 0%,
+      var(--accent-primary) 50%,
+      var(--shadow-color) 100%
     );
     border-radius: 2px;
     z-index: 1;
+    transition: background 0.3s ease;
   }
 
   /* Table Rows */
@@ -291,13 +296,13 @@
   }
 
   .table-row:hover .cell {
-    background: rgba(255, 215, 0, 0.05);
-    border-color: rgba(255, 215, 0, 0.3);
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
   }
 
   .cell {
     padding: 1.5rem;
-    border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+    border-bottom: 1px solid var(--card-border);
     transition: all 0.3s ease;
     position: relative;
   }
@@ -314,13 +319,15 @@
   .commits {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #4a90e2;
+    color: var(--signal-color);
+    transition: color 0.3s ease;
   }
 
   .contributors {
     font-size: 0.9rem;
-    color: #cccccc;
+    color: var(--text-primary);
     opacity: 0.8;
+    transition: color 0.3s ease;
   }
 
   /* Year Cell */
@@ -338,39 +345,39 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    border: 3px solid #151134;
+    border: 3px solid var(--bg-primary);
     transition: all 0.3s ease;
   }
 
   .table-row.past .year-dot {
-    background: #4a90e2;
-    box-shadow: 0 0 16px rgba(74, 144, 226, 0.6);
+    background: var(--signal-color);
+    box-shadow: 0 0 16px var(--signal-color);
   }
 
   .table-row.current .year-dot {
-    background: #ffd700;
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    background: var(--accent-primary);
+    box-shadow: 0 0 20px var(--accent-primary);
   }
 
   .table-row.future .year-dot {
-    background: rgba(255, 215, 0, 0.3);
-    border-color: rgba(255, 215, 0, 0.5);
-    box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+    background: var(--shadow-color);
+    border-color: var(--border-color);
+    box-shadow: 0 0 12px var(--shadow-color);
   }
 
   .year-label {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #cccccc;
+    color: var(--text-primary);
     transition: all 0.3s ease;
   }
 
   .table-row.current .year-label {
-    color: #ffd700;
+    color: var(--accent-primary);
   }
 
   .table-row.future .year-label {
-    color: #888888;
+    color: var(--text-muted);
   }
 
   /* Milestone Cell */
@@ -384,28 +391,70 @@
   .milestone-title {
     font-size: 1.2rem;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--text-secondary);
     margin: 0;
+    transition: color 0.3s ease;
   }
 
   .table-row.current .milestone-title {
-    color: #ffd700;
+    color: var(--accent-primary);
   }
 
   .table-row.future .milestone-title {
-    color: #cccccc;
+    color: var(--text-primary);
     opacity: 0.8;
   }
 
   .milestone-description {
-    color: #bbbbbb;
+    color: var(--text-muted);
     line-height: 1.5;
     font-size: 0.95rem;
     margin: 0;
+    transition: color 0.3s ease;
   }
 
   .table-row.future .milestone-description {
     opacity: 0.7;
+  }
+
+  /* Light theme specific adjustments */
+  html[data-theme="light"] .history-section::before {
+    background: radial-gradient(
+      ellipse at center,
+      rgba(21, 17, 52, 0.05) 0%,
+      transparent 70%
+    );
+  }
+
+  html[data-theme="light"] .history-title-main {
+    background: linear-gradient(
+      135deg,
+      #1e3a8a 0%,
+      #2563eb 25%,
+      #3b82f6 50%,
+      var(--accent-primary) 75%,
+      var(--accent-secondary) 100%
+    );
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  html[data-theme="light"] .header-cell {
+    background: rgba(21, 17, 52, 0.05);
+  }
+
+  html[data-theme="light"] .table-row.past .year-dot {
+    box-shadow: 0 0 16px rgba(37, 99, 235, 0.4);
+  }
+
+  html[data-theme="light"] .table-row.current .year-dot {
+    box-shadow: 0 0 20px rgba(214, 137, 16, 0.6);
+  }
+
+  html[data-theme="light"] .table-row.future .year-dot {
+    box-shadow: 0 0 12px rgba(21, 17, 52, 0.3);
   }
 
   /* Responsive Design */
@@ -451,11 +500,12 @@
       display: grid;
       grid-template-columns: 1fr 80px 1fr;
       gap: 1rem;
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 215, 0, 0.1);
+      background: var(--bg-secondary);
+      border: 1px solid var(--card-border);
       border-radius: 12px;
       padding: 1rem;
       margin-bottom: 1rem;
+      transition: all 0.3s ease;
     }
 
     .cell {
@@ -464,8 +514,8 @@
     }
 
     .year-cell {
-      border-left: 1px solid rgba(255, 215, 0, 0.2);
-      border-right: 1px solid rgba(255, 215, 0, 0.2);
+      border-left: 1px solid var(--border-color);
+      border-right: 1px solid var(--border-color);
     }
   }
 
@@ -477,46 +527,33 @@
 
     .year-cell {
       border: none;
-      border-top: 1px solid rgba(255, 215, 0, 0.2);
-      border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
       padding: 1rem 0;
     }
   }
 
   /* Accessibility */
   .table-row:focus-within .cell {
-    outline: 2px solid #ffd700;
+    outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
   }
 
   /* High contrast mode */
   @media (prefers-contrast: high) {
     .history-table {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: #ffffff;
+      background: var(--bg-tertiary);
+      border-color: var(--text-primary);
     }
 
     .milestone-title,
     .commits {
-      color: #ffffff;
+      color: var(--text-primary);
     }
 
-    .milestone-description,
-    .contributors {
-      color: #ffffff;
-    }
-  }
-
-  /* Reduced motion */
-  @media (prefers-reduced-motion: reduce) {
-    .table-row,
-    .cell,
-    .year-dot {
-      transition: none;
-    }
-
-    .history-title-main {
-      animation: none;
+    .contributors,
+    .milestone-description {
+      color: var(--text-primary);
     }
   }
 </style>

@@ -1,96 +1,126 @@
 ---
 title: Actions
-description: Getting started with actions in Reatom
+description: Reatom actions and code organization
 ---
 
-Actions in Reatom are powerful constructs that encapsulate logic, manage side effects, and orchestrate state updates within your application. They serve as dedicated containers for operations that go beyond simple state changes.
+Action is a base Reatom primitive that **increases the quality of your code** in many ways: organization and readability, debugability, extensibility.
 
-## `action`: Logic & Side Effect Container
+The beauty of Reatom is that you don't need to use actions for simple updates, like `(value) => myAtom.set(value)`. Actions are useful for complex operations, like data mappings, API calls and other side effects.
 
-An `action` is designed to hold complex logic, perform side effects such as API calls or interactions with `localStorage`, and coordinate multiple state updates in a structured manner.
-
-**When to Use `action`:**
-
-It's best to use actions for operations that involve more than a single, direct state modification.
-
-Here's an example of an action handling an asynchronous operation (like fetching data) and then updating multiple pieces of state:
+You can call actions anywhere just like regular functions. You can describe its parameters just like with regular functions. You can type your action function with generics as usual. `action` itself is a simple decorator which adds some extra features to your function, but does not limit you in any way.
 
 ```ts
-// GOOD: Use actions for complex operations or side effects.
-const fetchAndUpdateCounter = action(async (userId: string) => {
-  const response = await wrap(fetch(`/api/users/${userId}/count`)) // Preserve context!
-  const data = await wrap(response.json()) // Preserve context!
+import { atom, action } from '@reatom/core'
 
-  counter.set(data.count) // Update state within the action
-  lastUpdated.set(new Date())
+export const list = atom([])
+const isListLoading = atom(false)
 
-  return data // Actions can return values
-}, 'fetchAndUpdateCounter')
+const loadList = action(async (page: number) => {
+  isListLoading.set(true)
+  const response = await fetch(`/api/list?page=${page}`)
+  const payload = await response.json()
+  list.set(payload)
+  isListLoading.set(false)
+})
 
-// Call the action
-fetchAndUpdateCounter('user123')
+loadList(1) // Promise
 ```
 
-**When NOT to Use `action`:**
+## Naming
 
-For simple, direct state updates, using an action is unnecessary overhead. Atoms can be updated directly.
+Most Reatom units accept an optional name for debugging purposes. We highly recommend using it, as it helps to debug the runtime dataflow.
+
+```ts /'list'|'isListLoading'|'loadList'/
+export const list = atom([], 'list')
+const isListLoading = atom(false, 'isListLoading')
+
+const loadList = action(async (page: number) => {
+  // ...
+}, 'loadList')
+```
+
+That's better!
+
+> If you use some LLM code assistant it will help you to write related names for you. Also, we have an eslint plugin for this (will see in the tooling section).
+
+However, each atom has a `.actions` method to bind and name related actions.
+
+## Actions method
+
+It accepts a callback for creating related methods, it is called immediately and returns the original atom. The callback accepts the processed `target` as an argument and should return an object with related methods.
 
 ```ts
-// ❌ BAD: Using actions for simple state updates.
-const setCounter = action((value: number) => {
-  counter.set(value)
-}, 'setCounter')
+import { atom, action } from '@reatom/core'
 
-// ✅ GOOD: Update atoms directly for simple cases.
-counter.set(10)
+export const list = atom([], 'list').actions(
+  (target /* <-- current atom */) => ({
+    async load(page: number) {
+      isListLoading.set(true)
+      const response = await fetch(`/api/list?page=${page}`)
+      const payload = await response.json()
+      target.set(payload) // changed from `list.set` to `target.set`
+      isListLoading.set(false)
+    },
+  }),
+)
+const isListLoading = atom(false, 'isListLoading')
+
+list.load(1) // Promise
 ```
 
-**Primary Use Cases for `action`:**
+`.actions` converts passed methods to actions with relevant names. The code becomes more elegant and better organized!
 
-1.  **Orchestrating multiple state changes:** When an operation needs to modify several atoms.
-2.  **Performing side effects:** For tasks like API calls, interacting with browser storage (localStorage, sessionStorage), or any other asynchronous operations.
-3.  **Implementing complex business logic:** When the logic for a state transition is non-trivial and benefits from being encapsulated.
+But what if we want to proceed with this domain code organization and combine all things together? We have the `.extend` method for that!
 
-## Naming Conventions for Actions
+```ts /target/
+import { atom, action } from '@reatom/core'
 
-Consistent naming helps in understanding and debugging your Reatom application:
-
-*   **Always name your actions:** Provide a descriptive name as the second argument to the `action` creator (e.g., `action(async () => { /* ... */ }, 'myDescriptiveAction')`). This name is crucial for debugging and developer tools.
-*   **Use descriptive names:** Choose names that clearly indicate what the action does (e.g., `fetchUserData`, `submitForm`).
-*   **No "Action" suffix:** Avoid adding "Action" to the variable name itself (e.g., use `fetchUserData` instead of `fetchUserDataAction`). The `action` creator already signifies its type.
-
-## Context Preservation with `wrap()`
-
-When working with asynchronous operations (like `async/await` or Promises) within actions, Reatom's internal context can be lost. This context is vital for features like Server-Side Rendering (SSR), testing isolation, and async cancellation.
-
-The `wrap()` function is essential for preserving this context across asynchronous boundaries.
-
-```ts
-// ✅ GOOD: Wrap the entire async operation whose result interacts with Reatom.
-action(async () => {
-  const response = await wrap(fetch('/api/data'))
-  const data = await wrap(response.json()) // Wrap this step too
-  results(data) // Works
-}, 'fetchGood1')()
+export const list = atom([], 'list')
+  .extend((target) => ({
+    // describe things that you want to assign to the current atom
+    isLoading: atom(false, `${target.name}.isLoading`),
+  }))
+  .actions((target) => ({
+    async load(page: number) {
+      target.isLoading.set(true)
+      const response = await fetch(`/api/list?page=${page}`)
+      const payload = await response.json()
+      target.set(payload)
+      target.isLoading.set(false)
+    },
+  }))
 ```
 
-While `wrap()` is critical for robust asynchronous actions, it will be covered in more detail in the "Async Operations" section. For now, remember to use it when your action involves `async` code that interacts with Reatom state.
+Now you can access your states in a clean and readable way:
 
-## Extensions: `.actions()`
+```tsx
+import React from 'react'
+import { reatomComponent } from '@reatom/react'
+import { list } from './model'
 
-Reatom allows you to extend the functionality of atoms by attaching related actions directly to them using the `.actions()` method. This is useful for grouping operations that are tightly coupled with a specific piece of state.
+// You can use regular hooks in `reatomComponent`!
+const Paging = reatomComponent(() => {
+  const [page, setPage] = React.useState(1)
 
-Here's how you can add `increment`, `decrement`, and `reset` actions to a `counter` atom:
+  React.useEffect(() => {
+    list.load(page)
+  }, [page])
 
-```ts
-const counter = atom(0, 'counter').actions((target) => ({
-  increment: (amount = 1) => target.set((prev) => prev + amount),
-  decrement: (amount = 1) => target.set((prev) => prev - amount),
-  reset: () => target.set(0),
-}))
+  return (
+    <button onClick={() => setPage((page) => page + 1)} disabled={isLoading}>
+      {isLoading ? 'Loading...' : 'Next page'}
+    </button>
+  )
+})
 
-// Now you can call these actions directly on the counter:
-counter.increment(5)
-counter.reset()
+const List = reatomComponent(() => (
+  <section>
+    <Paging />
+    {list().map(/* ... */)}
+  </section>
+))
 ```
-This pattern helps in organizing your code by co-locating state and the actions that modify it.
+
+Awesome, now you can couple relative states with relative components without a props drilling!
+
+But this is just the beginning, `.extend` can give us much more! Check out the next section to learn more about it.

@@ -16,7 +16,7 @@ export let withAbort = (
 ): AssignerExt<AbortExt> => {
   assert(
     strategy === 'last-in-win',
-    'only last-in-win strategy is supported',
+    'only "last-in-win" strategy is currently supported',
     ReatomError,
   )
 
@@ -30,7 +30,7 @@ export let withAbort = (
     : identity
 
   return (target) => {
-    let abortMiddleware = (next: Fn, ...params: any[]) => {
+    let withAbort = (next: Fn, ...params: any[]) => {
       let frame = top()
       let prevFrame = _getPrevFrame(frame)
       let prevAbort =
@@ -88,7 +88,7 @@ export let withAbort = (
       return state
     }
 
-    target.__reatom.middlewares.push(abortMiddleware)
+    target.__reatom.middlewares.push(withAbort)
 
     return {
       abort(reason?: any) {

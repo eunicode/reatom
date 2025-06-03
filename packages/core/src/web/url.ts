@@ -1,4 +1,3 @@
-
 import type { Action, Atom, AtomState, Computed } from '../core'
 import {
   _enqueue,
@@ -15,9 +14,9 @@ import { ifChanged, peek } from '../methods'
 import { _getPrevFrame } from '../methods/context'
 import type { AbortExt } from '../mixins'
 import { withAbort, withChangeHook, withComputed, withInit } from '../mixins'
+import type { Rec } from '../utils'
 import { onEvent } from './onEvent'
-
-
+import type { RouteAtom } from './route'
 
 /** URL atom interface that extends the base Atom type. */
 export interface UrlAtom extends Atom<URL> {
@@ -82,6 +81,8 @@ export interface UrlAtom extends Atom<URL> {
    * @param replace Whether to replace the current history entry
    */
   syncFromSource: Action<[url: URL, replace?: boolean], URL>
+
+  routes: Rec<RouteAtom>
 }
 
 /** Interface for the search parameters atom. */
@@ -158,11 +159,16 @@ export let urlAtom: UrlAtom = /* @__PURE__ */ (() =>
           typeof update === 'function' ? update(url ?? urlAtom.init()) : update
 
         // TODO check `href`, instead of instance?
-        if (
-          url !== newUrl &&
-          STACK[STACK.length - 2]?.atom !== urlAtom.syncFromSource
-        ) {
-          urlAtom.sync()(newUrl, replace)
+        if (url !== newUrl) {
+          // invalidate
+          _enqueue(() => {
+            for (const [, routeAtom] of Object.entries(urlAtom.routes)) {
+              routeAtom.loader()
+            }
+          }, 'hook')
+          if (STACK[STACK.length - 2]?.atom !== urlAtom.syncFromSource) {
+            urlAtom.sync()(newUrl, replace)
+          }
         }
 
         return newUrl
@@ -229,6 +235,8 @@ export let urlAtom: UrlAtom = /* @__PURE__ */ (() =>
         ),
 
         pattern: '/',
+
+        routes: {},
       }),
     )
 
@@ -286,7 +294,7 @@ export const searchParamsAtom: SearchParamsAtom = /* @__PURE__ */ (() =>
 
             return atom(parse(), name).extend(
               // @ts-expect-error
-              withSearchParamsPersist(key, options),
+              withSearchParams(key, options),
             )
           },
         }) satisfies Pick<SearchParamsAtom, 'lens'>,
@@ -298,7 +306,7 @@ export const searchParamsAtom: SearchParamsAtom = /* @__PURE__ */ (() =>
  * @param key The parameter name to synchronize with
  * @param parse Function to parse string value to desired type
  */
-export function withSearchParamsPersist<T = string>(
+export function withSearchParams<T = string>(
   key: string,
   parse?: (value?: string) => T,
 ): <Target extends Atom<T>>(target: Target) => Target
@@ -318,7 +326,7 @@ export function withSearchParamsPersist<T = string>(
  *   specific URL paths
  * @param options.name Optional name of the created atom
  */
-export function withSearchParamsPersist<T = string>(
+export function withSearchParams<T = string>(
   key: string,
   options: {
     parse?: (value?: string) => T
@@ -328,7 +336,7 @@ export function withSearchParamsPersist<T = string>(
   },
 ): <Target extends Atom<T>>(target: Target) => Target
 
-export function withSearchParamsPersist<T = string>(
+export function withSearchParams<T = string>(
   key: string,
   options?:
     | ((value?: string) => T)

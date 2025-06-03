@@ -20,9 +20,9 @@ import {
   isLinkedListAtom,
   isObject,
   named,
-  type ParseAtoms,
   reatomLinkedList,
   type Rec,
+  type Deatomize,
   withAbort,
   withAsync,
   withCallHook,
@@ -103,7 +103,7 @@ export type FormFields<T extends FormInitState = FormInitState> = {
   [K in keyof T]: FormFieldElement<T[K]>
 }
 
-export type FormState<T extends FormInitState = FormInitState> = ParseAtoms<
+export type FormState<T extends FormInitState = FormInitState> = Deatomize<
   FormFields<T>
 >
 

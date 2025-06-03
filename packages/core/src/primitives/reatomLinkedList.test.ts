@@ -2,7 +2,7 @@ import { expect, subscribe, test, vi } from 'test'
 
 import { atom, computed, isAtom, isConnected, notify } from '../core'
 import { isCausedBy } from '../methods'
-import { parseAtoms } from '../methods/parseAtoms'
+import { Deatomize } from '../methods'
 import { withChangeHook } from '../mixins'
 import { LL_NEXT, LL_PREV, reatomLinkedList } from './reatomLinkedList'
 
@@ -15,16 +15,16 @@ test('should respect initState, create and remove elements properly', () => {
   const last = list.create(3)
   expect(list.array().map((v) => v())).toEqual([1, 2, 3])
   list.remove(last)
-  expect(parseAtoms(list.array)).toEqual([1, 2])
+  expect(deatomize(list.array)).toEqual([1, 2])
 
   list.remove(last)
-  expect(parseAtoms(list.array)).toEqual([1, 2])
+  expect(deatomize(list.array)).toEqual([1, 2])
 
   list.remove(list.find((n) => n() === 1)!)
-  expect(parseAtoms(list.array)).toEqual([2])
+  expect(deatomize(list.array)).toEqual([2])
 
   list.remove(list.find((n) => n() === 2)!)
-  expect(parseAtoms(list.array)).toEqual([])
+  expect(deatomize(list.array)).toEqual([])
 
   expect(() => {
     list.remove(list.find((n) => n() === 2)!)
@@ -80,7 +80,7 @@ test('should swap elements', () => {
 
   list.clear()
   notify()
-  expect(parseAtoms(list.array)).toEqual([])
+  expect(deatomize(list.array)).toEqual([])
 })
 
 test('should move elements', () => {
@@ -206,7 +206,7 @@ test('should accept only initState and key optionally', () => {
 
   list.map().get('1')!.id.set('0')
   notify()
-  expect(parseAtoms(list)).toStrictEqual([{ id: '0' }, { id: '2' }])
+  expect(deatomize(list)).toStrictEqual([{ id: '0' }, { id: '2' }])
   expect(keys()).toStrictEqual(['0', '2'])
   expect(track).toBeCalledWith(['0', '2'])
 })
