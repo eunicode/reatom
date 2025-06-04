@@ -335,3 +335,21 @@ test('route loader lazyness (abortable)', async () => {
   expect(ticks).toBe(4)
   expect(lazyRoute()).toBe(null)
 })
+
+test('params types transform', async () => {
+  const issueRoute = route({
+    path: 'issue/:issueId',
+    params: z.object({
+      issueId: z.string().regex(/^\d+$/).transform(Number),
+    }),
+    async loader(params: { issueId: number }) {
+      return {
+        issueId: params.issueId,
+      }
+    },
+  })
+
+  issueRoute.go({ issueId: 123 })
+
+  expect(await wrap(issueRoute.loader())).toEqual({ issueId: 123 })
+})
