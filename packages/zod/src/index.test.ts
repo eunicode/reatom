@@ -4,6 +4,7 @@ import {
   deatomize,
   isAtom,
   notify,
+  withChangeHook,
 } from '@reatom/core'
 import { expect, expectTypeOf, test, vi } from 'vitest'
 import { z } from 'zod'
@@ -252,4 +253,21 @@ test('date set overload', () => {
 
   model.optionalDate.set(undefined)
   expect(model.optionalDate()).toBe(undefined)
+})
+
+test('extend', () => {
+  const track = vi.fn()
+  const withTrack = withChangeHook(track)
+
+  const schema = z.object({
+    n: z.number(),
+  })
+
+  const model = reatomZod(schema, {
+    extend: [withTrack],
+  })
+
+  model.n.set(1)
+  notify()
+  expect(track).toHaveBeenCalledWith(1, 0)
 })

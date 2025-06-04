@@ -2,6 +2,7 @@ import {
   action,
   type Atom as ReatomAtom,
   atom,
+  type AtomLike,
   type BooleanAtom as ReatomBooleanAtom,
   type Computed as ReatomComputed,
   type EnumAtom as ReatomEnumAtom,
@@ -182,7 +183,7 @@ export const silentUpdate = action((cb: Fn) => {
 })
 
 export const EXTENSIONS = new Array<
-  (anAtom: Atom, ext: z.ZodFirstPartyTypeKind) => Atom
+  (target: AtomLike, ext: z.ZodFirstPartyTypeKind) => AtomLike
 >()
 
 /** Get default state based on Zod type definition */
@@ -282,11 +283,13 @@ export const reatomZod = <Schema extends z.ZodFirstPartySchemaTypes>(
     initState,
     parse,
     name,
+    extend,
   }: {
     sync?: () => void
     initState?: PartialDeep<z.infer<Schema>>
     parse?: Schema['parse']
     name?: string
+    extend?: typeof EXTENSIONS
   } = {},
 ): ZodAtomization<Schema> => {
   const def = schema._def
@@ -349,6 +352,7 @@ export const reatomZod = <Schema extends z.ZodFirstPartySchemaTypes>(
           sync,
           initState: (initState as any)?.[key],
           name: `${name}.${key}`,
+          extend,
         })
       }
       return obj as ZodAtomization<Schema>
@@ -356,7 +360,7 @@ export const reatomZod = <Schema extends z.ZodFirstPartySchemaTypes>(
     case z.ZodFirstPartyTypeKind.ZodTuple: {
       if (state === undefined) {
         state = def.items.map((item: z.ZodFirstPartySchemaTypes, i: number) =>
-          reatomZod(item, { sync, name: `${name}#${i}` }),
+          reatomZod(item, { sync, name: `${name}#${i}`, extend }),
         )
       }
       break
@@ -370,6 +374,7 @@ export const reatomZod = <Schema extends z.ZodFirstPartySchemaTypes>(
               sync,
               initState: itemInitState,
               name: named(name),
+              extend,
             }),
           }),
           initState: (state as any[] | undefined)?.map(
@@ -378,6 +383,7 @@ export const reatomZod = <Schema extends z.ZodFirstPartySchemaTypes>(
                 sync,
                 initState: itemInitState,
                 name: named(name),
+                extend,
               }),
             }),
           ),
@@ -433,7 +439,12 @@ export const reatomZod = <Schema extends z.ZodFirstPartySchemaTypes>(
           throw new ReatomError('Missed state for discriminated union')
         }
 
-        return reatomZod(stateType, { sync, initState: stateValue, name })
+        return reatomZod(stateType, {
+          sync,
+          initState: stateValue,
+          name,
+          extend,
+        })
       }
 
       theAtom = atom(getState(state), name).extend(
@@ -454,6 +465,7 @@ export const reatomZod = <Schema extends z.ZodFirstPartySchemaTypes>(
           return parse!(payload)
         },
         name,
+        extend,
       })
     }
     case z.ZodFirstPartyTypeKind.ZodNullable: {
@@ -465,6 +477,7 @@ export const reatomZod = <Schema extends z.ZodFirstPartySchemaTypes>(
           return parse!(payload)
         },
         name,
+        extend,
       })
     }
     case z.ZodFirstPartyTypeKind.ZodDefault: {
@@ -472,6 +485,7 @@ export const reatomZod = <Schema extends z.ZodFirstPartySchemaTypes>(
         sync,
         initState: state,
         name,
+        extend,
       })
     }
     case z.ZodFirstPartyTypeKind.ZodCatch: {
@@ -482,19 +496,19 @@ export const reatomZod = <Schema extends z.ZodFirstPartySchemaTypes>(
           state = def.catchValue({ error, input: state })
       }
 
-      return reatomZod(def.innerType, { sync, initState: state, name })
+      return reatomZod(def.innerType, { sync, initState: state, name, extend })
     }
     case z.ZodFirstPartyTypeKind.ZodEffects: {
-      return reatomZod(def.schema, { sync, initState: state, name })
+      return reatomZod(def.schema, { sync, initState: state, name, extend })
     }
     case z.ZodFirstPartyTypeKind.ZodBranded: {
-      return reatomZod(def.type, { sync, initState: state, name })
+      return reatomZod(def.type, { sync, initState: state, name, extend })
     }
     case z.ZodFirstPartyTypeKind.ZodPipeline: {
-      return reatomZod(def.out, { sync, initState: state, name })
+      return reatomZod(def.out, { sync, initState: state, name, extend })
     }
     case z.ZodFirstPartyTypeKind.ZodLazy: {
-      return reatomZod(def.getter(), { sync, initState: state, name })
+      return reatomZod(def.getter(), { sync, initState: state, name, extend })
     }
     case z.ZodFirstPartyTypeKind.ZodIntersection: {
       throw new TypeError(
@@ -532,8 +546,10 @@ export const reatomZod = <Schema extends z.ZodFirstPartySchemaTypes>(
     }),
   )
 
-  return EXTENSIONS.reduce(
-    (anAtom, ext) => ext(anAtom as Atom, def.typeName),
+  const allExtensions = [...EXTENSIONS, ...(extend || [])]
+
+  return allExtensions.reduce(
+    (target, ext) => ext(target, def.typeName),
     theAtom,
   ) as ZodAtomization<Schema>
 }

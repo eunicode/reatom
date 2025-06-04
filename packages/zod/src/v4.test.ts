@@ -4,6 +4,7 @@ import {
   deatomize,
   isAtom,
   notify,
+  withChangeHook,
 } from '@reatom/core'
 import { expect, expectTypeOf, test, vi } from 'vitest'
 import { z } from 'zod/v4'
@@ -264,4 +265,21 @@ test('string template literal', () => {
 
   expect(model.em()).toBe('0em')
   expect(model.complex()).toBe('_1_false_2_0_3_null')
+})
+
+test('extend', () => {
+  const track = vi.fn()
+  const withTrack = withChangeHook(track)
+
+  const schema = z.object({
+    n: z.number(),
+  })
+
+  const model = reatomZod(schema, {
+    extend: [withTrack],
+  })
+
+  model.n.set(1)
+  notify()
+  expect(track).toHaveBeenCalledWith(1, 0)
 })
