@@ -83,6 +83,7 @@ Effects are a way to react to changes in the state. They are similar to computed
 import { atom, effect } from '@reatom/core'
 
 const counter = atom(0)
+const isEven = computed(() => counter() % 2 === 0)
 
 effect(() => {
   console.log(`${counter()} is ${isEven() ? 'even' : 'odd'}`)
@@ -98,7 +99,6 @@ import { atom, computed } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 
 const counter = atom(0)
-
 const isEven = computed(() => counter() % 2 === 0)
 
 const Counter = reatomComponent(() => (

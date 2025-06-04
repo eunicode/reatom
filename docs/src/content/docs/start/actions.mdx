@@ -118,6 +118,8 @@ const Paging = reatomComponent(() => {
     list.load(page)
   }, [page])
 
+  const isLoading = list.isLoading()
+
   return (
     <button onClick={() => setPage((page) => page + 1)} disabled={isLoading}>
       {isLoading ? 'Loading...' : 'Next page'}

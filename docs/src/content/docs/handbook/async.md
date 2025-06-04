@@ -18,6 +18,70 @@ Reatom offers two main approaches for async operations:
 
 Both extensions provide automatic tracking of loading states, errors, and lifecycle hooks, with built-in support for request cancellation and race condition prevention through Reatom's async context system.
 
+## wrap
+
+The `wrap` function is essential for preserving Reatom's async context across asynchronous boundaries. JavaScript's async operations (like `await`, `.then()`, `setTimeout`) can break the chain of causation that Reatom uses for tracking dependencies and managing effects.
+
+### Why `wrap` is Needed
+
+When you use `await` or `.then()` in an async function, JavaScript creates a new execution context. This breaks Reatom's ability to track which atoms and actions are being used, potentially causing "context lost" errors or preventing automatic cancellation from working properly. Also, `wrap` allows Reatom to trace all your dataflow and show it in the logger and in the devtools!
+
+```ts
+import { action, atom, wrap } from '@reatom/core'
+
+const dataAtom = atom(null, 'dataAtom')
+
+const fetchData = action(async () => {
+  // ✅ GOOD: Wrap preserves context
+  const response = await wrap(fetch('/api/data'))
+  const data = await wrap(response.json())
+  dataAtom.set(data) // Context preserved, this works
+
+  // ❌ BAD: Context lost after unwrapped await
+  // const response = await fetch('/api/data')
+  // const data = await response.json()
+  // dataAtom.set(data) // May throw "context lost" error
+}, 'fetchData')
+```
+
+### Basic Usage
+
+Wrap any promise or callback that needs to maintain Reatom's async context:
+
+```ts
+// Wrap promises
+const response = await wrap(fetch('/api/data'))
+const data = await wrap(response.json())
+
+// Wrap promise chains
+fetch('/api/data')
+  .then((res) => res.json())
+  .then(
+    wrap((data) => {
+      // Context preserved in this callback
+      dataAtom.set(data)
+    }),
+  )
+
+// Wrap other async operations
+await wrap(new Promise((resolve) => setTimeout(resolve, 1000)))
+```
+
+### Rule of Thumb
+
+Wrap any function callback or promise that interacts with Reatom atoms, actions, or effects _after_ an `await` or within a `.then()` block. This ensures the reactive context is preserved throughout your async operations.
+
+**Important**: Don't chain methods after `wrap()` as this breaks the context:
+
+```ts
+// ❌ BAD: Chaining breaks context
+const data = await wrap(fetch('/api/data')).then((res) => res.json())
+
+// ✅ GOOD: Wrap each step
+const response = await wrap(fetch('/api/data'))
+const data = await wrap(response.json())
+```
+
 ## Basic Async Actions
 
 Use `withAsync` for operations that don't need to store the result data, such as form submissions or data mutations:
