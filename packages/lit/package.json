@@ -1,6 +1,6 @@
 {
   "name": "@reatom/lit",
-  "version": "1000.0.0-alpha.30",
+  "version": "1000.0.0-alpha.31",
   "publishConfig": {
     "tag": "alpha"
   },
@@ -27,7 +27,7 @@
   },
   "peerDependencies": {
     "lit": "^2.6.0",
-    "@reatom/core": "workspace:alpha"
+    "@reatom/core": "workspace:^"
   },
   "devDependencies": {
     "vite": "^5.0.0"

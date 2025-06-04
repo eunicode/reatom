@@ -25,7 +25,7 @@
     "test:watch": "vitest src/*"
   },
   "dependencies": {
-    "@reatom/core": "alpha"
+    "@reatom/core": "workspace:^"
   },
   "author": null,
   "maintainers": null,

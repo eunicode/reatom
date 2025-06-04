@@ -1,6 +1,6 @@
 {
   "name": "@reatom/react",
-  "version": "1000.0.0-alpha.30",
+  "version": "1000.0.0-alpha.31",
   "publishConfig": {
     "tag": "alpha"
   },
@@ -24,7 +24,7 @@
     "test:watch": "vitest src/*"
   },
   "peerDependencies": {
-    "@reatom/core": "workspace:alpha",
+    "@reatom/core": "workspace:^",
     "react": ">=18.2.0",
     "react-dom": ">=18.2.0"
   },

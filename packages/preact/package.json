@@ -1,6 +1,6 @@
 {
   "name": "@reatom/preact",
-  "version": "1000.0.0-alpha.30",
+  "version": "1000.0.0-alpha.31",
   "publishConfig": {
     "tag": "alpha"
   },
@@ -23,7 +23,7 @@
     "test:watch": "vitest src/*"
   },
   "peerDependencies": {
-    "@reatom/core": "workspace:alpha",
+    "@reatom/core": "workspace:^",
     "preact": "^10.0.0"
   },
   "author": "artalar",
