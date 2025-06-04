@@ -2,6 +2,7 @@
 title: Lifecycle
 description: Documentation on the lifecycle of atoms and actions in Reatom
 ---
+
 ## Lifecycle
 
 Reatom is heavily inspired by the [actor model](https://en.wikipedia.org/wiki/Actor_model), which emphasizes that each component of the system is isolated from the others.
@@ -35,7 +36,7 @@ If the user leaves the page and all subscriptions are gone, the atom is marked a
 
 An important aspect of atoms is that they are lazy.
 This means they will only connect when they are used.
-This connection is triggered by `ctx.subscribe`, but the magic of Reatom's internal graph is that ` also(establishes connections.
+This connection is triggered by `myAtom.subscribe`, but the magic of Reatom's internal graph is that an atom call inside a computed or it variation (`effect`, `reatomComponent` etc.) also establishes connections.
 
 So, if you have a main data atom, compute other atoms from it, and use these computed atoms in some components, the main atom will only connect when one of those components is mounted.
 

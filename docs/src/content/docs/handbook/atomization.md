@@ -13,7 +13,7 @@ For example, if you have a user model with an editable name property:
 
 ```ts
 // ~/features/user/model.ts
-import { AtomMut, action, atom } from '@reatom/core'
+import { atom, action, type Atom } from '@reatom/core'
 
 type UserDto = {
   id: string
@@ -22,39 +22,48 @@ type UserDto = {
 
 type User = {
   id: string
-  name: AtomMut<string>
+  name: Atom<string>
 }
 
-export const userAtom = atom<null | User>(null, 'user')
+export const user = atom<null | User>(null, 'user')
 
-export const fetchUser = action(
-  (ctx) =>
-    ctx.schedule(async () => {
-      const userDto = await api.getUser()
-      const user = { id: userDto.id, name: atom(userDto.name, 'user.name') }
-      userAtom(ctx, user)
-    }),
-  'fetchUser',
-)
+export const fetchUser = action(async () => {
+  const userDto = await api.getUser()
+  const userModel = { id: userDto.id, name: atom(userDto.name, 'user.name') }
+  user.set(userModel)
+}, 'fetchUser')
 
-export const syncUserName = action((ctx) => {
-  const name = ctx.get(ctx.get(userAtom).name)
-  return ctx.schedule(() => api.updateUser({ name }))
+export const syncUserName = action(async () => {
+  const name = user()?.name()
+  if (name) {
+    return await api.updateUser({ name })
+  }
 }, 'syncUserName')
 ```
 
-```ts
+```tsx
 // ~/features/user/index.tsx
-import { useAction, useAtom } from '@reatom/npm-react'
+import { reatomComponent } from '@reatom/react'
 
 // user component
-const [name] = useAtom((ctx) => ctx.spy(ctx.get(userAtom).name))
+const User = reatomComponent(() => {
+  const currentUser = user()
+  if (!currentUser) return null
+  
+  const name = currentUser.name()
 
-const handleChange = useAction((ctx, e: React.ChangeEvent<HTMLInputElement>) =>
-  ctx.get(userAtom).name(ctx, e.currentTarget.name),
-)
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    currentUser.name.set(e.currentTarget.value)
 
-const handleSubmit = useAction(syncUserName)
+  const handleSubmit = () => syncUserName()
+
+  return (
+    <div>
+      <input value={name} onChange={handleChange} />
+      <button onClick={handleSubmit}>Save</button>
+    </div>
+  )
+})
 ```
 
 If you have a list of users and need to perform CRUD operations (paging, sorting, adding) on it, you should wrap it in an atom too:
@@ -69,10 +78,10 @@ type Users = Array<{
 }>
 
 // App
-type Users = AtomMut<
+type Users = Atom<
   Array<{
     id: string
-    name: AtomMut<string>
+    name: Atom<string>
   }>
 >
 ```
@@ -96,9 +105,9 @@ export const updateUserName = (state, idx, name) => {
 }
 
 // reatom way: O(1)
-export const updateUserName = action((ctx, idx, name) => {
-  const nameAtom = ctx.get(listAtom)[idx].name
-  nameAtom(ctx, name)
+export const updateUserName = action((idx, name) => {
+  const nameAtom = list()[idx].name
+  nameAtom.set(name)
 })
 ```
 

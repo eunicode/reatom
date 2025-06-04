@@ -48,3 +48,15 @@ Also, with `@reatom/zod`, you can create safer reactive structures even shorter 
 - [en discord](https://discord.gg/EPAKK5SNFh)
 - [en github discussion](https://github.com/reatom/reatom/discussions)
 - [ru telegram](https://t.me/reatom_ru)
+
+## Migration from v3
+
+- **NEVER** use `ctx` or `Ctx`. The API is context-based implicitly via `wrap()`.
+- `ctx.schedule(() => promise)` -> `wrap(promise)`
+- `ctx.spy(dataAtom)` -> `data()`
+- `ctx.get(dataAtom)` -> `peek(data)`
+- `atom(callback)` -> `computed(callback)`
+- `dataAtom(ctx, newState)` -> `data.set(newState)`
+- `dataAtom(ctx, (state) => newState)` -> `data.set((state) => newState)`
+- Type `Atom` -> `AtomLike`
+- Type `AtomMut` -> `Atom`
