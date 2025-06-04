@@ -39,7 +39,7 @@ export default defineConfig({
         {
           icon: 'github',
           label: 'GitHub',
-          href: 'https://github.com/reatom/reatom',
+          href: 'https://github.com/reatom/reatom/tree/v1000',
         },
         {
           icon: 'twitter',
@@ -53,7 +53,7 @@ export default defineConfig({
         },
       ],
       editLink: {
-        baseUrl: 'https://github.com/reatom/reatom/edit/v3/docs/',
+        baseUrl: 'https://github.com/reatom/reatom/edit/v1000/docs/',
       },
     }),
   ],
