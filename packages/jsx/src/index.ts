@@ -178,33 +178,49 @@ let isSkipped = (value: unknown): value is boolean | '' | null | undefined =>
  */
 let walk = (
   dom: DomApis,
-  el: JSX.Element,
-  child: JSX.DOMAttributes<JSX.Element>['children'],
+  element: JSX.Element | DocumentFragment,
+  children: JSX.DOMAttributes<JSX.Element>['children'],
 ) => {
-  if (Array.isArray(child)) {
-    for (let i = 0; i < child.length; i++) walk(dom, el, child[i])
-  } else if (isLinkedListAtom(child)) {
-    walkLinkedList(dom, el, child as any)
-  } else if (isAtom(child)) {
-    el.append(walkAtom(dom, child as any))
-  } else if (!isSkipped(child)) {
-    el.append(child as Node | string)
+  if (Array.isArray(children)) {
+    for (let i = 0; i < children.length; i++) walk(dom, element, children[i])
+  } else if (isLinkedListAtom(children)) {
+    walkLinkedList(dom, element as JSX.Element, children as any)
+  } else if (isAtom(children)) {
+    element.append(walkAtom(dom, children))
+  } else if (typeof children === 'function') {
+    walk(dom, element, computed(children as () => any))
+  } else if (!isSkipped(children)) {
+    element.append(children as Node | string)
   }
+}
+
+let walkAtom = (
+  dom: DomApis,
+  anAtom: AtomLike<JSX.ElementChildren>,
+): DocumentFragment => {
+  let fragment = createLiveFragment(dom, anAtom.name)
+
+  unlink(
+    fragment.__reatomFragment.start,
+    () => anAtom.subscribe(fragment.__reatomFragment.update),
+  )
+
+  return fragment
 }
 
 let walkLinkedList = (
   dom: DomApis,
-  el: JSX.Element,
+  element: JSX.Element,
   list: LinkedListLikeAtom<LinkedList<LLNode<JSX.Element>>>,
 ) => {
   let lastVersion = -1
 
   let cb = (state: LinkedList<LLNode<JSX.Element>>) => {
     if (state.version - 1 > lastVersion) {
-      el.innerHTML = ''
+      element.innerHTML = ''
       for (let { head } = state; head; head = head[LL_NEXT]) {
         throwNativeFragment(head)
-        el.append(head)
+        element.append(head)
       }
     } else {
       let appendBatch: undefined | DocumentFragment
@@ -216,7 +232,7 @@ let walkLinkedList = (
 
           appendBatch.append(change.node)
         } else if (appendBatch) {
-          el.append(appendBatch)
+          element.append(appendBatch)
           appendBatch = undefined
         }
 
@@ -227,22 +243,22 @@ let walkLinkedList = (
             fragment.start.remove()
             fragment.end.remove()
           } else {
-            el.removeChild(change.node)
+            element.removeChild(change.node)
           }
         }
         // TODO support fragments
         else if (change.kind === 'swap') {
           let [aNext, bNext] = [change.a.nextSibling, change.b.nextSibling]
           if (bNext) {
-            el.insertBefore(change.a, bNext)
+            element.insertBefore(change.a, bNext)
           } else {
-            el.append(change.a)
+            element.append(change.a)
           }
 
           if (aNext) {
-            el.insertBefore(change.b, aNext)
+            element.insertBefore(change.b, aNext)
           } else {
-            el.append(change.b)
+            element.append(change.b)
           }
         }
         // TODO support fragments
@@ -250,19 +266,19 @@ let walkLinkedList = (
           if (change.after) {
             change.after.insertAdjacentElement('afterend', change.node)
           } else {
-            el.append(change.node)
+            element.append(change.node)
           }
         } else if (change.kind === 'clear') {
-          el.innerHTML = ''
+          element.innerHTML = ''
         }
       }
 
-      if (appendBatch) el.append(appendBatch)
+      if (appendBatch) element.append(appendBatch)
     }
     lastVersion = state.version
   }
 
-  unlink(el, () => {
+  unlink(element, () => {
     // it's critical to not use not a last state, but the each state.
     let unSubscribe = list.subscribe(noop)
     let rootFrame = context()
@@ -285,7 +301,7 @@ interface LiveDocumentFragment extends DocumentFragment {
   __reatomFragment: {
     start: Comment
     end: Comment
-    update: (element?: JSX.ElementPrimitiveChildren) => void
+    update: (children?: JSX.ElementChildren) => void
   }
 }
 
@@ -306,43 +322,20 @@ let createLiveFragment = (dom: DomApis, name: string): LiveDocumentFragment => {
   let fragment = dom.document.createDocumentFragment() as LiveDocumentFragment
   let start = dom.document.createComment(name)
   let end = start.cloneNode() as Comment
-  fragment.append(start, end)
-
-  let update = (element?: JSX.ElementPrimitiveChildren) => {
+  let update = (children?: JSX.ElementChildren) => {
     while (start.nextSibling && start.nextSibling !== end) {
-      start.nextSibling!.remove?.()
+      start.nextSibling.remove()
     }
 
-    if (element instanceof dom.Node) {
-      start.after(element)
-    } else if (!isSkipped(element)) {
-      let node = isAtom(element)
-        ? walkAtom(dom, element)
-        : dom.document.createTextNode(String(element))
-      start.after(node)
-    }
+    walk(dom, fragment, children)
+    start.after(fragment)
   }
-
   fragment.__reatomFragment = {
     start,
     end,
     update,
   }
-
-  return fragment
-}
-
-let walkAtom = (
-  dom: DomApis,
-  anAtom: AtomLike<JSX.ElementPrimitiveChildren>,
-): DocumentFragment => {
-  let fragment = createLiveFragment(dom, anAtom.name)
-
-  unlink(
-    fragment.__reatomFragment.start,
-    () => anAtom.subscribe(fragment.__reatomFragment.update),
-  )
-
+  fragment.append(start, end)
   return fragment
 }
 
@@ -515,10 +508,7 @@ export let h = (tag: any, props: Rec, ...children: any[]): JSX.Element => {
   if (tag === hf) {
     // needed for `walkLinkedList`
     let fragment = createLiveFragment(dom, '')
-    for (let i = 0; i < children.length; i++) {
-      let child = children[i]
-      fragment.append(isAtom(child) ? walkAtom(dom, child) : child)
-    }
+    walk(dom, fragment, children)
     fragment.append(fragment.__reatomFragment.end)
     // FIXME we need types refactoring
     return fragment as any

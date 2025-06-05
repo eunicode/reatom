@@ -251,9 +251,7 @@ test('fragment as child', () =>
 test('array children', () =>
   context.start(async () => {
     const n = atom(1)
-    const list = computed(() => (
-      <>{...Array.from({ length: n() }, (_, i) => <li>{i + 1}</li>)}</>
-    ))
+    const list = computed(() => Array.from({ length: n() }, (_, i) => <li>{i + 1}</li>))
 
     const element = (
       <ul>
@@ -264,13 +262,12 @@ test('array children', () =>
 
     mount(parent(), element)
     await wrap(sleep())
-
-    expect(element.childNodes.length).toBe(6)
+    expect(element.childNodes.length).toBe(4)
     expect(element.textContent).toBe('1')
 
     n.set(2)
     await wrap(sleep())
-    expect(element.childNodes.length).toBe(7)
+    expect(element.childNodes.length).toBe(5)
     expect(element.textContent).toBe('12')
   }))
 

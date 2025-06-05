@@ -15,7 +15,6 @@ import {
   ClassNameValue,
 } from './utils'
 
-type AtomMaybe<T = any> = T | AtomLike<T>
 type AtomOrGetterMaybe<T = any> = T | AtomLike<T> | (() => T)
 
 // TODO write it manually to improve perf
@@ -41,10 +40,10 @@ export namespace JSX {
     | null
     | undefined
 
-  type ElementChildren =
-    | Array<ElementChildren | AtomMaybe<ElementPrimitiveChildren>>
-    | AtomMaybe<ElementPrimitiveChildren>
+  type ElementChildren = AtomOrGetterMaybe<
     | ElementPrimitiveChildren
+    | Array<ElementChildren>
+  >
 
   interface ElementClass {
     // empty, libs can define requirements downstream
