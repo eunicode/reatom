@@ -3,6 +3,7 @@ import {
   assert,
   type AtomLike,
   isAtom,
+  isWratableAtom,
   type Rec,
   type Unsubscribe,
   wrap,
@@ -374,7 +375,7 @@ let setProp = (dom: DomApis, element: JSX.Element, key: string, value: any) => {
       key,
       wrap(
         // only for logging purposes
-        action(value, named(element, key)),
+        action(value as () => void, named(element, key)),
       ),
     )
     return
@@ -396,24 +397,6 @@ let setProp = (dom: DomApis, element: JSX.Element, key: string, value: any) => {
     return
   }
 
-  /** @todo Show warning if isAction(value). */
-  if (key.startsWith('model:')) {
-    key = key.slice(6) as 'value' | 'valueAsNumber' | 'checked'
-    if (key === 'value') {
-      setProp(dom, element, 'on:input', (event: any) => value(event.target[key]))
-      setProp(dom, element, key, value)
-    } else if (key === 'valueAsNumber') {
-      setProp(dom, element, 'on:input', (event: any) => value(+event.target.value))
-      setProp(dom, element, 'value', value)
-      setProp(dom, element, 'type', 'number')
-    } else if (key === 'checked') {
-      setProp(dom, element, 'on:input', (event: any) => value(event.target[key]))
-      setProp(dom, element, key, value)
-      setProp(dom, element, 'type', 'checkbox')
-    }
-    return
-  }
-
   let setter = (val: any) => set(dom, element, key, val)
 
   /** @todo Show warning if isAction(value). */
@@ -424,6 +407,18 @@ let setProp = (dom: DomApis, element: JSX.Element, key: string, value: any) => {
       setter(typeof value === 'string' ? value : undefined)
     }
     return
+  }
+
+  if (key.startsWith('model:')) {
+    key = key.slice(6) as 'checked' | 'value' | 'valueAsDate' | 'valueAsNumber'
+    if (isWratableAtom(value)) {
+      setProp(dom, element, 'on:input', (event: any) => {
+        if (!event.target.validity.badInput) {
+          let val = event.target[key]
+          value.set(val == null || Number.isNaN(val) ? undefined : val)
+        }
+      })
+    }
   }
 
   /** @todo Show warning if isAction(value). */
@@ -474,16 +469,12 @@ let set = (dom: DomApis, element: JSX.Element, key: string, value: any) => {
      * @see https://measurethat.net/Benchmarks/Show/31249
      */
     if (key === 'class') key = 'className'
+    /** @note element.valueAsNumber = '' // element.value === '0' */
+    else if (key === 'valueAsNumber') key = 'value'
 
-    /**
-     * @todo Support for properties values null | undefined.
-     * @example
-     * if (key === 'valueAsDate') element[key] = val
-     * else if (key === 'valueAsNumber') element[key] = key ?? NaN
-     */
-
+    /** @note element.valueAsDate = '' // Uncaught TypeError: Failed to convert value to 'object'. */
     // @ts-ignore
-    element[key] = value == null ? '' : value
+    element[key] = value == null && key !== 'valueAsDate' ? '' : value
   } else {
     if (key === 'className') key = 'class'
     else if (key.startsWith('attr:')) key = key.slice(5)

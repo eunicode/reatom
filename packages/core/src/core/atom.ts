@@ -342,6 +342,10 @@ export let isAtom = (value: any): value is AtomLike => {
   return typeof value === 'function' && '__reatom' in value
 }
 
+export let isWratableAtom = (value: any): value is Atom => {
+  return isAtom(value) && value.set !== undefined
+}
+
 let mark = (frame: Frame) => {
   // console.log(COLOR.dimGreen('mark'), frame.atom.name)
 

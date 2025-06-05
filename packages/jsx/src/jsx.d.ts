@@ -20,7 +20,7 @@ type AtomOrGetterMaybe<T = any> = T | AtomLike<T> | (() => T)
 
 // TODO write it manually to improve perf
 type AttributesAtomMaybe<T extends Record<keyof any, any>> = {
-  [K in keyof T]: K extends `${'on' | 'model'}:${string}` | 'ref'
+  [K in keyof T]: K extends `on:${string}` | 'ref'
     ? T[K]
     : AtomOrGetterMaybe<T[K]>
 }
@@ -2421,14 +2421,12 @@ export namespace JSX {
     value?: string[] | string | number | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/valueAsDate
-     * @todo Support for properties values null | undefined.
      */
-    valueAsDate?: Date
+    valueAsDate?: Date | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/valueAsNumber
-     * @todo Support for properties values null | undefined.
      */
-    valueAsNumber?: `${number}` | number
+    valueAsNumber?: `${number}` | number | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input#width
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/width
@@ -2461,9 +2459,28 @@ export namespace JSX {
      */
     'on:selectionchange'?: EventHandler<T, Event>
 
-    'model:value'?: Atom<string>
-    'model:valueAsNumber'?: Atom<number>
-    'model:checked'?: Atom<boolean>
+    /**
+     * Two-way binding `checked`.
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input#checked
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/checked
+     */
+    'model:checked'?: boolean | null | undefined
+    /**
+     * Two-way binding `value`.
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input#value
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/value
+     */
+    'model:value'?: string | null | undefined
+    /**
+     * Two-way binding `valueAsDate`.
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/valueAsDate
+     */
+    'model:valueAsDate'?: Date | null | undefined
+    /**
+     * Two-way binding `valueAsNumber`.
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/valueAsNumber
+     */
+    'model:valueAsNumber'?: number | null | undefined
   }
   interface InsHTMLAttributes<T = HTMLElementTagNameMap['ins']>
     extends HTMLAttributes<T> {
