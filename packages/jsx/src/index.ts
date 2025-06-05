@@ -371,13 +371,15 @@ let setProp = (dom: DomApis, element: JSX.Element, key: string, value: any) => {
    */
   if (key.startsWith('on:')) {
     key = key.slice(3)
-    element.addEventListener(
-      key,
-      wrap(
-        // only for logging purposes
-        action(value as () => void, named(element, key)),
-      ),
-    )
+    if (typeof value === 'function') {
+      element.addEventListener(
+        key,
+        wrap(
+          // only for logging purposes
+          action(value as () => void, named(element, key)),
+        ),
+      )
+    }
     return
   }
 

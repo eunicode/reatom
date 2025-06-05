@@ -204,7 +204,7 @@ export namespace JSX {
     [Key in keyof CustomEvents as `on:${Key}`]?: EventHandler<
       T,
       CustomEvents[Key]
-    >
+    > | null | undefined
   }
   interface DOMAttributes<T>
     extends CustomAttributes<T>,
@@ -226,370 +226,370 @@ export namespace JSX {
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Node/selectstart_event
      */
-    'on:selectstart'?: EventHandler<T, Event>
+    'on:selectstart'?: EventHandler<T, Event> | null | undefined
 
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/afterscriptexecute_event
      * @deprecated
      */
-    'on:afterscriptexecute'?: EventHandler<T, Event>
+    'on:afterscriptexecute'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationcancel_event
      */
-    'on:animationcancel'?: EventHandler<T, AnimationEvent>
+    'on:animationcancel'?: EventHandler<T, AnimationEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationend_event
      */
-    'on:animationend'?: EventHandler<T, AnimationEvent>
+    'on:animationend'?: EventHandler<T, AnimationEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationiteration_event
      */
-    'on:animationiteration'?: EventHandler<T, AnimationEvent>
+    'on:animationiteration'?: EventHandler<T, AnimationEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationstart_event
      */
-    'on:animationstart'?: EventHandler<T, AnimationEvent>
+    'on:animationstart'?: EventHandler<T, AnimationEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/auxclick_event
      */
-    'on:auxclick'?: EventHandler<T, PointerEvent>
+    'on:auxclick'?: EventHandler<T, PointerEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/beforeinput_event
      */
-    'on:beforeinput'?: EventHandler<T, InputEvent>
+    'on:beforeinput'?: EventHandler<T, InputEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/beforematch_event
      */
-    'on:beforematch'?: EventHandler<T, Event>
+    'on:beforematch'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/beforescriptexecute_event
      * @deprecated
      */
-    'on:beforescriptexecute'?: EventHandler<T, Event>
+    'on:beforescriptexecute'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/beforexrselect_event
      * @todo Replace to XRSessionEvent.
      */
-    'on:beforexrselect'?: EventHandler<T, Event>
+    'on:beforexrselect'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event
      */
-    'on:blur'?: EventHandler<T, FocusEvent>
+    'on:blur'?: EventHandler<T, FocusEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/click_event
      */
-    'on:click'?: EventHandler<T, PointerEvent>
+    'on:click'?: EventHandler<T, PointerEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event
      */
-    'on:compositionend'?: EventHandler<T, CompositionEvent>
+    'on:compositionend'?: EventHandler<T, CompositionEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionstart_event
      */
-    'on:compositionstart'?: EventHandler<T, CompositionEvent>
+    'on:compositionstart'?: EventHandler<T, CompositionEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionupdate_event
      */
-    'on:compositionupdate'?: EventHandler<T, CompositionEvent>
+    'on:compositionupdate'?: EventHandler<T, CompositionEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/contentvisibilityautostatechange_event
      */
-    'on:contentvisibilityautostatechange'?: EventHandler<T, ContentVisibilityAutoStateChangeEvent>
+    'on:contentvisibilityautostatechange'?: EventHandler<T, ContentVisibilityAutoStateChangeEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/contextmenu_event
      */
-    'on:contextmenu'?: EventHandler<T, PointerEvent>
+    'on:contextmenu'?: EventHandler<T, PointerEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/copy_event
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/copy_event
      */
-    'on:copy'?: EventHandler<T, ClipboardEvent>
+    'on:copy'?: EventHandler<T, ClipboardEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/cut_event
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/cut_event
      */
-    'on:cut'?: EventHandler<T, ClipboardEvent>
+    'on:cut'?: EventHandler<T, ClipboardEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/dblclick_event
      */
-    'on:dblclick'?: EventHandler<T, MouseEvent>
+    'on:dblclick'?: EventHandler<T, MouseEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/DOMActivate_event
      * @deprecated
      */
-    'on:DOMActivate'?: EventHandler<T, MouseEvent>
+    'on:DOMActivate'?: EventHandler<T, MouseEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/DOMMouseScroll_event
      * @deprecated
      */
-    'on:DOMMouseScroll'?: EventHandler<T, WheelEvent>
+    'on:DOMMouseScroll'?: EventHandler<T, WheelEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/focus_event
      */
-    'on:focus'?: EventHandler<T, FocusEvent>
+    'on:focus'?: EventHandler<T, FocusEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event
      */
-    'on:focusin'?: EventHandler<T, FocusEvent>
+    'on:focusin'?: EventHandler<T, FocusEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event
      */
-    'on:focusout'?: EventHandler<T, FocusEvent>
+    'on:focusout'?: EventHandler<T, FocusEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/fullscreenchange_event
      */
-    'on:fullscreenchange'?: EventHandler<T, Event>
+    'on:fullscreenchange'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/fullscreenerror_event
      */
-    'on:fullscreenerror'?: EventHandler<T, Event>
+    'on:fullscreenerror'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/gesturechange_event
      * @todo Replace to GestureEvent.
      */
-    'on:gesturechange'?: EventHandler<T, UIEvent>
+    'on:gesturechange'?: EventHandler<T, UIEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/gestureend_event
      * @todo Replace to GestureEvent.
      */
-    'on:gestureend'?: EventHandler<T, UIEvent>
+    'on:gestureend'?: EventHandler<T, UIEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/gesturestart_event
      * @todo Replace to GestureEvent.
      */
-    'on:gesturestart'?: EventHandler<T, UIEvent>
+    'on:gesturestart'?: EventHandler<T, UIEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/gotpointercapture_event
      */
-    'on:gotpointercapture'?: EventHandler<T, PointerEvent>
+    'on:gotpointercapture'?: EventHandler<T, PointerEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event
      */
-    'on:input'?: EventHandler<T, InputEvent>
+    'on:input'?: EventHandler<T, InputEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event
      */
-    'on:keydown'?: EventHandler<T, KeyboardEvent>
+    'on:keydown'?: EventHandler<T, KeyboardEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keypress_event
      * @deprecated
      */
-    'on:keypress'?: EventHandler<T, KeyboardEvent>
+    'on:keypress'?: EventHandler<T, KeyboardEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keyup_event
      */
-    'on:keyup'?: EventHandler<T, KeyboardEvent>
+    'on:keyup'?: EventHandler<T, KeyboardEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/lostpointercapture_event
      */
-    'on:lostpointercapture'?: EventHandler<T, PointerEvent>
+    'on:lostpointercapture'?: EventHandler<T, PointerEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mousedown_event
      */
-    'on:mousedown'?: EventHandler<T, MouseEvent>
+    'on:mousedown'?: EventHandler<T, MouseEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseenter_event
      */
-    'on:mouseenter'?: EventHandler<T, MouseEvent>
+    'on:mouseenter'?: EventHandler<T, MouseEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseleave_event
      */
-    'on:mouseleave'?: EventHandler<T, MouseEvent>
+    'on:mouseleave'?: EventHandler<T, MouseEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mousemove_event
      */
-    'on:mousemove'?: EventHandler<T, MouseEvent>
+    'on:mousemove'?: EventHandler<T, MouseEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseout_event
      */
-    'on:mouseout'?: EventHandler<T, MouseEvent>
+    'on:mouseout'?: EventHandler<T, MouseEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseover_event
      */
-    'on:mouseover'?: EventHandler<T, MouseEvent>
+    'on:mouseover'?: EventHandler<T, MouseEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseup_event
      */
-    'on:mouseup'?: EventHandler<T, MouseEvent>
+    'on:mouseup'?: EventHandler<T, MouseEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mousewheel_event
      * @deprecated
      */
-    'on:mousewheel'?: EventHandler<T, WheelEvent>
+    'on:mousewheel'?: EventHandler<T, WheelEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/MozMousePixelScroll_event
      * @deprecated
      */
-    'on:MozMousePixelScroll'?: EventHandler<T, WheelEvent>
+    'on:MozMousePixelScroll'?: EventHandler<T, WheelEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/paste_event
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/paste_event
      */
-    'on:paste'?: EventHandler<T, ClipboardEvent>
+    'on:paste'?: EventHandler<T, ClipboardEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointercancel_event
      */
-    'on:pointercancel'?: EventHandler<T, PointerEvent>
+    'on:pointercancel'?: EventHandler<T, PointerEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerdown_event
      */
-    'on:pointerdown'?: EventHandler<T, PointerEvent>
+    'on:pointerdown'?: EventHandler<T, PointerEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerenter_event
      */
-    'on:pointerenter'?: EventHandler<T, PointerEvent>
+    'on:pointerenter'?: EventHandler<T, PointerEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerleave_event
      */
-    'on:pointerleave'?: EventHandler<T, PointerEvent>
+    'on:pointerleave'?: EventHandler<T, PointerEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointermove_event
      */
-    'on:pointermove'?: EventHandler<T, PointerEvent>
+    'on:pointermove'?: EventHandler<T, PointerEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerout_event
      */
-    'on:pointerout'?: EventHandler<T, PointerEvent>
+    'on:pointerout'?: EventHandler<T, PointerEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerover_event
      */
-    'on:pointerover'?: EventHandler<T, PointerEvent>
+    'on:pointerover'?: EventHandler<T, PointerEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerrawupdate_event
      */
-    'on:pointerrawupdate'?: EventHandler<T, PointerEvent>
+    'on:pointerrawupdate'?: EventHandler<T, PointerEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerup_event
      */
-    'on:pointerup'?: EventHandler<T, PointerEvent>
+    'on:pointerup'?: EventHandler<T, PointerEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scroll_event
      */
-    'on:scroll'?: EventHandler<T, Event>
+    'on:scroll'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollend_event
      */
-    'on:scrollend'?: EventHandler<T, Event>
+    'on:scrollend'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollsnapchange_event
      * @todo Replace to SnapEvent.
      */
-    'on:scrollsnapchange'?: EventHandler<T, Event>
+    'on:scrollsnapchange'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollsnapchanging_event
      * @todo Replace to SnapEvent.
      */
-    'on:scrollsnapchanging'?: EventHandler<T, Event>
+    'on:scrollsnapchanging'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/securitypolicyviolation_event
      */
-    'on:securitypolicyviolation'?: EventHandler<T, SecurityPolicyViolationEvent>
+    'on:securitypolicyviolation'?: EventHandler<T, SecurityPolicyViolationEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchcancel_event
      */
-    'on:touchcancel'?: EventHandler<T, TouchEvent>
+    'on:touchcancel'?: EventHandler<T, TouchEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchend_event
      */
-    'on:touchend'?: EventHandler<T, TouchEvent>
+    'on:touchend'?: EventHandler<T, TouchEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchmove_event
      */
-    'on:touchmove'?: EventHandler<T, TouchEvent>
+    'on:touchmove'?: EventHandler<T, TouchEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchstart_event
      */
-    'on:touchstart'?: EventHandler<T, TouchEvent>
+    'on:touchstart'?: EventHandler<T, TouchEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitioncancel_event
      */
-    'on:transitioncancel'?: EventHandler<T, TransitionEvent>
+    'on:transitioncancel'?: EventHandler<T, TransitionEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitionend_event
      */
-    'on:transitionend'?: EventHandler<T, TransitionEvent>
+    'on:transitionend'?: EventHandler<T, TransitionEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitionrun_event
      */
-    'on:transitionrun'?: EventHandler<T, TransitionEvent>
+    'on:transitionrun'?: EventHandler<T, TransitionEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitionstart_event
      */
-    'on:transitionstart'?: EventHandler<T, TransitionEvent>
+    'on:transitionstart'?: EventHandler<T, TransitionEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/webkitmouseforcechanged_event
      */
-    'on:webkitmouseforcechanged'?: EventHandler<T, MouseEvent>
+    'on:webkitmouseforcechanged'?: EventHandler<T, MouseEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/webkitmouseforcedown_event
      */
-    'on:webkitmouseforcedown'?: EventHandler<T, MouseEvent>
+    'on:webkitmouseforcedown'?: EventHandler<T, MouseEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/webkitmouseforceup_event
      */
-    'on:webkitmouseforceup'?: EventHandler<T, MouseEvent>
+    'on:webkitmouseforceup'?: EventHandler<T, MouseEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/webkitmouseforcewillbegin_event
      */
-    'on:webkitmouseforcewillbegin'?: EventHandler<T, MouseEvent>
+    'on:webkitmouseforcewillbegin'?: EventHandler<T, MouseEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event
      */
-    'on:wheel'?: EventHandler<T, WheelEvent>
+    'on:wheel'?: EventHandler<T, WheelEvent> | null | undefined
 
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/beforetoggle_event
      */
-    'on:beforetoggle'?: EventHandler<T, ToggleEvent>
+    'on:beforetoggle'?: EventHandler<T, ToggleEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event
      */
-    'on:change'?: EventHandler<T, Event>
+    'on:change'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/command_event
      * @todo Replace to CommandEvent.
      */
-    'on:command'?: EventHandler<T, Event>
+    'on:command'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/drag_event
      */
-    'on:drag'?: EventHandler<T, DragEvent>
+    'on:drag'?: EventHandler<T, DragEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragend_event
      */
-    'on:dragend'?: EventHandler<T, DragEvent>
+    'on:dragend'?: EventHandler<T, DragEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragenter_event
      */
-    'on:dragenter'?: EventHandler<T, DragEvent>
+    'on:dragenter'?: EventHandler<T, DragEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragleave_event
      */
-    'on:dragleave'?: EventHandler<T, DragEvent>
+    'on:dragleave'?: EventHandler<T, DragEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragover_event
      */
-    'on:dragover'?: EventHandler<T, DragEvent>
+    'on:dragover'?: EventHandler<T, DragEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragstart_event
      */
-    'on:dragstart'?: EventHandler<T, DragEvent>
+    'on:dragstart'?: EventHandler<T, DragEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/drop_event
      */
-    'on:drop'?: EventHandler<T, DragEvent>
+    'on:drop'?: EventHandler<T, DragEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/error_event
      */
-    'on:error'?: EventHandler<T, UIEvent>
+    'on:error'?: EventHandler<T, UIEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/load_event
      */
-    'on:load'?: EventHandler<T, Event>
+    'on:load'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/toggle_event
      */
-    'on:toggle'?: EventHandler<T, ToggleEvent>
+    'on:toggle'?: EventHandler<T, ToggleEvent> | null | undefined
   }
 
   /** Controls automatic capitalization in inputted text. */
@@ -1356,7 +1356,7 @@ export namespace JSX {
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autocorrect
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/autocorrect
-     * @todo Support for attribute values ​​'' | 'on' | 'off'.
+     * @todo Support for attribute values '' | 'on' | 'off'.
      */
     autocorrect?: boolean | null | undefined
     /**
@@ -1807,23 +1807,23 @@ export namespace JSX {
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/contextlost_event
      */
-    'on:contextlost'?: EventHandler<T, Event>
+    'on:contextlost'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/contextrestored_event
      */
-    'on:contextrestored'?: EventHandler<T, Event>
+    'on:contextrestored'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/webglcontextcreationerror_event
      */
-    'on:webglcontextcreationerror'?: EventHandler<T, WebGLContextEvent>
+    'on:webglcontextcreationerror'?: EventHandler<T, WebGLContextEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/webglcontextlost_event
      */
-    'on:webglcontextlost'?: EventHandler<T, WebGLContextEvent>
+    'on:webglcontextlost'?: EventHandler<T, WebGLContextEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/webglcontextrestored_event
      */
-    'on:webglcontextrestored'?: EventHandler<T, WebGLContextEvent>
+    'on:webglcontextrestored'?: EventHandler<T, WebGLContextEvent> | null | undefined
   }
   interface DataHTMLAttributes<T = HTMLElementTagNameMap['data']>
     extends HTMLAttributes<T> {
@@ -1879,11 +1879,11 @@ export namespace JSX {
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement/cancel_event
      */
-    'on:cancel'?: EventHandler<T, Event>
+    'on:cancel'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement/close_event
      */
-    'on:close'?: EventHandler<T, Event>
+    'on:close'?: EventHandler<T, Event> | null | undefined
   }
   interface EmbedHTMLAttributes<T = HTMLElementTagNameMap['embed']>
     extends HTMLAttributes<T> {
@@ -2013,15 +2013,15 @@ export namespace JSX {
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/formdata_event
      */
-    'on:formdata'?: EventHandler<T, FormDataEvent>
+    'on:formdata'?: EventHandler<T, FormDataEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/reset_event
      */
-    'on:reset'?: EventHandler<T, Event>
+    'on:reset'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/submit_event
      */
-    'on:submit'?: EventHandler<T, SubmitEvent>
+    'on:submit'?: EventHandler<T, SubmitEvent> | null | undefined
   }
   interface IframeHTMLAttributes<T = HTMLElementTagNameMap['iframe']>
     extends HTMLAttributes<T> {
@@ -2441,23 +2441,23 @@ export namespace JSX {
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/cancel_event
      */
-    'on:cancel'?: EventHandler<T, Event>
+    'on:cancel'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/invalid_event
      */
-    'on:invalid'?: EventHandler<T, Event>
+    'on:invalid'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/search_event
      */
-    'on:search'?: EventHandler<T, Event>
+    'on:search'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/select_event
      */
-    'on:select'?: EventHandler<T, Event>
+    'on:select'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/selectionchange_event
      */
-    'on:selectionchange'?: EventHandler<T, Event>
+    'on:selectionchange'?: EventHandler<T, Event> | null | undefined
 
     /**
      * Two-way binding `checked`.
@@ -2729,99 +2729,99 @@ export namespace JSX {
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/abort_event
      */
-    'on:abort'?: EventHandler<T, Event>
+    'on:abort'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplay_event
      */
-    'on:canplay'?: EventHandler<T, Event>
+    'on:canplay'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event
      */
-    'on:canplaythrough'?: EventHandler<T, Event>
+    'on:canplaythrough'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/durationchange_event
      */
-    'on:durationchange'?: EventHandler<T, Event>
+    'on:durationchange'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/emptied_event
      */
-    'on:emptied'?: EventHandler<T, Event>
+    'on:emptied'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/encrypted_event
      */
-    'on:encrypted'?: EventHandler<T, MediaEncryptedEvent>
+    'on:encrypted'?: EventHandler<T, MediaEncryptedEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ended_event
      */
-    'on:ended'?: EventHandler<T, Event>
+    'on:ended'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/error_event
      */
-    'on:error'?: EventHandler<T, Event>
+    'on:error'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadeddata_event
      */
-    'on:loadeddata'?: EventHandler<T, Event>
+    'on:loadeddata'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadedmetadata_event
      */
-    'on:loadedmetadata'?: EventHandler<T, Event>
+    'on:loadedmetadata'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadstart_event
      */
-    'on:loadstart'?: EventHandler<T, Event>
+    'on:loadstart'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/pause_event
      */
-    'on:pause'?: EventHandler<T, Event>
+    'on:pause'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play_event
      */
-    'on:play'?: EventHandler<T, Event>
+    'on:play'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/playing_event
      */
-    'on:playing'?: EventHandler<T, Event>
+    'on:playing'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/progress_event
      */
-    'on:progress'?: EventHandler<T, Event>
+    'on:progress'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ratechange_event
      */
-    'on:ratechange'?: EventHandler<T, Event>
+    'on:ratechange'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeked_event
      */
-    'on:seeked'?: EventHandler<T, Event>
+    'on:seeked'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeking_event
      */
-    'on:seeking'?: EventHandler<T, Event>
+    'on:seeking'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/stalled_event
      */
-    'on:stalled'?: EventHandler<T, Event>
+    'on:stalled'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/suspend_event
      */
-    'on:suspend'?: EventHandler<T, Event>
+    'on:suspend'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/timeupdate_event
      */
-    'on:timeupdate'?: EventHandler<T, Event>
+    'on:timeupdate'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/volumechange_event
      */
-    'on:volumechange'?: EventHandler<T, Event>
+    'on:volumechange'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/waiting_event
      */
-    'on:waiting'?: EventHandler<T, Event>
+    'on:waiting'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/waitingforkey_event
      */
-    'on:waitingforkey'?: EventHandler<T, Event>
+    'on:waitingforkey'?: EventHandler<T, Event> | null | undefined
   }
   interface MetaHTMLAttributes<T = HTMLElementTagNameMap['meta']>
     extends HTMLAttributes<T> {
@@ -3229,7 +3229,7 @@ export namespace JSX {
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLSlotElement/slotchange_event
      */
-    'on:slotchange'?: EventHandler<T, Event>
+    'on:slotchange'?: EventHandler<T, Event> | null | undefined
   }
   interface SourceHTMLAttributes<T = HTMLElementTagNameMap['source']>
     extends HTMLAttributes<T> {
@@ -3675,11 +3675,11 @@ export namespace JSX {
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement/select_event
      */
-    'on:select'?: EventHandler<T, Event>
+    'on:select'?: EventHandler<T, Event> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement/selectionchange_event
      */
-    'on:selectionchange'?: EventHandler<T, Event>
+    'on:selectionchange'?: EventHandler<T, Event> | null | undefined
   }
   interface TimeHTMLAttributes<T = HTMLElementTagNameMap['time']>
     extends HTMLAttributes<T> {
@@ -3721,7 +3721,7 @@ export namespace JSX {
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLTrackElement/cuechange_event
      */
-    'on:cuechange'?: EventHandler<T, Event>
+    'on:cuechange'?: EventHandler<T, Event> | null | undefined
   }
   interface UlHTMLAttributes<T = HTMLElementTagNameMap['ul']>
     extends HTMLAttributes<T> {
@@ -3767,15 +3767,15 @@ export namespace JSX {
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/enterpictureinpicture_event
      */
-    'on:enterpictureinpicture'?: EventHandler<T, PictureInPictureEvent>
+    'on:enterpictureinpicture'?: EventHandler<T, PictureInPictureEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/leavepictureinpicture_event
      */
-    'on:leavepictureinpicture'?: EventHandler<T, PictureInPictureEvent>
+    'on:leavepictureinpicture'?: EventHandler<T, PictureInPictureEvent> | null | undefined
     /**
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/resize_event
      */
-    'on:resize'?: EventHandler<T, Event>
+    'on:resize'?: EventHandler<T, Event> | null | undefined
   }
 
   // #region SVG
