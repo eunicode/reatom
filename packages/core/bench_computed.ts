@@ -398,7 +398,7 @@ const testComputers = setupComputersTest({
   //   return (i) => store.dispatch(a.entry(i))
   // },
   async reatom({ listener, startCreation, endCreation }) {
-    const { atom, computed, context, wrap, notify, clearStack } = await import('./dist')
+    const { atom, computed, context, wrap, notify, clearStack } = await import('./build')
 
     startCreation()
 

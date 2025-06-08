@@ -8,7 +8,7 @@ async function testAggregateGrowing(
   const mol_wire_lib = await import('mol_wire_lib')
   const { $mol_wire_atom } = mol_wire_lib.default
 
-  const Reatom = await import('./dist/index.mjs')
+  const Reatom = await import('./build')
 
   const { observable, computed, autorun, configure } = await import('mobx')
   configure({ enforceActions: 'never' })
@@ -174,7 +174,7 @@ async function testAggregateShrinking(
   const mol_wire_lib = await import('mol_wire_lib')
   const { $mol_wire_atom } = mol_wire_lib.default
 
-  const Reatom = await import('./dist/index.mjs')
+  const Reatom = await import('./build')
 
   const { observable, computed, autorun, configure } = await import('mobx')
   configure({ enforceActions: 'never' })
@@ -337,7 +337,7 @@ async function testParent(count: number, batchSize: number = 1) {
   const mol_wire_lib = await import('mol_wire_lib')
   const { $mol_wire_atom } = mol_wire_lib.default
 
-  const Reatom = await import('./dist/index.mjs')
+  const Reatom = await import('./build')
 
   const { observable, computed, autorun, configure } = await import('mobx')
   configure({ enforceActions: 'never' })
@@ -495,7 +495,7 @@ async function testAggregateShuffle(count: number, batchSize: number = 1) {
   const mol_wire_lib = await import('mol_wire_lib')
   const { $mol_wire_atom } = mol_wire_lib.default
 
-  const Reatom = await import('./dist/index.mjs')
+  const Reatom = await import('./build')
 
   const { observable, computed, autorun, configure } = await import('mobx')
   configure({ enforceActions: 'never' })
@@ -677,7 +677,7 @@ async function testAggregateMiddle(count: number, batchSize: number = 1) {
   const mol_wire_lib = await import('mol_wire_lib')
   const { $mol_wire_atom } = mol_wire_lib.default
 
-  const Reatom = await import('./dist/index.mjs')
+  const Reatom = await import('./build')
 
   const { observable, computed, autorun, configure } = await import('mobx')
   configure({ enforceActions: 'never' })
@@ -857,11 +857,11 @@ async function testAggregateMiddle(count: number, batchSize: number = 1) {
 }
 
 ;(async () => {
-  // const subscribers = [2048, 1024, 512, 256] // The alien is very slow here
-  const subscribers = [
-    128, 64, 64, 32, 32, 32, 16, 16, 16, 16, 8, 8, 8, 8, 8, 8, 4, 4, 4, 4, 4, 4,
-    4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-  ]
+  // The alien is very slow here
+  // const subscribers = [2048, 1024, 512, 256]
+
+  // Typical app
+  const subscribers = [1024, 8, 8, 4, 4, 4, 4, 2, 2, 2, 2, 2, 2, 2, 2]
 
   // Collect all results from all subscribers
   const allResults: any[][] = []
