@@ -3216,6 +3216,12 @@ export namespace JSX {
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLSelectElement/value
      */
     value?: string | number | null | undefined
+
+    /**
+     * Two-way binding `value`.
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLSelectElement/value
+     */
+    'model:value'?: string | null | undefined
   }
   interface HTMLSlotElementAttributes<T = HTMLElementTagNameMap['slot']>
     extends HTMLAttributes<T> {
@@ -3679,6 +3685,12 @@ export namespace JSX {
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement/selectionchange_event
      */
     'on:selectionchange'?: EventHandler<T, Event> | null | undefined
+
+    /**
+     * Two-way binding `value`.
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement/value
+     */
+    'model:value'?: string | null | undefined
   }
   interface TimeHTMLAttributes<T = HTMLElementTagNameMap['time']>
     extends HTMLAttributes<T> {

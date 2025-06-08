@@ -19,10 +19,10 @@ clearStack()
 DEBUG.extend(withInit(() => false))
 
 const parent = atom(() => {
-  const div = <div /> as HTMLElement
-  window.document.body.appendChild(div)
+  const main = <main /> as HTMLElement
+  window.document.body.appendChild(main)
 
-  return div
+  return main
 }, 'parent')
 
 test('static props & children', () =>
@@ -1146,4 +1146,21 @@ test('preserves atom connection when moved within DOM', () =>
 
     expect(isConnected(valueAtom)).toBe(true)
     expect(element.className).toBe('bbb')
+  }))
+
+/**
+ * @todo `second.subscribe` is called twice with the same DocumentFragment so the second time the children are deleted.
+ */
+test.skip('fragment as child in double atom', () =>
+  context.start(async () => {
+    const first = computed(() => <div>{second}</div>, 'first')
+    const second = computed(() => <>test</>, 'second')
+    const element = <div>{first}</div>
+
+    mount(parent(), element)
+    await wrap(sleep())
+
+    expect(element.innerHTML).toBe(
+      '<!--first--><p><!--second--><!---->test<!----><!--second--></p><!--first-->',
+    )
   }))
