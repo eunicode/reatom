@@ -2,7 +2,7 @@ import type { Computed } from '../core'
 import { computed, context, named, top } from '../core'
 import type { Unsubscribe } from '../utils'
 import { isAbort } from '../utils'
-import { type AbortAtom, abortVar } from './abort'
+import { type AbortAtom, abortVar } from './abortVar'
 import { _getPrevFrame } from './context'
 
 export interface Effect<State> extends Computed<State> {

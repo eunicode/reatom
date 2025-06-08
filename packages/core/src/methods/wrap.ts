@@ -2,7 +2,7 @@ import type { Frame } from '../core'
 import { STACK, top } from '../core'
 import type { Fn } from '../utils'
 import { isAbort, noop } from '../utils'
-import { abortVar } from './abort'
+import { abortVar } from './abortVar'
 
 /**
  * Preserves Reatom's reactive context across async boundaries or function

@@ -2,7 +2,7 @@ import type { AtomLike } from '../core'
 import { action, bind, computed, top } from '../core'
 import type { Fn } from '../utils'
 import { isAbort, noop } from '../utils'
-import { abortVar } from './abort'
+import { abortVar } from './abortVar'
 import { ifCalled } from './ifChanged'
 
 let i = 0

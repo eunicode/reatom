@@ -3,7 +3,7 @@ import { expect, test, vi } from 'test'
 import { atom } from '../core'
 import { withAbort } from '../mixins'
 import { sleep } from '../utils'
-import { abortVar } from './abort'
+import { abortVar } from './abortVar'
 import { effect } from './effect'
 import { wrap } from './wrap'
 

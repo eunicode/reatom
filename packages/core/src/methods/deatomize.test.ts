@@ -4,7 +4,7 @@ import { describe, expect, test } from 'vitest'
 import { atom, computed } from '../core'
 import { reatomEnum } from '../primitives/reatomEnum'
 import { reatomLinkedList } from '../primitives/reatomLinkedList'
-import { deatomize } from './parseAtoms'
+import { deatomize } from './deatomize'
 
 describe('runtime', () => {
   test('should return value', () => {
