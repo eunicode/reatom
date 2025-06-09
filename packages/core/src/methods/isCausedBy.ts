@@ -1,4 +1,4 @@
-import type { AtomLike } from '../core'
+import type { AtomLike, Frame } from '../core'
 import { top } from '../core'
 
 /**
@@ -22,7 +22,15 @@ import { top } from '../core'
  * @returns {boolean} True if the target atom is part of the causal chain, false
  *   otherwise
  */
-export let isCausedBy = (target: AtomLike, frame = top()): boolean =>
+export let isCausedBy = (
+  target: AtomLike,
+  frame = top(),
+  visited = new Set<Frame>(),
+): boolean =>
   frame.pubs.some(
-    (pub) => pub && (pub.atom === target || isCausedBy(target, pub)),
+    (pub) =>
+      pub &&
+      (pub.atom === target ||
+        (!visited.has(pub) &&
+          (visited.add(pub), isCausedBy(target, pub, visited)))),
   )
