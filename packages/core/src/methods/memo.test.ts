@@ -2,7 +2,7 @@ import { describe, expect, silentQueuesErrors, subscribe, test } from 'test'
 
 import type { Atom, AtomLike, AtomState } from '../core'
 import { atom, computed, isConnected, notify } from '../core'
-import { memo } from './select'
+import { memo } from './memo'
 
 test('should not recompute the end atom if the source atom changed', () => {
   let track = 0

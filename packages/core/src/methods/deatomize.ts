@@ -107,3 +107,6 @@ export const deatomize = <Value>(value: Value): Deatomize<Value> => {
 
   return value as any
 }
+
+/** @deprecated Use `deatomize` instead */
+export let parseAtoms = deatomize
