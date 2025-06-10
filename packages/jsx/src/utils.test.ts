@@ -1,5 +1,6 @@
-import { test, expect, describe } from 'vitest'
 import { atom, clearStack, context } from '@reatom/core'
+import { describe,expect, test } from 'vitest'
+
 import { reatomClassName } from './utils'
 
 clearStack()

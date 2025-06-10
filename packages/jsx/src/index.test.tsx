@@ -1,18 +1,18 @@
-import { test, expect, vi } from 'vitest'
 import {
-  type Fn,
   atom,
   clearStack,
   computed,
+  context,
+  type Fn,
   isConnected,
   reatomLinkedList,
-  context,
   sleep,
   withInit,
   wrap,
 } from '@reatom/core'
+import { expect, test, vi } from 'vitest'
 
-import { h, hf, mount, Bind, DEBUG, type JSX, stylesheet } from '.'
+import { Bind, DEBUG, h, type JSX, mount, stylesheet } from '.'
 
 clearStack()
 

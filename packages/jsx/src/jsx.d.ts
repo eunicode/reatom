@@ -2,18 +2,20 @@
 Respectfully copied from https://github.com/ryansolid/dom-expressions/blob/ae71a417aa13b33517082628aff09513629df8b2/packages/dom-expressions/src/jsx.d.ts
 */
 
-import * as csstype from 'csstype'
-import {
+import type {
   AtomLike,
-  Atom,
-  LinkedListLikeAtom,
   LinkedList,
+  LinkedListLikeAtom,
   LLNode,
-  Fn,
 } from '@reatom/core'
-import {
-  ClassNameValue,
-} from './utils'
+import type * as csstype from 'csstype'
+
+type Primitive =
+  | (string & {})
+  | number
+  | boolean
+  | null
+  | undefined
 
 type AtomOrGetterMaybe<T = any> = T | AtomLike<T> | (() => T)
 
@@ -30,18 +32,19 @@ type ElementsAttributesAtomMaybe<T extends Record<keyof any, any>> = {
 }
 
 export namespace JSX {
+  type ClassNameValue = AtomOrGetterMaybe<
+    | Primitive
+    | Array<ClassNameValue>
+    | AtomLike<T>
+    | Record<string, unknown>
+    | (() => ClassNameValue)
+  >
+
   type Element = HTMLElement | SVGElement
 
-  type ElementPrimitiveChildren =
-    | ChildNode
-    | (string & {})
-    | number
-    | boolean
-    | null
-    | undefined
-
   type ElementChildren = AtomOrGetterMaybe<
-    | ElementPrimitiveChildren
+    | Primitive
+    | ChildNode
     | Array<ElementChildren>
   >
 

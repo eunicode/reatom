@@ -1,22 +1,13 @@
-import { type AtomLike, computed, type Computed, isObject, named } from '@reatom/core'
+import { type Computed, computed, isObject, named } from '@reatom/core'
 
-type Primitive = string | number | boolean | null | undefined
-type GetterMaybe<T = any> = T | (() => T)
-
-export type ClassNameValue = GetterMaybe<
-  | Primitive
-  | Array<ClassNameValue>
-  | AtomLike<ClassNameValue>
-  | Record<string, unknown>
-  | (() => ClassNameValue)
->
+import type { JSX } from './jsx'
 
 // @see https://github.com/JedWatson/classnames
 // @see https://vuejs.org/guide/essentials/class-and-style.html#binding-html-classes
-export let reatomClassName = (value: ClassNameValue, name = named('classNameAtom')): Computed<string> =>
+export let reatomClassName = (value: JSX.ClassNameValue, name = named('classNameAtom')): Computed<string> =>
   computed(() => parseClasses(value), name)
 
-let parseClasses = (value: ClassNameValue): string => {
+let parseClasses = (value: JSX.ClassNameValue): string => {
   let className = ''
   value = resolveGetter(value)
   if (typeof value === 'string') className = value
@@ -34,7 +25,7 @@ let parseClasses = (value: ClassNameValue): string => {
   return className
 }
 
-let resolveGetter = (value: ClassNameValue): ClassNameValue => {
+let resolveGetter = (value: JSX.ClassNameValue): JSX.ClassNameValue => {
   while (typeof value === 'function') value = value()
   return value
 }

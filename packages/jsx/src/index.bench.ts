@@ -1,5 +1,5 @@
-import { bench, describe } from 'vitest'
 import { atom } from '@reatom/core'
+import { bench, describe } from 'vitest'
 
 describe('Node extend', () => {
   const createNode = () => document.createElement('div')

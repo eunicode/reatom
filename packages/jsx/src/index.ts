@@ -1,26 +1,27 @@
 import {
   action,
+  addChangeHook,
   assert,
+  atom,
   type AtomLike,
+  computed,
+  context,
+  isAction,
   isAtom,
+  isLinkedListAtom,
+  isObject,
   isWratableAtom,
+  type LinkedList,
+  type LinkedListLikeAtom,
+  LL_NEXT,
+  type LLNode,
+  noop,
+  ReatomError,
   type Rec,
   type Unsubscribe,
   wrap,
-  isAction,
-  ReatomError,
-  isLinkedListAtom,
-  LL_NEXT,
-  type LinkedList,
-  type LinkedListLikeAtom,
-  type LLNode,
-  noop,
-  addChangeHook,
-  isObject,
-  atom,
-  context,
-  computed,
 } from '@reatom/core'
+
 import type { AttributesAtomMaybe, JSX } from './jsx'
 import { reatomClassName } from './utils'
 
@@ -30,9 +31,9 @@ export type FC<Props = {}> = (
   props: Props & { children?: JSXElement },
 ) => JSXElement
 
-export type { JSXElement, JSX }
+export type { JSX, JSXElement }
 
-export { type ClassNameValue, reatomClassName } from './utils'
+export { reatomClassName } from './utils'
 
 type DomApis = Pick<
   typeof window,
