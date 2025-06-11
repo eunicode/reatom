@@ -30,7 +30,7 @@
     "@reatom/core": "workspace:^"
   },
   "devDependencies": {
-    "vite": "^5.0.0"
+    "vite": "catalog:"
   },
   "author": "kaifaty",
   "maintainers": [

@@ -36,11 +36,11 @@
     "@reatom/core": "workspace:^"
   },
   "dependencies": {
-    "csstype": "^3.1.2"
+    "csstype": "catalog:"
   },
   "devDependencies": {
-    "@vitest/browser": "^3.0.9",
-    "playwright": "^1.53.0"
+    "@vitest/browser": "catalog:",
+    "playwright": "catalog:"
   },
   "author": "artalar",
   "maintainers": [

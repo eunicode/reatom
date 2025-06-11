@@ -40,6 +40,6 @@
     "/build"
   ],
   "devDependencies": {
-    "@preact/preset-vite": "^2.10.1"
+    "@preact/preset-vite": "catalog:"
   }
 }
