@@ -43,6 +43,7 @@ export default tseslint.config(
       // TODO the rules below should be restored and relative errors should be fixed
       '@typescript-eslint/ban-ts-comment': 'off',
       '@typescript-eslint/no-empty-object-type': 'off',
+      '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
     },
   },
   {

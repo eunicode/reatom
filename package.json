@@ -14,16 +14,6 @@
     "prettify:check": "prettier --check */**/**/*.{js,ts,md}",
     "prettify:watch": "onchange */**/**/*.{js,ts,md} -- prettier --write {{changed}}"
   },
-  "workspaces": [
-    "./packages/core",
-    "./packages/jazz",
-    "./packages/jsx",
-    "./packages/lit",
-    "./packages/preact",
-    "./packages/react",
-    "./packages/vue",
-    "./packages/zod"
-  ],
   "engines": {
     "pnpm": ">=10",
     "node": ">=24"

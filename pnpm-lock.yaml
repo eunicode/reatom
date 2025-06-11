@@ -110,7 +110,7 @@ importers:
         version: 6.13.7
       mol_wire_lib:
         specifier: latest
-        version: 1.0.1421
+        version: 1.0.1422
       nanostores:
         specifier: latest
         version: 1.0.1
@@ -238,6 +238,9 @@ importers:
       '@reatom/core':
         specifier: '>=1000.0.0-alpha.30'
         version: 1000.0.0-alpha.30
+      solid-js:
+        specifier: ^1.9.7
+        version: 1.9.7
     devDependencies:
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.28.0
@@ -2062,8 +2065,8 @@ packages:
   mobx@6.13.7:
     resolution: {integrity: sha512-aChaVU/DO5aRPmk1GX8L+whocagUUpBQqoPtJk+cm7UOXUk87J4PeWCh6nNmTTIfEhiR9DI/+FnA8dln/hTK7g==}
 
-  mol_wire_lib@1.0.1421:
-    resolution: {integrity: sha512-CHjCV/fqXNqvFQQZqPF1mR59naBnuY31adZTNiIjJI1F/F5VCzKV97K4oFWFMXImS061xG1k7cpLS2EcPzSttQ==}
+  mol_wire_lib@1.0.1422:
+    resolution: {integrity: sha512-WIZC7G9YGXNJxRCkIiw+htAEsCW1HsnPthYemkXIIZV7aYt8+HJqIZVTH13mLguvsW0an+FgbKWu/OxVoy/TLA==}
 
   mrmime@2.0.1:
     resolution: {integrity: sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ==}
@@ -4489,7 +4492,7 @@ snapshots:
 
   mobx@6.13.7: {}
 
-  mol_wire_lib@1.0.1421: {}
+  mol_wire_lib@1.0.1422: {}
 
   mrmime@2.0.1: {}
 
