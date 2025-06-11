@@ -2,9 +2,14 @@ import type { Fn } from '../utils'
 import type { AtomLike, AtomMeta } from './'
 import { _enqueue, createAtom, isAtom, named, ReatomError, STACK } from './'
 
+export interface ActionCall<Params extends any[] = any[], Payload = any> {
+  params: Params
+  payload: Payload
+}
+
 /** Autoclearable array of processed events */
 export interface ActionState<Params extends any[] = any[], Payload = any>
-  extends Array<{ params: Params; payload: Payload }> {}
+  extends Array<ActionCall<Params, Payload>> {}
 
 /** Logic container with atom features */
 export interface Action<Params extends any[] = any[], Payload = any>

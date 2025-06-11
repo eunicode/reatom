@@ -47,30 +47,42 @@ export const ifChanged = <T extends AtomLike>(
 }
 
 /**
- * Executes a callback when an action is called
+ * Retrieves new action calls that occurred in the current batch.
  *
- * This utility detects when an action is called during the current frame
- * execution and executes the provided callback with the action's payload and
- * parameters. Only works within a reactive (atom) context.
+ * This utility function tracks action invocations and returns an array of new
+ * calls that have been made during the current batch. It's particularly useful
+ * for monitoring action activity within computed atoms or effects without
+ * triggering side effects during the action execution itself.
+ *
+ * In a computed atom, the function compares the current action state with the
+ * previous frame's state to determine which calls are new. If this is the first
+ * time the action is being tracked, all current calls are considered new.
+ * Otherwise, only calls that weren't present in the previous frame are
+ * returned. If the computed triggered by some other dependent atom change, the
+ * function may return an empty array. The past calls are not stored!
  *
  * @example
- *   // Log when a user is created
- *   ifCalled(createUser, (user, params) => {
- *     console.log(`User created: ${user.name} with ID ${user.id}`)
- *   })
+ *   // Monitor API calls in an effect
+ *   const apiCall = action((endpoint: string) => fetch(endpoint), 'apiCall')
  *
- * @template Params - Array type of action parameters
- * @template Payload - Return type of the action
- * @param {Action<Params, Payload>} target - The action to monitor for calls
- * @param {(payload: Payload, params: Params) => void} cb - Callback function to
- *   execute when the action is called
- * @throws {ReatomError} If target is not an action or if not used in a reactive
- *   context
+ *   effect(() => {
+ *     const newCalls = getCalls(apiCall)
+ *     newCalls.forEach(({ payload, params }) => {
+ *       console.log(`API called: ${params[0]}, Response:`, payload)
+ *     })
+ *   }, 'apiMonitor')
+ *
+ * @template Params - Array type representing the action's parameter types
+ * @template Payload - Type of the action's return value/payload
+ * @param {Action<Params, Payload>} target - The action to monitor for new calls
+ * @returns {{ payload: Payload; params: Params }[]} Array of new action calls,
+ *   each containing the action's payload (return value) and the parameters it
+ *   was called with
+ * @throws {ReatomError} If target is a reactive atom instead of an action
  */
-export const ifCalled = <Params extends any[], Payload>(
+export const getCalls = <Params extends any[], Payload>(
   target: Action<Params, Payload>,
-  cb: (payload: Payload, params: Params) => void,
-) => {
+): Array<{ payload: Payload; params: Params }> => {
   if (target.__reatom.reactive) {
     throw new ReatomError('action expected')
   }
@@ -78,8 +90,9 @@ export const ifCalled = <Params extends any[], Payload>(
   type ActionFrame = Frame<ActionState<Params, Payload>, Params, Payload>
 
   let frame = top()
-  assert(frame.atom.__reatom.linking, 'invalid context', ReatomError)
-  let prevPubs = _getPrevFrame(frame)?.pubs ?? [null]
+  let prevPubs = frame.atom.__reatom.linking
+    ? (_getPrevFrame(frame)?.pubs ?? [null])
+    : [null]
   let prevTargetFrame = prevPubs[frame.pubs.length] as undefined | ActionFrame
 
   let targetFrame = frame.root.store.get(target) as undefined | ActionFrame
@@ -98,18 +111,21 @@ export const ifCalled = <Params extends any[], Payload>(
   }
   frame.pubs.push(targetFrame)
 
-  if (targetFrame.atom !== prevTargetFrame?.atom) {
-    targetFrame.state.forEach(({ params, payload }) =>
-      peek(cb, payload, params),
-    )
-  } else if (!Object.is(targetFrame.state, prevTargetFrame.state)) {
-    for (
-      let i = prevTargetFrame.state.length;
-      i < targetFrame.state.length;
-      i++
-    ) {
-      const { params, payload } = targetFrame.state[i]!
-      peek(cb, payload, params)
-    }
-  }
+  const calls =
+    targetFrame.atom !== prevTargetFrame?.atom
+      ? targetFrame.state
+      : Object.is(targetFrame.state, prevTargetFrame.state)
+        ? []
+        : targetFrame.state.slice(prevTargetFrame.state.length)
+
+  return calls
+}
+
+/** @deprecated Use `getCalls` instead */
+export const ifCalled = <Params extends any[], Payload>(
+  target: Action<Params, Payload>,
+  cb: (payload: Payload, params: Params) => void,
+) => {
+  const newCalls = getCalls(target)
+  newCalls.forEach(({ payload, params }) => peek(cb, payload, params))
 }

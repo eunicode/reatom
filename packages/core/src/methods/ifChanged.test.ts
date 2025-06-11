@@ -1,9 +1,10 @@
 import { expect, test, vi } from 'test'
 
-import { _read, action, atom, computed } from '../core'
+import { _read, action, type ActionState, atom, computed } from '../core'
 import { notify } from '../core'
 import { sleep } from '../utils'
-import { ifCalled, ifChanged } from './ifChanged'
+import { effect } from './effect'
+import { getCalls, ifCalled, ifChanged } from './ifChanged'
 import { wrap } from './wrap'
 
 test('ifChanged', () => {
@@ -108,4 +109,47 @@ test('ifCalled skip duplicates', async () => {
   param.set((s) => s + 1)
   data()
   expect(log).toBeCalledTimes(2)
+})
+
+test('getCalls in effect', async () => {
+  const name = 'getCalls'
+  const sum = action((a: number, b: number) => a + b, `${name}.sum`)
+  const log = vi.fn<(call: ActionState) => any>()
+  effect(() => {
+    const calls = getCalls(sum)
+    log(calls)
+  }, `${name}.data`)
+
+  expect(log).toBeCalledWith([])
+
+  sum(1, 2)
+  sum(10, 10)
+  await wrap(sleep())
+  expect(log).toBeCalledWith([
+    { payload: 3, params: [1, 2] },
+    { payload: 20, params: [10, 10] },
+  ])
+
+  sum(1, 1)
+  await wrap(sleep())
+  expect(log).toBeCalledWith([{ payload: 2, params: [1, 1] }])
+})
+
+test('getCalls', async () => {
+  const name = 'getCalls'
+  const sum = action((a: number, b: number) => a + b, `${name}.sum`)
+
+  expect(getCalls(sum)).toEqual([])
+
+  sum(1, 2)
+  sum(10, 10)
+  expect(getCalls(sum)).toEqual([
+    { payload: 3, params: [1, 2] },
+    { payload: 20, params: [10, 10] },
+  ])
+
+  await wrap(sleep())
+
+  sum(1, 1)
+  expect(getCalls(sum)).toEqual([{ payload: 2, params: [1, 1] }])
 })
