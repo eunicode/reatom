@@ -203,16 +203,18 @@ export let abortVar: AbortVar = /* @__PURE__ */ (() =>
           payload as undefined | T,
         frame = top(),
         meta = frame.root.variables,
-        // TODO think well about all of this
-        isComputed = false,
       ): undefined | T {
         let result = cb(meta.get(frame)?.get(this))
-        if (result !== undefined && !isComputed) return result
+        if (result !== undefined) return result
 
-        for (let i = isComputed ? 1 : 0; i < frame.pubs.length; i++) {
+        for (
+          let i = frame.atom.__reatom.reactive ? 1 : 0;
+          i < frame.pubs.length;
+          i++
+        ) {
           let pub = frame.pubs[i]
           if (pub !== null && pub!.atom !== context) {
-            let result = this.find(cb, pub, meta, i > 0)
+            let result = this.find(cb, pub, meta)
             if (result !== undefined) return result
           }
         }
