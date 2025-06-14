@@ -40,7 +40,7 @@ export type Deatomize<T> = T extends Action
             ? Array<Deatomize<T>>
             : T extends Primitive | Builtin
               ? T
-              : T extends object
+              : T extends Record<PropertyKey, unknown>
                 ? {
                     [K in keyof T]: Deatomize<T[K]>
                   }
