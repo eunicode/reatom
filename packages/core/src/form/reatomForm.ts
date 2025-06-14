@@ -78,7 +78,7 @@ export type FormFieldArrayAtom<
 }
 
 export type FormFieldElement<
-  T extends FormInitStateElement = FormInitStateElement,
+  T extends FormInitStateElement | unknown = FormInitStateElement,
 > = T extends FieldLikeAtom
   ? T
   : T extends Date
@@ -95,7 +95,7 @@ export type FormFieldElement<
             : T extends FieldOptions<State, infer Value>
               ? FieldAtom<State, Value>
               : never
-          : T extends Rec
+          : T extends Rec<unknown>
             ? { [K in keyof T]: FormFieldElement<T[K]> }
             : FieldAtom<T>
 
