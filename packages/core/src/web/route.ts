@@ -213,7 +213,7 @@ const createRouteFactory = (
 
     const pattern = `${parentPattern}/${subPath}`
 
-    name ??= `route#${pattern}`
+    name ||= `route#${pattern}`
 
     const hasOptionalPart = pattern.endsWith('?')
 
