@@ -17,9 +17,9 @@ export const getStaticPaths = (() => {
 
 const { readme, ref } = Astro.props
 
-const { Content } = await render(readme)
+const { Content, headings } = await render(readme)
 ---
 
-<StarlightPage frontmatter={{ title: ref.package.name }}>
+<StarlightPage frontmatter={{ title: ref.package.name }} headings={headings}>
   <Content />
 </StarlightPage>
