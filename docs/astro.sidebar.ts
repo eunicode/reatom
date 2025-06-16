@@ -1,3 +1,5 @@
+import type { StarlightIcon } from '@astrojs/starlight/types'
+
 import { group } from './config/sidebar'
 import { makeSidebar } from './config/integrations/package-reference'
 
@@ -5,6 +7,7 @@ import { adapters } from './adapters.config'
 
 export const sidebar = [
   group('Start', {
+    badge: icon('rocket'),
     items: [
       'start/base',
       'start/actions',
@@ -16,6 +19,7 @@ export const sidebar = [
   }),
 
   group('Handbook', {
+    badge: icon('open-book'),
     items: [
       'handbook/history',
       'handbook/atomization',
@@ -30,12 +34,17 @@ export const sidebar = [
   }),
 
   group('Guides', {
+    badge: icon('puzzle'),
     autogenerate: {
       directory: 'guides',
     },
   }),
 
   group('Adapters', {
+    badge: icon('information'),
     items: await makeSidebar(adapters, { prefix: 'adapters' }),
   }),
 ]
+function icon(iconName: StarlightIcon) {
+  return iconName
+}
