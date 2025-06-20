@@ -1,27 +1,36 @@
 import type { AtomLike, Ext } from '../core'
+import { action } from '../core'
+import { abortVar } from '../methods'
+import type { Unsubscribe } from '../utils'
+import { noop } from '../utils'
+import { withAbort } from './withAbort'
+import { withCallHook } from './withChangeHook'
 
-export let withLifecycleHook =
+export let withConnectHook =
   <Target extends AtomLike>(
-    cb: (target: Target) => void,
-    hookName: 'onConnect' | 'onDisconnect',
+    cb: (target: Target) => void | Unsubscribe | Promise<void | Unsubscribe>,
   ): Ext<Target> =>
   (target) => {
-    let name = `${target.name}.${hookName}`
-    let prevHook = target.__reatom[hookName]
-    target.__reatom[hookName] = {
-      [name]() {
-        prevHook?.()
-        cb(target)
-      },
-    }[name]
+    const onConnect = (target.__reatom.onConnect ??=
+      action(noop).extend(withAbort()))
+
+    onConnect.extend(
+      withCallHook(async () => {
+        let result = cb(target)
+
+        if (result instanceof Promise) {
+          result = await result
+        }
+
+        if (typeof result === 'function') {
+          abortVar.subscribeAbort(result)
+        }
+      }),
+    )
 
     return target
   }
 
-export let withConnectHook = <Target extends AtomLike>(
-  cb: (target: Target) => void,
-): Ext<Target> => withLifecycleHook(cb, 'onConnect')
-
 export let withDisconnectHook = <Target extends AtomLike>(
   cb: (target: Target) => void,
-): Ext<Target> => withLifecycleHook(cb, 'onDisconnect')
+): Ext<Target> => withConnectHook((target) => () => cb(target))

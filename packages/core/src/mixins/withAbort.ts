@@ -1,5 +1,5 @@
-import type { AssignerExt } from '../core'
-import { ReatomError, STACK, top } from '../core'
+import type { Action, AssignerExt } from '../core'
+import { action, ReatomError, STACK, top } from '../core'
 import type { AbortAtom } from '../methods'
 import { abortVar } from '../methods'
 import { _getPrevFrame } from '../methods/context'
@@ -8,7 +8,7 @@ import { assert, identity, isAbort, noop, toAbortError } from '../utils'
 import { withComputed } from './withComputed'
 
 export interface AbortExt {
-  abort: (reason?: any) => void
+  abort: Action<[reason?: any]>
 }
 
 export let withAbort = (
@@ -91,12 +91,12 @@ export let withAbort = (
     target.__reatom.middlewares.push(withAbort)
 
     return {
-      abort(reason?: any) {
+      abort: action((reason?: any) => {
         let frame = top().root.store.get(target)
         if (frame) {
           abortVar.find((maybeAbort) => maybeAbort ?? null, frame)?.set(reason)
         }
-      },
+      }, `${target.name}._abort`),
     }
   }
 }

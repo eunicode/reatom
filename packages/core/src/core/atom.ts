@@ -1,5 +1,6 @@
+import type { AbortExt } from '../mixins'
 import { type Fn, isAbort, type Unsubscribe } from '../utils'
-import type { Ext } from './'
+import type { Action, Ext } from './'
 import { _enqueue, type Actions, actions, type Extend, extend } from './'
 
 let identity = <T>(value: T): T => value
@@ -39,11 +40,11 @@ export interface AtomMeta {
    */
   linking: boolean
 
-  /** Function called when the atom gains its first subscriber. */
-  onConnect: undefined | Fn
-
-  /** Function called when the atom loses its last subscriber. */
-  onDisconnect: undefined | Fn
+  /**
+   * Function called when the atom gains its first subscriber. `onConnect.abort`
+   * called when the atom loses its last subscriber.
+   */
+  onConnect: undefined | (Action & AbortExt)
 }
 
 /**
@@ -398,8 +399,8 @@ let unlink = (sub: AtomLike, oldPubs: Frame['pubs']) => {
 
     if (pub.subs.length === 1) {
       pub.subs.pop()
-      if (pub.atom.__reatom.onDisconnect !== undefined) {
-        _enqueue(pub.atom.__reatom.onDisconnect, 'effect')
+      if (pub.atom.__reatom.onConnect !== undefined) {
+        _enqueue(pub.atom.__reatom.onConnect.abort, 'effect')
       }
       unlink(pub.atom, pub.pubs)
     }
@@ -490,8 +491,8 @@ function subscribe(this: AtomLike, userCb?: Fn) {
     frame.subs.splice(frame.subs.lastIndexOf(this), 1)
 
     if (frame.subs.length === 0) {
-      if (frame.atom.__reatom.onDisconnect !== undefined) {
-        _enqueue(frame.atom.__reatom.onDisconnect, 'effect')
+      if (frame.atom.__reatom.onConnect !== undefined) {
+        _enqueue(frame.atom.__reatom.onConnect.abort, 'effect')
       }
       unlink(this, rootFrame.state.store.get(this)!.pubs)
     }
@@ -619,7 +620,7 @@ function atomMiddleware(next: Fn) {
 
 let castAtom = <T extends AtomLike>(
   target: Fn,
-  meta: Omit<AtomMeta, 'processing' | 'linking' | 'onConnect' | 'onDisconnect'>,
+  meta: Omit<AtomMeta, 'processing' | 'linking' | 'onConnect'>,
 ): T =>
   Object.assign(target, {
     actions,
@@ -639,7 +640,6 @@ let castAtom = <T extends AtomLike>(
       processing: false,
       linking: false,
       onConnect: undefined,
-      onDisconnect: undefined,
     } satisfies AtomMeta,
 
     toString: () => `[Atom ${target.name}]`,

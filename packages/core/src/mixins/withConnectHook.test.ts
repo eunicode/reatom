@@ -1,7 +1,7 @@
 import { expect, test, vi } from 'test'
 
 import { atom, computed } from '../core'
-import { wrap } from '../methods'
+import { abortVar, wrap } from '../methods'
 import { sleep } from '../utils'
 import { withConnectHook, withDisconnectHook } from './withConnectHook'
 
@@ -59,4 +59,31 @@ test('withConnectHook', async () => {
   expect(connect).toBeCalledTimes(2)
   expect(disconnect).toBeCalledTimes(2)
   expect(disconnect).toBeCalledWith('a')
+})
+
+test('withConnectHook abort', async () => {
+  const name = 'withConnectHookAbort'
+  let connect = vi.fn()
+  let disconnect = vi.fn()
+  const a = atom(0, `${name}.a`).extend(
+    withConnectHook(() => {
+      connect()
+      abortVar.subscribeAbort(disconnect)
+    }),
+  )
+
+  a()
+  await wrap(sleep())
+  expect(connect).toBeCalledTimes(0)
+  expect(disconnect).toBeCalledTimes(0)
+
+  const un = a.subscribe()
+  await wrap(sleep())
+  expect(connect).toBeCalledTimes(1)
+  expect(disconnect).toBeCalledTimes(0)
+
+  un()
+  await wrap(sleep())
+  expect(connect).toBeCalledTimes(1)
+  expect(disconnect).toBeCalledTimes(1)
 })
