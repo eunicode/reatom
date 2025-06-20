@@ -10,7 +10,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "update": "npx npm-check-updates -u",
-    "references": "cd .. && pnpm i &&pnpm --filter @reatom/core --filter @reatom/jsx --filter @reatom/lit --filter @reatom/preact --filter @reatom/react --filter @reatom/vue --filter @reatom/zod exec tsc -b tsconfig.build.json && typedoc"
+    "references": "cd .. && pnpm i pnpm -g && pnpm i &&pnpm --filter @reatom/core --filter @reatom/jsx --filter @reatom/lit --filter @reatom/preact --filter @reatom/react --filter @reatom/vue --filter @reatom/zod exec tsc -b tsconfig.build.json && typedoc"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.34.4",
