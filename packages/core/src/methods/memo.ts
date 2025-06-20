@@ -98,13 +98,15 @@ export let memo = <T>(
     map.set(frame.atom, (atoms = {}))
   }
 
-  if (key in touched) {
-    throw new ReatomError(
-      'multiple memo with the same "toString" representation is not possible',
-    )
-  }
+  if (frame.atom.__reatom.reactive) {
+    if (key in touched) {
+      throw new ReatomError(
+        'multiple memo with the same "toString" representation is not possible',
+      )
+    }
 
-  touched[key] = true
+    touched[key] = true
+  }
 
   let memoAtom = atoms[key]
   if (!memoAtom) {
