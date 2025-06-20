@@ -358,3 +358,28 @@ test('params types transform', async () => {
 
   expect(await wrap(issueRoute.loader())).toEqual({ issueId: 123 })
 })
+
+test('search params memo', async () => {
+  let route1Track = vi.fn()
+  const route1 = reatomRoute('test').extend(withChangeHook(route1Track))
+  const route2 = reatomRoute({
+    path: 'test',
+    search: z.object({
+      q: z.string().optional(),
+    }),
+  })
+
+  route1.go()
+
+
+  expect(route1()).toEqual({})
+  await wrap(sleep()) // wait the hook
+  expect(route1Track).toBeCalledTimes(1)
+  expect(route2()).toEqual({})
+
+  route2.go({ q: '123' })
+  expect(route1()).toEqual({})
+  await wrap(sleep()) // wait the hook
+  expect(route1Track).toBeCalledTimes(1)
+  expect(route2()).toEqual({ q: '123' })
+})
