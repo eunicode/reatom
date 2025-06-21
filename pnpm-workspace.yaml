@@ -1,4 +1,5 @@
 packages:
+  - docs
   - packages/*
 publishBranch: v1000
 executionEnv.nodeVersion: 24.2.0

@@ -4,13 +4,12 @@
   "version": "0.100.0",
   "private": true,
   "scripts": {
-    "dev": "npm run references && astro dev",
-    "start": "npm run references && astro dev",
-    "build": "npm run references && astro build",
+    "dev": "pnpm run references && astro dev",
+    "start": "pnpm run references && astro dev",
+    "build": "pnpm run references && astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "update": "npx npm-check-updates -u",
-    "references": "cd .. && pnpm i &&pnpm --filter @reatom/core --filter @reatom/jsx --filter @reatom/lit --filter @reatom/preact --filter @reatom/react --filter @reatom/vue --filter @reatom/zod exec tsc -b tsconfig.build.json && typedoc"
+    "references": "echo 'TODO cd .. && pnpm --filter @reatom/core --filter @reatom/jsx --filter @reatom/lit --filter @reatom/preact --filter @reatom/react --filter @reatom/vue --filter @reatom/zod exec tsc -b tsconfig.build.json && typedoc'"
   },
   "packageManager": "pnpm@10.12.1",
   "dependencies": {
