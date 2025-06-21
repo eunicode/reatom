@@ -16,7 +16,7 @@
   },
   "engines": {
     "pnpm": ">=10",
-    "node": ">=22"
+    "node": ">=20"
   },
   "dependencies": {
     "@commitlint/cli": "catalog:",
