@@ -1,0 +1,47 @@
+name: Continuous Preview Release
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    # Skip CI for docs/config changes
+    paths-ignore:
+      - '.github/**'
+      - '.husky/**'
+      - '.vscode/**'
+      - 'docs/**'
+      - '**/*.md'
+
+# Ensure only the latest workflow for a PR runs; previous ones are canceled if new commits are pushed quickly
+concurrency:
+  group: continuous-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview-release:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node & cache pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.2.0
+          cache: pnpm
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm run build
+
+      - name: Publish to pkg.pr.new
+        run: pnpm dlx pkg-pr-new publish './packages/*' --packageManager=pnpm
