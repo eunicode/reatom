@@ -1,3 +1,4 @@
+// Test making a change to the file to ensure that the build system in the continuous preview release workflow works correctly
 import {
   action,
   assert,
