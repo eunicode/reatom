@@ -1,0 +1,52 @@
+name: Continuous Preview Release
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    # Skip CI for docs/config changes
+    paths-ignore:
+      - '.github/**'
+      - '.husky/**'
+      - '.vscode/**'
+      - 'docs/**'
+      - '**/*.md'
+
+# Cancel in-progress runs of this workflow if a new commit is pushed
+concurrency:
+  group: continuous-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview-release:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node & cache pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: pnpm
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Fetch upstream for diffing
+        run: |
+          git remote add upstream https://github.com/reatom/reatom.git
+          git fetch upstream v1000 --depth=1
+
+      - name: Build changed packages
+        run: npx turbo run build --filter=...[upstream/v1000]
+
+      - name: Publish preview packages
+        run: pnpm dlx pkg-pr-new publish './packages/*' --packageManager=pnpm
