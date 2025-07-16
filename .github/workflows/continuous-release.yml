@@ -36,8 +36,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
-        env:
-          CI: ''
 
       - name: Fetch upstream for diffing
         run: |
@@ -47,5 +45,5 @@ jobs:
       - name: Build changed packages
         run: npx turbo run build --filter=...[upstream/${{ github.base_ref }}]
 
-      - name: Publish preview packages
+      - name: Publish packages
         run: pnpm dlx pkg-pr-new publish './packages/*' --packageManager=pnpm
