@@ -22,31 +22,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout code (full history for Turbo diff)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Set up Node & cache pnpm
+      - name: Set up Node & cache npm
         uses: actions/setup-node@v4
         with:
           node-version: 22.13.1
-          cache: pnpm
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+          cache: npm
 
       - name: Install dependencies
-        run: pnpm install
+        run: npm install
 
       - name: Fetch upstream for diffing
         run: |
           git remote add upstream https://github.com/reatom/reatom.git
-          git fetch upstream v1000 --depth=1
+          git fetch upstream v1000 --depth=100
 
       - name: Build changed packages
         run: npx turbo run build --filter=...[upstream/v1000]
 
       - name: Publish preview packages
-        run: pnpm dlx pkg-pr-new publish './packages/*' --packageManager=pnpm
+        run: npx pkg-pr-new publish './packages/*' --packageManager=pnpm
