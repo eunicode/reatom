@@ -29,11 +29,10 @@ jobs:
         with:
           version: 10.12.1
 
-      - name: Set up Node & cache pnpm
+      - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: 22.13.1
-          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install
