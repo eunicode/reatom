@@ -36,7 +36,9 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install
+        env:
+          CI: ''
 
       - name: Fetch upstream for diffing
         run: |
