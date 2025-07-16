@@ -3,13 +3,10 @@ name: Continuous Preview Release
 on:
   pull_request:
     types: [opened, reopened, synchronize]
-    # Skip CI for docs/config changes
-    paths-ignore:
-      - '.github/**'
-      - '.husky/**'
-      - '.vscode/**'
-      - 'docs/**'
-      - '**/*.md'
+
+permissions:
+  contents: read
+  pull-requests: write
 
 # Cancel in-progress runs of this workflow if a new commit is pushed
 concurrency:
@@ -27,22 +24,27 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Node & cache npm
+      - name: Pin & bootstrap pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
+
+      - name: Set up Node & cache pnpm
         uses: actions/setup-node@v4
         with:
           node-version: 22.13.1
-          cache: npm
+          cache: pnpm
 
       - name: Install dependencies
-        run: npm install
+        run: pnpm install
 
       - name: Fetch upstream for diffing
         run: |
           git remote add upstream https://github.com/reatom/reatom.git
-          git fetch upstream v1000 --depth=100
+          git fetch upstream ${{ github.base_ref }} --depth=50
 
       - name: Build changed packages
-        run: npx turbo run build --filter=...[upstream/v1000]
+        run: npx turbo run build --filter=...[upstream/${{ github.base_ref }}]
 
       - name: Publish preview packages
-        run: npx pkg-pr-new publish './packages/*' --packageManager=pnpm
+        run: pnpm dlx pkg-pr-new publish './packages/*' --packageManager=pnpm
