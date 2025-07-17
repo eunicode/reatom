@@ -43,7 +43,7 @@ jobs:
           git fetch upstream ${{ github.base_ref }} --depth=50
 
       - name: Build changed packages
-        run: npx turbo run build --filter=...[upstream/${{ github.base_ref }}]
+        run: npx turbo run build --filter=...[upstream/${{ github.base_ref }}] --dry=json
 
-      - name: Publish packages
-        run: pnpm dlx pkg-pr-new publish './packages/*' --packageManager=pnpm
+      # - name: Publish packages
+      # run: pnpm dlx pkg-pr-new publish './packages/*' --packageManager=pnpm
