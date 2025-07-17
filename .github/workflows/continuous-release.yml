@@ -43,7 +43,7 @@ jobs:
           git fetch upstream ${{ github.base_ref }} --depth=50
 
       - name: Build changed packages
-        run: npx turbo run build --filter=[HEAD^1]
+        run: npx turbo run build --filter=./packages/react
         # run: npx turbo run build --filter=[upstream/${{ github.base_ref }}]
 
       # - name: Publish packages
