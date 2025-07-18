@@ -39,12 +39,26 @@ jobs:
 
       - name: Fetch upstream for diffing
         run: |
-          git remote add upstream https://github.com/reatom/reatom.git
+          git remote add upstream https://github.com/reatom/reatom.git || true
           git fetch upstream ${{ github.base_ref }} --depth=50
 
+      - name: Get changed packages
+        id: changed
+        run: |
+          CHANGED=$(npx turbo run build --filter=...[upstream/${{ github.base_ref }}...HEAD] --dry=json | jq -r '.tasks[].package' | sort -u | xargs)
+          echo "changed=$CHANGED" >> $GITHUB_OUTPUT
+
       - name: Build changed packages
-        run: npx turbo run build --filter=./packages/react
-        # run: npx turbo run build --filter=[upstream/${{ github.base_ref }}]
+        run: npx turbo run build --filter=...[upstream/${{ github.base_ref }}...HEAD]
+
+      - name: Publish changed packages
+        run: |
+          for pkg in ${{ steps.changed.outputs.changed }}; do
+            pnpm dlx pkg-pr-new publish "./packages/$pkg"
+          done
+
+      # - name: Build changed packages
+      #   run: npx turbo run build --filter=[upstream/${{ github.base_ref }}]
 
       # - name: Publish packages
       # run: pnpm dlx pkg-pr-new publish './packages/*' --packageManager=pnpm --no-template
