@@ -38,7 +38,7 @@ jobs:
         run: pnpm install
 
       - name: Build packages
-        run: npx turbo run build
+        run: pnpm run build
 
       - name: Publish packages
         run: pnpm dlx pkg-pr-new publish './packages/*' --packageManager=pnpm --no-template
