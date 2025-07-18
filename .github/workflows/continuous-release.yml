@@ -1,0 +1,42 @@
+name: Continuous Preview Release
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+# Cancel in-progress runs of this workflow if a new commit is pushed
+concurrency:
+  group: continuous-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview-release:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Pin & bootstrap pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build packages
+        run: npx turbo run build
+
+      - name: Publish packages
+        run: pnpm dlx pkg-pr-new publish './packages/*' --packageManager=pnpm --no-template
