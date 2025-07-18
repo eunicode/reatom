@@ -37,40 +37,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Fetch upstream for diffing
-        run: |
-          git remote add upstream https://github.com/reatom/reatom.git || true
-          git fetch upstream ${{ github.base_ref }} --depth=50
+      - name: Build packages
+        run: npx turbo run build
 
-      - name: Get changed workspace directories
-        id: changed
-        run: |
-          set -euo pipefail
-          # Ask Turbo which packages changed vs upstream/<base> & include dependents
-          npx turbo run build --filter=...[upstream/${{ github.base_ref }}...HEAD] --dry=json \
-            | jq -r '.tasks[].directory' \
-            | sort -u >changed-dirs.txt
-
-          if [ ! -s changed-dirs.txt ]; then
-            echo "paths=" >>"$GITHUB_OUTPUT"
-            echo "No changed packages."
-          else
-            # Prefix each with ./ for pkg-pr-new
-            CHANGED_PATHS=$(sed -e 's|^|./|' changed-dirs.txt | xargs)
-            echo "paths=$CHANGED_PATHS" >>"$GITHUB_OUTPUT"
-            echo "Changed paths: $CHANGED_PATHS"
-          fi
-
-      - name: Build changed + dependents
-        if: steps.changed.outputs.paths != ''
-        run: npx turbo run build --filter=...[upstream/${{ github.base_ref }}...HEAD]
-
-      - name: Publish changed packages
-        if: steps.changed.outputs.paths != ''
-        run: pnpm dlx pkg-pr-new publish ${{ steps.changed.outputs.paths }}
-
-      # - name: Build changed packages
-      #   run: npx turbo run build --filter=[upstream/${{ github.base_ref }}]
-
-      # - name: Publish packages
-      # run: pnpm dlx pkg-pr-new publish './packages/*' --packageManager=pnpm --no-template
+      - name: Publish packages
+        run: pnpm dlx pkg-pr-new publish './packages/*' --packageManager=pnpm --no-template
