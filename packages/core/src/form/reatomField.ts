@@ -467,17 +467,12 @@ export function reatomField<State, Value = State>(
             promise = [{ source: 'validation', message: toError(error) }]
           }
 
-          const putValidationErrors = (
-            to: FieldError[],
-            ...errors: FieldError[]
-          ) => to.filter((e) => e.source !== 'validation').concat(errors)
-
           if (promise instanceof Promise) {
             const validationPromise = (async () => {
               try {
                 const errors = await wrap(promise)
                 target.merge({
-                  errors: putValidationErrors(target().errors, ...errors),
+                  errors,
                   meta: undefined,
                   triggered: true,
                   validating: undefined,
@@ -486,10 +481,10 @@ export function reatomField<State, Value = State>(
               } catch (error) {
                 if (isAbort(error)) return { errors: target().errors }
                 const validation = target.merge({
-                  errors: putValidationErrors(target().errors, {
+                  errors: [{
                     source: 'validaton',
                     message: toError(error),
-                  }),
+                  }],
                   meta: undefined,
                   triggered: true,
                   validating: undefined,
@@ -508,7 +503,7 @@ export function reatomField<State, Value = State>(
 
           return target.merge({
             validating: undefined,
-            errors: putValidationErrors(validationValue.errors, ...promise),
+            errors: promise,
             meta: undefined,
             triggered: true,
           })

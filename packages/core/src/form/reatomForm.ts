@@ -138,13 +138,19 @@ export interface Form<
     > &
       AsyncExt<[], any, Error | undefined> &
       AbortExt
+      
+    triggerSchemaValidation: Action<
+      [],
+      StandardSchemaV1.Result<SchemaState> | Promise<StandardSchemaV1.Result<SchemaState>>
+    > &
+      AbortExt
   }
 
   /**
    * Submit async handler. It checks the validation of all the fields in
    * `fieldsList`, calls the form's `validate` options handler, and then the
    * `onSubmit` options handler. Check the additional options properties of
-   * async action: https://www.reatom.dev/package/async/.
+   * async action: https://reatom.dev/handbook/async/.
    */
   submit: SubmitAction<SubmitReturn>
 
@@ -442,7 +448,7 @@ export function reatomForm<T extends FormInitState, SchemaState, SubmitReturn>(
         if (schema) {
           field.validation.trigger.extend(
             withCallHook(() => {
-              if (!isCausedBy(submit)) checkSchemaValidation()
+              if (!isCausedBy(submit)) triggerSchemaValidation()
             }),
           )
         }
@@ -471,7 +477,7 @@ export function reatomForm<T extends FormInitState, SchemaState, SubmitReturn>(
     }),
   )
 
-  const checkSchemaValidation = action(() => {
+  const triggerSchemaValidation = action(() => {
     if (!schema) throw new Error('Triggering schema validation without schema')
 
     const state = fieldsState()
@@ -505,13 +511,13 @@ export function reatomForm<T extends FormInitState, SchemaState, SubmitReturn>(
     }
 
     return validation instanceof Promise
-      ? validation.then(placeErrors)
+      ? validation.then(wrap(placeErrors))
       : placeErrors(validation)
-  }, `${name}.checkSchemaValidation`)
+  }, `${name}.triggerSchemaValidation`).extend(withAbort())
 
-  const origValidationTrigger = fieldsetValidation.trigger
-  const validationTrigger = action(async () => {
-    const status = origValidationTrigger()
+  const origTriggerValidation = fieldsetValidation.trigger
+  const triggerValidation = action(async () => {
+    const status = origTriggerValidation()
     const { errors } = status.validating
       ? await wrap(status.validating)
       : status
@@ -520,7 +526,7 @@ export function reatomForm<T extends FormInitState, SchemaState, SubmitReturn>(
     let state: any
 
     if (schema) {
-      const promise = checkSchemaValidation()
+      const promise = triggerSchemaValidation()
       const schemaValidationResult =
         promise instanceof Promise ? await wrap(promise) : promise
       if (!('value' in schemaValidationResult))
@@ -542,7 +548,7 @@ export function reatomForm<T extends FormInitState, SchemaState, SubmitReturn>(
   }, `${name}.validation.triggerExt`).extend(withAsync(), withAbort())
 
   const submit = action(async () => {
-    const state = await wrap(validationTrigger())
+    const state = await wrap(triggerValidation())
 
     let result
 
@@ -567,7 +573,8 @@ export function reatomForm<T extends FormInitState, SchemaState, SubmitReturn>(
   )
 
   const validation = Object.assign(fieldsetValidation, {
-    trigger: validationTrigger,
+    trigger: triggerValidation,
+    triggerSchemaValidation
   })
 
   return {
