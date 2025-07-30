@@ -138,14 +138,14 @@ export interface Form<
     > &
       AsyncExt<[], any, Error | undefined> &
       AbortExt
-
+  } & (undefined extends SchemaState ? {} : {
     triggerSchemaValidation: Action<
       [],
       | StandardSchemaV1.Result<SchemaState>
       | Promise<StandardSchemaV1.Result<SchemaState>>
     > &
       AbortExt
-  }
+  })
 
   /**
    * Submit async handler. It checks the validation of all the fields in
