@@ -5,14 +5,9 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
 
-permissions:
-  pull-requests: write
-
 env:
   PNPM_VERSION: '10.12.1'
-  NODE_VERSION: '22.13.1'
 
-# Cancel in-progress runs of this workflow if a new commit is pushed
 concurrency:
   group: continuous-preview-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -20,9 +15,10 @@ concurrency:
 jobs:
   preview-release:
     name: 'Release preview'
-    # Valid conditions: PR events or pushes to default branch
     if: github.event_name == 'pull_request' || github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
+    container:
+      image: node:22.13.1-alpine
     timeout-minutes: 30
 
     steps:
@@ -33,11 +29,6 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
         run: pnpm install
