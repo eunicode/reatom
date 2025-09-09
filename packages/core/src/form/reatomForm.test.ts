@@ -591,13 +591,13 @@ test('correct handling of side errors from schema', async () => {
   expect(form.fields.min.validation().errors.length).toBeFalsy()
 })
 
-test('concurrent field validation with schema', async () => {
+test('recipe: concurrent field validation with schema', async () => {
   const form = reatomForm(
     {
       age: {
         initState: 12,
         validate: async () => {
-          await sleep()
+          await wrap(sleep())
           throw new Error('validation error')
         },
       },
@@ -610,20 +610,26 @@ test('concurrent field validation with schema', async () => {
     },
   )
 
+  form.validation.triggerSchemaValidation.extend(
+    withCallHook(() => {
+      form.fields.age.validation.trigger.abort()
+    }),
+  )
+
   form.fields.age.change(10)
   notify()
 
-  expect(form.fields.age.validation().errors[0]?.message).toBe(
-    'must be minimum 18',
-  )
+  expect(form.fields.age.validation()).toMatchObject({
+    errors: [{ message: 'must be minimum 18' }],
+  })
   await wrap(sleep())
 
-  expect(form.fields.age.validation().errors[0]?.message).toBe(
-    'must be minimum 18',
-  )
+  expect(form.fields.age.validation()).toMatchObject({
+    errors: [{ message: 'must be minimum 18' }],
+  })
 })
 
-test('autofocus recipe', async () => {
+test('recipe: autofocus', async () => {
   const form = reatomForm(
     {
       email: '',
@@ -689,4 +695,26 @@ test('validation trigger', async () => {
   const result = await promise
   expect(form.fields.age.validation().errors.length).toBeTruthy()
   expect(result).toBeFalsy()
+})
+
+test('subsequent validation', async () => {
+  const form = reatomForm(
+    {
+      email: '',
+    },
+    {
+      name: 'emailOtpForm',
+      schema: z.object({
+        email: z.string().email(),
+      }),
+    },
+  )
+
+  form.fields.email.change('test')
+  await wrap(form.submit()).catch(noop)
+  expect(form.fields.email.validation().errors.length).toBe(1)
+
+  form.fields.email.change('test@test.com')
+  await wrap(form.submit()).catch(noop)
+  expect(form.fields.email.validation().errors.length).toBe(0)
 })
