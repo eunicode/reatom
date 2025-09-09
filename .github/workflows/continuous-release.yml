@@ -7,6 +7,7 @@ on:
 
 env:
   PNPM_VERSION: '10.12.1'
+  NODE_VERSION: '22.13.1'
 
 concurrency:
   group: continuous-preview-${{ github.event.pull_request.number || github.ref }}
@@ -17,8 +18,8 @@ jobs:
     name: 'Release preview'
     if: github.event_name == 'pull_request' || github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
-    container:
-      image: node:22.13.1-alpine
+    # container:
+    # image: node:22.13.1-alpine
     timeout-minutes: 30
 
     steps:
@@ -33,6 +34,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
       - name: Build packages
         run: npx turbo run build
 
